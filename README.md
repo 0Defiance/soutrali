@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/logo/soutrali-logo-vertical-v1.svg" alt="Soutrali – L’entraide à porter de main" width="260">
+  <img src="Logo Soutrali _ entraide en couleurs.png" alt="Soutrali – L’entraide à porter de main" width="260">
 </p>
 
 # Soutrali — L’entraide à porter de main
