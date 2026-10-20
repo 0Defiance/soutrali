@@ -2,48 +2,673 @@
   <img src="brand/logo/soutrali-logo-vertical-v1.svg" alt="Soutrali – L’entraide à porter de main" width="260">
 </p>
 
-# Soutrali
+# Soutrali — L’entraide à porter de main
 
-**L’entraide à porter de main**
+Plateforme d’entraide et de services de proximité entre habitants d’une même ville de Côte d’Ivoire. Projet pilote : **Abidjan**.
 
-Plateforme d’entraide et de services de proximité entre habitants d’une même ville de Côte d’Ivoire. Projet pilote lancé à **Abidjan**.
-
-> **Ce fichier est le document unique de référence du projet** : présentation, décisions, état d’avancement, règles de travail et journal. Il remplace l’ancien `ContexteSoutrali.md`. Il est mis à jour à la fin de chaque séance de travail.
+> **Ce fichier est la source unique de contexte du projet.** Il est écrit pour qu’une personne, une équipe ou une IA qui n’a rien suivi puisse comprendre **ce qu’est Soutrali, pourquoi il existe, ce qui est décidé, ce qui ne l’est pas, et comment reprendre le travail avec n’importe quelle technologie**.
 >
-> **Statut : cadrage et conception.** Le dépôt ne contient pas encore de code. Le choix technique (stack v3) sera défini ensemble plus tard : rien de technique n’est arrêté ici.
+> **Neutralité technologique :** ce document ne choisit aucun langage, framework, base de données ni hébergeur. Le choix technique (« stack v3 ») sera fait ensuite, en équipe.
 >
-> **Dernière mise à jour :** 20 octobre 2026 · **Langue de travail :** français
+> **Version :** 4.0 · **Dernière mise à jour :** 20 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage et conception, aucun code écrit à ce jour.
 
 ---
 
-## 1. L’idée
+## Sommaire
 
-Trouver rapidement quelqu’un pour un coup de main (plombier, répétiteur, réparateur de téléphone, aide pour un déménagement) passe souvent par les connaissances, les appels ou les groupes de discussion. Les demandes se perdent, les compétences manquent de visibilité.
+0. [Comment utiliser ce document](#0-comment-utiliser-ce-document)
+1. [Soutrali en une minute](#1-soutrali-en-une-minute)
+2. [Contexte et problème](#2-contexte-et-problème)
+3. [Vision, mission, positionnement](#3-vision-mission-positionnement)
+4. [Publics et acteurs](#4-publics-et-acteurs)
+5. [Les 18 besoins et leur traitement](#5-les-18-besoins-et-leur-traitement)
+6. [Périmètre du MVP](#6-périmètre-du-mvp)
+7. [Parcours clés](#7-parcours-clés)
+8. [Règles métier](#8-règles-métier)
+9. [Modèle de données conceptuel](#9-modèle-de-données-conceptuel)
+10. [Cycle de vie d’une annonce](#10-cycle-de-vie-dune-annonce)
+11. [Écrans prévus](#11-écrans-prévus)
+12. [Exigences non fonctionnelles](#12-exigences-non-fonctionnelles)
+13. [Critères d’acceptation du MVP](#13-critères-dacceptation-du-mvp)
+14. [Principes de conception](#14-principes-de-conception)
+15. [Identité visuelle et ton](#15-identité-visuelle-et-ton)
+16. [Confiance, sécurité et données personnelles](#16-confiance-sécurité-et-données-personnelles)
+17. [Indicateurs d’évaluation du pilote](#17-indicateurs-dévaluation-du-pilote)
+18. [Risques et mesures](#18-risques-et-mesures)
+19. [Méthode de travail et règles de collaboration](#19-méthode-de-travail-et-règles-de-collaboration)
+20. [Registre des décisions](#20-registre-des-décisions)
+21. [Questions ouvertes](#21-questions-ouvertes)
+22. [Guide de reprise (autre équipe, autre technologie)](#22-guide-de-reprise-autre-équipe-autre-technologie)
+23. [Documents et fichiers du projet](#23-documents-et-fichiers-du-projet)
+24. [Glossaire](#24-glossaire)
+25. [Journal des séances](#25-journal-des-séances)
+26. [Prochaines étapes](#26-prochaines-étapes)
 
-Soutrali rassemble au même endroit :
+---
 
-- **l’entraide** : demander ou proposer une aide ponctuelle, bénévole ou non ;
-- **les services** : trouver ou proposer une prestation de proximité ;
-- **les opportunités** : donner de la visibilité aux compétences et aux petites missions.
+## 0. Comment utiliser ce document
 
-Soutrali n’est ni un logiciel de gestion d’entreprise, ni une place de marché complexe dès sa première version.
+**Statuts utilisés partout :**
 
-## 2. Le projet pilote
-
-| | |
+| Statut | Signification |
 |---|---|
-| **Ville pilote** | Abidjan (décision validée) |
-| **Public** | Habitants : personnes qui cherchent de l’aide, prestataires, volontaires |
-| **Principe** | Un produit minimum viable (MVP) simple, pensé d’abord pour le téléphone |
-| **Double objectif** | Un service utile aux habitants **et** une méthode de travail collaboratif reproductible, de l’idée à la présentation à la maîtrise d’ouvrage (MOA) |
+| **Validé** | Décidé par le porteur du projet. À respecter. |
+| **Proposé** | Recommandation de l’équipe, pas encore validée. À ne pas présenter comme décidée. |
+| **Ouvert** | Question à arbitrer. Ne pas la remplir par invention. |
 
-**Le MVP doit permettre de :** créer un compte et un profil ; publier une demande ou une offre, bénévole ou rémunérée ; rechercher par commune, catégorie, type et mot-clé ; contacter l’auteur d’une annonce ; suivre, modifier et clôturer ses annonces ; signaler un contenu ; modérer et administrer (de base).
+**Identifiants :** `F-xx` fonctionnalités · `RM-xx` règles métier · `NF-xx` exigences non fonctionnelles · `CA-xx` critères d’acceptation · `D-xx` décisions · `UC-xx` cas d’utilisation.
 
-**Hors MVP :** paiement en ligne, livraison, géolocalisation en temps réel, application mobile native, vérification d’identité exhaustive, notes et avis, aide aux personnes vulnérables, collectes d’argent, actions collectives.
+**Ordre de lecture conseillé pour une nouvelle équipe :** §1 → §3 → §6 → §8 → §9 → §20 → §21 → §22. Le reste sert de référence détaillée.
 
-**Règles sensibles proposées :** annonces concernant des mineurs publiées par un adulte seulement ; aide aux personnes vulnérables et collectes interdites au MVP ; message de prudence pour les services à domicile ; distinction claire entre informations « déclarées » et « vérifiées ».
+**Origine des informations :** ce document consolide trois sources : le cadrage de la Phase 1 (18 besoins), le cahier des charges UML (v1 puis v2) et la charte graphique (v1 puis v2). En cas de contradiction, ce fichier fait foi pour l’état courant ; les documents Word détaillent les diagrammes et les tableaux.
 
-## 3. Feuille de route
+---
+
+## 1. Soutrali en une minute
+
+- **Quoi :** un endroit unique où les habitants d’une ville publient une **demande d’aide** ou une **offre de service**, se retrouvent par commune et par catégorie, puis prennent contact.
+- **Pour qui :** les habitants d’Abidjan : personnes qui cherchent de l’aide, prestataires de petits services, volontaires.
+- **Pourquoi :** aujourd’hui, ces mises en relation passent par les connaissances, les appels et les groupes de discussion ; les demandes se perdent et les compétences manquent de visibilité.
+- **Comment, au départ :** un produit minimum viable (MVP) simple, pensé d’abord pour le téléphone, sans paiement, sans livraison, sans vérification d’identité exhaustive.
+- **Double objectif :** (1) un service utile aux habitants ; (2) **expérimenter une méthode de travail collaboratif reproductible** (IA, développeurs, chefs de projet, maîtrise d’ouvrage) de l’idée à la présentation à la MOA.
+- **Garde-fou :** Soutrali n’est ni un ERP, ni un CRM, ni un logiciel de gestion d’entreprise, ni une place de marché complexe dès la première version.
+
+---
+
+## 2. Contexte et problème
+
+Dans la vie quotidienne en Côte d’Ivoire, de nombreuses personnes ont du mal à trouver vite quelqu’un pour résoudre un problème ou accomplir une tâche : plombier, mécanicien, répétiteur, réparateur de téléphone, personne pour transporter un meuble, aide ponctuelle.
+
+À l’inverse, des personnes possèdent des compétences, du temps ou des ressources utiles à d’autres, sans moyen efficace de faire connaître leurs disponibilités.
+
+Les canaux actuels (connaissances personnelles, appels, groupes de messagerie, réseaux sociaux, déplacements) fonctionnent, mais présentent des limites :
+
+- les demandes se perdent dans les conversations ;
+- il est difficile de trouver une personne compétente pour un besoin précis ;
+- les informations sur les prestataires sont dispersées ;
+- les personnes compétentes manquent de visibilité ;
+- les demandes urgentes ne trouvent pas toujours de réponse rapide ;
+- on ne sait pas toujours vers qui se tourner ;
+- il est difficile de distinguer les offres sérieuses des annonces peu fiables.
+
+Soutrali veut apporter une réponse numérique simple à ces difficultés, sans prétendre les supprimer toutes.
+
+---
+
+## 3. Vision, mission, positionnement
+
+**Vision.** Devenir une plateforme de référence pour faciliter l’entraide, la recherche de services et la mise en relation entre les habitants d’une même ville de Côte d’Ivoire.
+
+**Mission.** Permettre à chaque utilisateur de :
+
+- trouver une personne susceptible de répondre à un besoin ;
+- publier une demande d’aide ou de service ;
+- proposer ses compétences et ses disponibilités ;
+- découvrir les services proposés par d’autres habitants ;
+- entrer en contact avec les personnes intéressées ;
+- participer à un réseau local d’entraide.
+
+**Positionnement.** Soutrali n’est pas qu’un annuaire de professionnels. Il réunit trois dimensions :
+
+| Dimension | Sens |
+|---|---|
+| **Entraide** | Demander ou proposer une aide ponctuelle, bénévole ou non |
+| **Services** | Trouver ou proposer des prestations, rémunérées ou gratuites |
+| **Opportunités** | Donner de la visibilité aux compétences, aux disponibilités et aux petites activités des habitants |
+
+**Distinction essentielle :** une aide **bénévole** ne doit jamais être présentée comme une prestation **commerciale**.
+
+**Périmètre géographique.** Une **ville**, et non un quartier. Ville pilote : **Abidjan** (validé). Le lancement dans une seule ville ne limite pas définitivement le projet à cette ville.
+
+**Objectifs spécifiques du pilote :**
+
+1. Permettre aux habitants de publier des demandes et des offres.
+2. Permettre aux prestataires et volontaires de proposer leur aide.
+3. Faciliter la recherche par catégorie et zone.
+4. Simplifier la consultation des offres et demandes.
+5. Faciliter la prise de contact.
+6. Mettre en place une modération et un signalement élémentaires.
+7. Tester la plateforme auprès d’un petit groupe d’utilisateurs.
+8. Évaluer l’utilité réelle du service et les améliorations nécessaires.
+
+---
+
+## 4. Publics et acteurs
+
+### 4.1 Publics concernés
+
+| Public | Besoin | Exemples |
+|---|---|---|
+| Habitants qui cherchent de l’aide | Trouver vite une personne pour un besoin personnel, familial ou pratique | Réparateur de téléphone, répétiteur pour un enfant, aide au déménagement, mécanicien, couturière, petite course |
+| Personnes qui proposent des services | Gagner en visibilité auprès des habitants de leur ville | Artisans, réparateurs, mécaniciens, plombiers, électriciens, couturiers, coiffeurs, répétiteurs, informaticiens |
+| Personnes qui offrent une aide ponctuelle | Consacrer du temps à une activité utile | Étudiants, travailleurs, retraités, bénévoles : aide numérique à une personne âgée, aider un voisin à transporter un objet, partager une compétence |
+| Petits entrepreneurs et indépendants | Présenter leurs services sans site Internet ni solution commerciale complexe | Petites activités locales |
+| Associations et initiatives solidaires | **Évolution future**, cadrage spécifique requis (règles de publication, vérification, suivi) | Actions de solidarité, collectes de biens |
+
+### 4.2 Acteurs du système
+
+Les rôles « demandeur » et « prestataire / volontaire » sont des **rôles métier** qu’un même compte peut prendre tour à tour, pas des types de compte distincts.
+
+| Acteur | Description | Droits principaux |
+|---|---|---|
+| **Visiteur** | Personne non connectée | Voir les annonces publiques, rechercher, s’inscrire ou se connecter. Ne voit **aucune coordonnée**. |
+| **Utilisateur** | Habitant inscrit | Gérer son profil, publier et gérer ses annonces, contacter un auteur, signaler. |
+| **Demandeur** (rôle métier) | Utilisateur qui publie une demande | Décrire le besoin, répondre aux prises de contact, clôturer la demande. |
+| **Prestataire / volontaire** (rôle métier) | Utilisateur qui publie une offre ou répond à une demande | Publier une offre, répondre aux demandes, indiquer ses disponibilités. |
+| **Modérateur** | Personne autorisée à traiter les abus | Examiner les signalements, masquer ou restaurer une annonce, proposer une suspension. |
+| **Administrateur** | Responsable de la plateforme | Gérer rôles, catégories, communes, paramètres, comptes modérateurs, suspensions. |
+
+Au prototype, les permissions restent simples : pas de système complexe de droits.
+
+---
+
+## 5. Les 18 besoins et leur traitement
+
+Ces besoins sont l’origine fonctionnelle du projet. Le tableau indique comment chacun est traité (**MVP**, **après le MVP**, **hors périmètre**). Statut du classement : **Proposé**.
+
+| # | Besoin | Réponse de Soutrali | Périmètre |
+|---|---|---|---|
+| 1 | Trouver rapidement quelqu’un pour résoudre un problème | Recherche par commune, catégorie et mot-clé | MVP |
+| 2 | Publier une demande d’aide | Annonce de type DEMANDE (titre, description, catégorie, commune, période souhaitée, nature bénévole/rémunérée, contact) | MVP |
+| 3 | Proposer ses compétences | Annonce de type OFFRE (description, zone d’intervention, modalités de contact) | MVP |
+| 4 | Trouver un service dans une ville donnée | Filtres : commune, catégorie, type, nature, mot-clé | MVP |
+| 5 | Trouver une aide ponctuelle (bénévole) | Nature = BÉNÉVOLE, distinguée des prestations commerciales | MVP |
+| 6 | Trouver un petit travail ou une mission ponctuelle | Catégorie « Petites missions » + nature RÉMUNÉRÉE ; règles anti-fraude | MVP |
+| 7 | Donner de la visibilité aux petits prestataires | Profil + annonces OFFRE ; coordonnées publiées avec consentement ; fiches enrichies (photos, avis) plus tard | MVP (version simple) |
+| 8 | Trouver quelqu’un pour un besoin domestique | Catégories simples ; vigilance sécurité pour l’accès au domicile | MVP avec avertissements |
+| 9 | Aide aux études et à la formation | Catégorie Éducation ; règles de protection des mineurs | MVP avec règles |
+| 10 | Aide numérique ou administrative | Catégorie dédiée ; ne pas confondre avec du conseil réglementé ; ne pas garantir qu’une démarche aboutit | MVP |
+| 11 | Aide pour une personne vulnérable | Exige vérification et sécurité renforcées ; ne pas confondre avec un service médical | **Hors MVP** |
+| 12 | Actions d’entraide collective | Collectes d’argent et appels à la solidarité : règles spécifiques | **Hors MVP** |
+| 13 | Réduire le temps de recherche d’un prestataire | Catalogue unique, filtrable | MVP |
+| 14 | Faciliter la mise en relation entre habitants | Prise de contact (F-06) | MVP |
+| 15 | Améliorer la confiance | Signalement, modération, informations claires, minimisation des données, suspension ; un compte n’est **pas** une identité vérifiée | MVP (élémentaire) |
+| 16 | Suivre ses demandes | « Mes annonces » : modifier, clôturer, indiquer « besoin satisfait » | MVP |
+| 17 | Faire connaître ses disponibilités | Simple mention textuelle ; pas de calendrier complexe | MVP (simple) |
+| 18 | Favoriser les échanges locaux et l’activité économique | Effet à mesurer, **non garanti** | Indicateur |
+
+**Domaines couverts à long terme** (vision, pas MVP) : entraide entre habitants · services de proximité · éducation et formation · petites missions · assistance numérique · solidarité collective · recherche et mise en relation · confiance et suivi.
+
+---
+
+## 6. Périmètre du MVP
+
+### 6.1 Fonctionnalités incluses
+
+| ID | Fonctionnalité | Description | Priorité |
+|---|---|---|---|
+| F-01 | Compte et authentification | Inscription, connexion, déconnexion, récupération d’accès. Méthode à décider (D-04) | Essentiel |
+| F-02 | Profil utilisateur | Nom d’affichage, commune, courte présentation, canaux de contact choisis et leur visibilité | Essentiel |
+| F-03 | Publier une annonce | Demande ou offre ; **nature bénévole ou rémunérée** ; catégorie ; description ; commune et quartier ; disponibilité ; budget indicatif si rémunérée | Essentiel |
+| F-04 | Explorer les annonces | Liste paginée, détail, mots-clés, filtres commune / catégorie / type / nature | Essentiel |
+| F-05 | Gérer ses annonces | Modifier, retirer, clôturer, indiquer « besoin satisfait », consulter l’historique | Essentiel |
+| F-06 | Contacter un auteur | Contact via le canal choisi par l’auteur, réservé aux utilisateurs connectés ; trace de l’interaction (D-05) | Essentiel |
+| F-07 | Signaler un contenu | Motif, détails, suivi du statut | Essentiel |
+| F-08 | Modération | File de signalements, masquer / restaurer, suspendre un compte, historique | Essentiel |
+| F-13 | Référentiels | Gestion par l’administrateur des catégories et des communes / zones d’Abidjan | Essentiel |
+| F-09 | Notifications | Confirmation de publication, événements majeurs | Souhaitable |
+
+### 6.2 Hors MVP
+
+| ID | Élément | Raison |
+|---|---|---|
+| F-10 | Évaluations réciproques après échange | Exige un dispositif de contrôle contre les abus |
+| F-11 | Paiement en ligne, portefeuille, séquestre | Complexité financière et réglementaire ; inutile pour tester l’utilité |
+| F-12 | Géolocalisation en temps réel | Données sensibles et coûteuses ; la commune suffit |
+| F-14 | Aide aux personnes vulnérables | Vérification et sécurité renforcées nécessaires |
+| F-15 | Collectes d’argent, actions collectives | Règles spécifiques de vérification et de publication |
+| F-16 | Fiches enrichies (photos de réalisations, avis) | Après le MVP si le besoin est établi |
+| — | Application mobile native, vérification d’identité exhaustive, livraison ou logistique intégrée, système complexe de réputation ou de recommandation, fonctions de gestion d’entreprise, automatisations complexes, architecture surdimensionnée | Exclus par le cadrage ; évolution possible vers une application installable plus tard |
+
+> **Règle :** ne rien ajouter à ce périmètre sans expliquer le besoin, les coûts et les conséquences, puis obtenir une décision explicite.
+
+---
+
+## 7. Parcours clés
+
+### 7.1 Publier une annonce (UC-01)
+
+- **Acteur :** utilisateur connecté (compte actif).
+- **Déclencheur :** il choisit « Publier une annonce ».
+- **Scénario nominal :** 1. choisir demande ou offre · 2. saisir titre, catégorie, description, commune, disponibilité · 3. indiquer la nature (bénévole ou rémunérée) et, si rémunérée, un budget indicatif · 4. prévisualiser · 5. confirmer · 6. le système valide et enregistre · 7. confirmation et statut affichés.
+- **Exceptions :** champ obligatoire manquant ; contenu interdit ; session expirée ; erreur réseau. L’erreur est expliquée **sans perdre les champs saisis** autant que possible.
+- **Résultat :** annonce enregistrée avec identifiant, auteur, date et statut initial.
+
+### 7.2 Rechercher une annonce (UC-02)
+
+- **Acteur :** visiteur ou utilisateur.
+- **Scénario :** saisir un mot-clé (facultatif), choisir commune, catégorie, type, nature, lancer la recherche. Le système affiche une liste paginée, ou un **état vide explicite** si aucun résultat.
+- **Exceptions :** paramètres invalides, service indisponible → proposer de réessayer.
+- **Résultat :** les résultats respectent les critères et les règles de visibilité.
+
+### 7.3 Contacter l’auteur d’une annonce (UC-03)
+
+- **Préconditions :** utilisateur connecté ; annonce visible et non clôturée ; canal de contact disponible.
+- **Scénario :** ouvrir le détail → choisir « contacter » → le canal choisi par l’auteur est proposé → confirmation.
+- **Règles :** les coordonnées privées ne sont jamais publiques par défaut ; blocage et signalement prévus.
+- **Résultat :** une interaction est tracée.
+
+### 7.4 Signaler et traiter un signalement (UC-04)
+
+- **Utilisateur :** signale une annonce avec un motif et des détails facultatifs ; reçoit une confirmation et peut suivre le statut.
+- **Modérateur :** consulte la file, ouvre le signalement, examine le contenu, choisit une action (classer sans suite, masquer, restaurer, demander une correction, transmettre à l’administrateur), saisit une justification si nécessaire, confirme.
+- **Résultat :** décision, auteur de la décision, date et historique enregistrés. **Un signalement ne vaut pas suppression automatique** (RM-08).
+
+### 7.5 Clôturer une demande (UC-05)
+
+L’auteur clôture son annonce et indique l’issue : **satisfaite**, **non satisfaite** ou **abandonnée**. Cette information alimente les indicateurs du pilote.
+
+### 7.6 Gérer les référentiels (UC-06)
+
+L’administrateur crée, renomme ou désactive des catégories et des communes. Une catégorie désactivée n’est plus proposée, mais les annonces existantes restent consultables.
+
+```mermaid
+flowchart LR
+  V[Visiteur] --> UC1("Consulter les annonces")
+  V --> UC2("Rechercher et filtrer")
+  V --> UC3("Créer un compte / se connecter")
+  U[Utilisateur] --> UC1
+  U --> UC2
+  U --> UC4("Gérer son profil et ses contacts")
+  U --> UC5("Publier une annonce")
+  U --> UC6("Modifier / clôturer une annonce")
+  U --> UC7("Contacter un auteur")
+  U --> UC8("Signaler un contenu")
+  U --> UC12("Marquer besoin satisfait")
+  M[Modérateur] --> UC9("Traiter les signalements")
+  M --> UC10("Masquer / restaurer une annonce")
+  A[Administrateur] --> UC11("Gérer rôles, catégories, communes")
+  A --> UC9
+```
+
+---
+
+## 8. Règles métier
+
+| ID | Règle | Statut |
+|---|---|---|
+| RM-01 | Seul un utilisateur authentifié peut publier, modifier ou clôturer une annonce. | Proposé |
+| RM-02 | Un utilisateur ne peut modifier ou supprimer que ses propres annonces, sauf rôle de modération autorisé. | Proposé |
+| RM-03 | Chaque annonce a un type : DEMANDE ou OFFRE. | Proposé |
+| RM-04 | Une annonce publiée contient au minimum un titre, une catégorie, une description et une zone géographique suffisamment générale. | Proposé |
+| RM-05 | Les coordonnées privées ne sont **jamais** visibles des visiteurs non connectés. Chaque utilisateur choisit quels canaux il rend visibles aux utilisateurs connectés (consentement explicite et révocable). | Proposé |
+| RM-06 | Une annonce clôturée disparaît des résultats actifs mais reste visible de son auteur dans son historique. | Proposé |
+| RM-07 | Les actions de modération sont traçables. | Proposé |
+| RM-08 | Un signalement ne garantit pas la suppression : une décision de modération est nécessaire. | Proposé |
+| RM-09 | Sont interdits les contenus illicites, frauduleux, discriminatoires, menaçants, ou exposant des données personnelles non nécessaires. | Proposé |
+| RM-10 | La plateforme indique clairement qu’elle **facilite la mise en relation** et ne garantit pas, par défaut, l’exécution d’un service. | Proposé |
+| RM-11 | L’interface distingue « informations déclarées » et « informations vérifiées ». Tant qu’aucune vérification n’existe, aucune mention « vérifié » n’est affichée. | Proposé |
+| RM-12 | Une annonce concernant un mineur (cours, garde, accompagnement) est publiée par un adulte. Aucune donnée permettant d’identifier ou de localiser un mineur n’est publiée (nom complet, école, adresse). Âge minimum d’inscription : à décider (D-11). | Proposé |
+| RM-13 | Aide aux personnes vulnérables, collectes d’argent et appels à dons : interdits au MVP et signalables. | Proposé |
+| RM-14 | Pour les services à domicile, un message de prudence est affiché ; son contenu exact est à valider avec la MOA. | Proposé |
+| RM-15 | Une annonce de nature BÉNÉVOLE ne comporte pas de budget. Une aide bénévole n’est pas présentée comme une prestation commerciale. | Proposé |
+| RM-16 | Un utilisateur a un rôle unique : UTILISATEUR, MODÉRATEUR ou ADMINISTRATEUR. Les droits sont vérifiés côté serveur. | Proposé |
+
+---
+
+## 9. Modèle de données conceptuel
+
+Modèle **logique et indépendant de toute technologie**. Les types et cardinalités sont indicatifs ; ils seront alignés avec la base de données par la future équipe technique.
+
+### 9.1 Entités
+
+| Entité | Responsabilité | Attributs principaux |
+|---|---|---|
+| **Utilisateur** | Compte, profil, identité applicative | id, nom d’affichage, identifiant (e-mail ou téléphone, D-04), secret **stocké sous forme hachée**, rôle, commune, présentation, visibilité des contacts, statut, date de création |
+| **Annonce** | Demande ou offre publiée | id, titre, description, type, **nature**, quartier (libre), disponibilité (texte), budget indicatif (facultatif), statut, issue de clôture (facultative), dates de création et de mise à jour |
+| **Catégorie** | Taxonomie des besoins et services | id, nom, description, active |
+| **Commune** | Référentiel géographique | id, nom, active |
+| **Interaction** | Trace d’une prise de contact | id, message initial, statut, date de création ; contenu non public |
+| **Signalement** | Remontée d’un abus | id, motif (obligatoire), détails, statut, date de création ; accès restreint |
+| **ActionModération** | Historique des décisions | id, décision, justification, date ; modérateur identifié |
+
+**Relations :** un utilisateur publie 0..n annonces · une catégorie classe 0..n annonces · une commune situe 0..n annonces et utilisateurs · un utilisateur initie 0..n interactions, chacune concerne une annonce · un utilisateur émet 0..n signalements, chacun cible une annonce · un utilisateur (modérateur) effectue 0..n actions de modération, chacune traite 0..1 signalement.
+
+### 9.2 Énumérations
+
+```
+TypeAnnonce        = DEMANDE | OFFRE
+NatureAnnonce      = BENEVOLE | REMUNEREE
+RoleUtilisateur    = UTILISATEUR | MODERATEUR | ADMINISTRATEUR
+StatutCompte       = ACTIF | SUSPENDU | SUPPRIME
+StatutAnnonce      = BROUILLON | EN_REVUE | PUBLIEE | MASQUEE | CLOTUREE | REFUSEE
+StatutInteraction  = OUVERTE | REPONDUE | FERMEE | SIGNALEE
+StatutSignalement  = NOUVEAU | EN_COURS | TRAITE | CLASSE_SANS_SUITE
+IssueCloture       = SATISFAITE | NON_SATISFAITE | ABANDONNEE
+```
+
+### 9.3 Diagramme de classes
+
+```mermaid
+classDiagram
+  class Utilisateur {
+    id
+    nomAffichage
+    identifiant
+    motDePasseHash
+    role
+    presentation
+    visibiliteContact
+    statut
+    dateCreation
+  }
+  class Annonce {
+    id
+    titre
+    description
+    type
+    nature
+    quartier
+    disponibilite
+    budgetIndicatif
+    statut
+    issueCloture
+    dateCreation
+    dateMiseAJour
+  }
+  class Categorie {
+    id
+    nom
+    description
+    active
+  }
+  class Commune {
+    id
+    nom
+    active
+  }
+  class Interaction {
+    id
+    messageInitial
+    statut
+    dateCreation
+  }
+  class Signalement {
+    id
+    motif
+    details
+    statut
+    dateCreation
+  }
+  class ActionModeration {
+    id
+    decision
+    justification
+    dateAction
+  }
+  Utilisateur "1" --> "0..*" Annonce : publie
+  Categorie "1" --> "0..*" Annonce : classe
+  Commune "1" --> "0..*" Annonce : situe
+  Commune "1" --> "0..*" Utilisateur : reside
+  Utilisateur "1" --> "0..*" Interaction : initie
+  Interaction "0..*" --> "1" Annonce : concerne
+  Utilisateur "1" --> "0..*" Signalement : emet
+  Signalement "0..*" --> "1" Annonce : cible
+  Utilisateur "1" --> "0..*" ActionModeration : effectue
+  ActionModeration "0..*" --> "0..1" Signalement : traite
+```
+
+---
+
+## 10. Cycle de vie d’une annonce
+
+```mermaid
+stateDiagram-v2
+  [*] --> BROUILLON
+  BROUILLON --> EN_REVUE : soumettre (si moderation prealable)
+  BROUILLON --> PUBLIEE : publier (si publication immediate)
+  EN_REVUE --> PUBLIEE : approuver
+  EN_REVUE --> REFUSEE : refuser
+  REFUSEE --> BROUILLON : corriger
+  PUBLIEE --> MASQUEE : moderation
+  MASQUEE --> PUBLIEE : restaurer
+  PUBLIEE --> CLOTUREE : auteur cloture
+  MASQUEE --> CLOTUREE : cloture autorisee
+  CLOTUREE --> [*]
+```
+
+La modération préalable est activable ou non pour le pilote (D-06). Cette décision change le parcours de publication : **à trancher avant le développement**.
+
+**Séquence de publication :**
+
+```mermaid
+sequenceDiagram
+  actor U as Utilisateur
+  participant UI as Interface
+  participant S as Service Annonce
+  participant D as Stockage
+  U->>UI: Remplit le formulaire
+  UI->>UI: Vérifie les champs
+  UI->>S: Soumet l'annonce et la session
+  S->>S: Vérifie session, rôle et règles métier
+  alt données valides
+    S->>D: Enregistre l'annonce
+    D-->>S: Annonce créée et identifiant
+    S-->>UI: Succès et statut
+    UI-->>U: Confirmation
+  else données invalides
+    S-->>UI: Erreurs de validation
+    UI-->>U: Champs à corriger, saisies conservées
+  end
+```
+
+---
+
+## 11. Écrans prévus
+
+| Écran | Contenu minimal |
+|---|---|
+| Accueil | Présentation claire, sélecteur de commune, recherche, catégories fréquentes, accès à la publication |
+| Résultats | Recherche, filtres, liste paginée, états de chargement, état vide explicite |
+| Détail d’annonce | Titre, type, nature (par un libellé), description, catégorie, commune, disponibilité, auteur, date, action de contact, signalement |
+| Inscription / connexion | Formulaire court, erreurs accessibles, récupération d’accès |
+| Profil | Informations publiques choisies, annonces de l’utilisateur, modification |
+| Créer / modifier une annonce | Formulaire guidé, validation, prévisualisation, confirmation |
+| Mes annonces | Statuts, actions modifier / clôturer / retirer, issue de clôture |
+| Signalement | Motif, détails facultatifs, confirmation |
+| Modération | File de signalements, détail, décision, justification, historique |
+| Administration | Catégories, communes, rôles ; accès limité |
+
+Les maquettes détaillées sont à produire (Phase 3) à partir de la charte graphique.
+
+---
+
+## 12. Exigences non fonctionnelles
+
+Les cibles sont des **propositions de cadrage** à valider par la MOA ; ce ne sont pas des engagements contractuels.
+
+| ID | Domaine | Exigence |
+|---|---|---|
+| NF-01 | Responsive | Utilisable dès 360 px de large, sans défilement horizontal global |
+| NF-02 | Performance | Affichage initial perçu rapide ; viser un LCP ≤ 2,5 s au 75e percentile sur les pages clés, dans des conditions de mesure à définir |
+| NF-03 | Disponibilité | Objectif du pilote à définir ; sauvegardes et procédure de restauration prévues |
+| NF-04 | Sécurité | HTTPS en production, contrôle d’accès côté serveur, hachage des mots de passe, limitation des tentatives, validation des entrées |
+| NF-05 | Confidentialité | Collecter le minimum, limiter l’exposition des contacts, documenter la conservation, permettre la suppression selon la politique validée |
+| NF-06 | Accessibilité | Cible WCAG 2.2 AA sur les parcours principaux : clavier, focus, libellés, contraste |
+| NF-07 | Compatibilité | Versions récentes des principaux navigateurs mobiles et ordinateur ; tests sur Android courant |
+| NF-08 | Résilience | Messages d’erreur compréhensibles, reprise après erreur réseau, conservation des saisies |
+| NF-09 | Maintenabilité | Code structuré, tests automatisés des règles critiques, documentation d’installation, variables centralisées |
+| NF-10 | Traçabilité | Journaliser les actions de modération et les événements de sécurité sans enregistrer de données sensibles inutiles |
+| NF-11 | Réseau variable | Pages légères, pas de média lourd obligatoire ; seuils de poids à définir après mesure sur appareils réels |
+| NF-12 | Marque | Conformité à la charte graphique v2 |
+| NF-13 | Reproductibilité | Dépôt unique versionné ; ce README et la documentation technique permettent à un nouvel intervenant de reprendre le travail |
+
+---
+
+## 13. Critères d’acceptation du MVP
+
+| ID | Critère vérifiable |
+|---|---|
+| CA-01 | Un visiteur peut rechercher et consulter une annonce publique sans compte. |
+| CA-02 | Un utilisateur non connecté ne peut ni publier ni modifier une annonce. |
+| CA-03 | Une annonce valide est enregistrée avec auteur, catégorie, type, statut et dates. |
+| CA-04 | Une annonce invalide est refusée avec des messages de correction compréhensibles. |
+| CA-05 | Un utilisateur peut modifier et clôturer ses annonces, pas celles d’autrui. |
+| CA-06 | Les filtres combinés ne retournent que les annonces correspondantes et visibles. |
+| CA-07 | Un utilisateur peut signaler une annonce ; le signalement apparaît dans la file de modération. |
+| CA-08 | Un modérateur peut enregistrer une décision, datée et attribuée à son compte. |
+| CA-09 | Les écrans essentiels restent utilisables sur un téléphone de 360 px de large. |
+| CA-10 | Les erreurs serveur et réseau sont présentées sans exposer de détails techniques sensibles. |
+| CA-11 | Le filtre par commune ne retourne que les annonces de cette commune. |
+| CA-12 | Chaque annonce affiche sa nature (bénévole / rémunérée) par un libellé, pas par la seule couleur. |
+| CA-13 | Un visiteur ne voit aucune coordonnée ; un utilisateur connecté ne voit que les canaux autorisés par l’auteur. |
+| CA-14 | L’administrateur peut ajouter ou désactiver une catégorie ; une catégorie désactivée n’est plus proposée, mais les annonces existantes restent consultables. |
+| CA-15 | Une demande peut être clôturée avec une issue (satisfaite, non satisfaite, abandonnée). |
+
+**Le MVP est aligné avec la vision si un utilisateur peut :** comprendre vite à quoi sert Soutrali ; consulter les annonces de sa ville ou zone ; publier sans difficulté inutile ; retrouver et gérer ses annonces ; contacter une personne selon les règles de confidentialité ; signaler un contenu ; utiliser l’essentiel sur un téléphone. Aucun seuil de réussite chiffré n’est fixé avant validation.
+
+---
+
+## 14. Principes de conception
+
+Toute proposition concernant Soutrali doit les respecter.
+
+1. **Utilité quotidienne** : partir de besoins concrets des habitants ; chaque fonctionnalité répond à un besoin identifié.
+2. **Simplicité** : limiter les étapes et les champs inutiles.
+3. **Accessibilité mobile** : écrans lisibles et utilisables sur téléphone d’abord, sans exclure l’ordinateur.
+4. **Contexte ivoirien** : tenir compte des usages, de la connectivité, des moyens de contact, sans suppositions non vérifiées.
+5. **Confiance et prudence** : règles claires, signalement, modération.
+6. **Protection des données** : ne collecter que le nécessaire ; ne pas exposer de coordonnées sans décision explicite.
+7. **Transparence** : distinguer l’information déclarée de l’information vérifiée.
+8. **Sobriété technique** : éviter ce qui exige une infrastructure coûteuse ou des intégrations complexes.
+9. **Évolutivité raisonnable** : base simple, maintenable, documentée, capable d’accueillir de nouvelles catégories et fonctionnalités après validation du prototype.
+10. **Cohérence** : ne pas contredire les décisions validées.
+11. **Validation humaine** : signaler les décisions ouvertes plutôt que les inventer.
+
+---
+
+## 15. Identité visuelle et ton
+
+### 15.1 Marque
+
+- **Nom :** Soutrali. **Signature :** « L’entraide à porter de main ».
+- **Sens à transmettre :** solidarité, proximité, accessibilité, confiance, action concrète. Chaleureux sans être enfantin ; moderne sans ressembler à un kit d’interface générique.
+- **Logo :** deux mains entrelacées formant un « S », l’une orange et l’autre verte. Mot-symbole : « S » orange, « outrali » vert, accent orange en forme de feuille sur le « i ».
+- **Statut (D-02) :** le logo reçu est un **modèle de départ** ; il reste à confirmer comme logo de lancement ou à retravailler.
+
+### 15.2 Variantes et usage du logo
+
+| Variante | Usage |
+|---|---|
+| Vertical + signature | Accueil, couverture, supports institutionnels |
+| Vertical sans signature | Quand la signature est illisible |
+| Horizontal | En-tête du site, pied de page, documents |
+| Symbole seul | Avatar, icône, petite zone |
+| Monochrome noir / blanc | Tampon, impression une couleur, fonds complexes |
+| Inversée | Fond vert profond : parties vertes en blanc, orange conservé |
+
+Règles : zone de protection au moins égale à la hauteur du « S » du mot-symbole ; ne pas étirer, incliner, ombrer, contourer ni recolorer ; aplat de contraste sur photo ; tailles minimales indicatives : logo complet 140 px de large, symbole seul 24 px (idéalement 32 px et plus).
+
+### 15.3 Palette (v2, statut Proposé)
+
+Couleurs de marque **mesurées** sur le logo ; couleurs d’interface dérivées pour la lisibilité.
+
+| Rôle | Couleur | Usage |
+|---|---|---|
+| Orange Soutrali | `#FE7402` | Actions principales (avec **texte sombre**), accents |
+| Vert Soutrali | `#037C30` | Marque, titres, liens, boutons secondaires (texte blanc) |
+| Vert profond | `#0B5A2A` | Survol, états actifs, fonds sombres |
+| Orange texte | `#B24A00` | Orange lisible en texte sur fond clair |
+| Ivoire chaud | `#FFF9F2` | Fond de page |
+| Texte principal | `#1F2A24` | Titres et texte courant |
+| Texte secondaire | `#5A6B62` | Aides, métadonnées |
+| Vert pâle | `#E8F5EC` | Blocs informatifs |
+| Orange pâle | `#FFF0E0` | Mise en évidence secondaire |
+| Bordure | `#DCE5DF` | Contours, séparateurs |
+| Blanc | `#FFFFFF` | Cartes, champs, fonds inversés |
+| Danger | `#B3261E` | Erreurs (toujours avec libellé) |
+
+**Contrastes calculés (formule WCAG) :** texte `#1F2A24` sur ivoire 14,2 : 1 · texte secondaire sur ivoire 5,4 : 1 · blanc sur vert 5,3 : 1 · blanc sur vert profond 8,4 : 1 · texte sombre sur orange 5,5 : 1 · orange texte sur ivoire 5,2 : 1 · orange sur vert profond 3,1 : 1 (grands éléments graphiques seulement) · **blanc sur orange 2,7 : 1 (interdit en texte)** · orange sur fond clair 2,6 à 2,7 : 1 (interdit en texte).
+
+**Règle :** orange = surface d’action avec texte sombre ; vert = texte et titres ; « orange texte » plus foncé pour accentuer un mot. Aucune information n’est portée par la couleur seule : toujours un libellé ou une icône.
+
+### 15.4 Typographie (Proposé)
+
+| Rôle | Famille | Détail |
+|---|---|---|
+| Titres et marque | Manrope | Poids 600 à 750, titres courts |
+| Texte et interface | Source Sans 3 | Poids 400 à 600 |
+| Repli | Arial, Helvetica, sans-serif | Obligatoire ; deux familles maximum par écran |
+
+Échelle de référence : Display 40–48 px · H1 32 · H2 24 · H3 20 · H4 16–18 · corps 16 (interligne 1,55) · compact 14 · label 12–14. Les polices doivent être hébergées localement ; **les fichiers ne sont pas encore récupérés** (licence à vérifier).
+
+### 15.5 Système visuel
+
+- Coins arrondis de 8 à 16 px, surfaces nettes, espaces généreux ; éviter l’empilement de cartes identiques.
+- Grille de base 4 px ; échelle d’espacement 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64.
+- Icônes linéaires, extrémités arrondies, trait 1,75 à 2 px, une seule bibliothèque.
+- Illustrations et photos : scènes humaines crédibles du quotidien ivoirien, lumière naturelle ; pas de banques d’images trop corporate.
+- Motifs : courbes inspirées du geste d’entraide, faible contraste, en arrière-plan.
+- Ombres rares et douces ; hiérarchie par bordures, contraste et espacement. Limiter dégradés, effets de verre et animations décoratives.
+- Zones tactiles d’au moins 44 × 44 px ; libellés de champs toujours visibles ; focus clavier identifiable.
+- **Composants métier propres à Soutrali :** demande d’aide, proposition de service, étiquette de nature (Bénévole / Rémunéré), sélecteur de commune, mention « déclaré / vérifié », disponibilité, mise en relation.
+
+### 15.6 Ton éditorial
+
+Français clair, chaleureux, direct, compréhensible par un public large. Pas de jargon technique dans les textes destinés aux habitants. Messages respectueux, inclusifs, orientés vers l’action. Exemple : « Trouver un coup de main » plutôt que « Découvrez nos solutions innovantes ». Afficher clairement étapes, erreurs, états vides, confirmations et prochaines étapes. **Pas de faux témoignages ni de statistiques inventées.**
+
+### 15.7 Fichiers d’identité livrés (dossier `brand/`)
+
+13 variantes de logo en SVG · PNG transparents 1600 px · PDF d’impression · favicon (ICO 16/32/48, PNG 32, SVG) · icône iOS 180 · icônes 192 et 512 · icône 512 « maskable » · fichier de couleurs et d’espacements. Tracé vectoriel **fidèle au logo reçu mais non dessiné à l’origine** ; à régénérer si le logo est retravaillé. Le détail du favicon à 16 px est à vérifier sur écran réel.
+
+---
+
+## 16. Confiance, sécurité et données personnelles
+
+Soutrali **facilite la mise en relation**. Il ne garantit pas qu’une personne ou une annonce est fiable sans processus réel de vérification : un compte créé n’est pas une identité vérifiée.
+
+**Principes à traduire en exigences par toute équipe technique :**
+
+- protection des comptes et des sessions (secrets hachés, limitation des tentatives) ;
+- validation de toutes les données saisies ;
+- limitation du spam et des abus ;
+- signalement, traitement des contenus problématiques, historique des décisions ;
+- minimisation des données ; pas de pièce d’identité ni de localisation précise sans justification validée ;
+- coordonnées jamais publiques ; accès aux messages et aux coordonnées restreint aux personnes concernées ;
+- droits distincts pour utilisateurs, modérateurs, administrateurs ; accès aux outils de modération contrôlé ;
+- consignes de prudence adaptées aux échanges entre inconnus ;
+- procédures de suppression ou de clôture des annonces ;
+- politique de confidentialité compréhensible : finalités, durées de conservation, exercice des droits.
+
+**Limites :** aucune affirmation juridique ou de conformité n’est faite ici. Les obligations applicables en Côte d’Ivoire (notamment sur les données personnelles) doivent être **vérifiées auprès de sources fiables et actuelles** avant mise en production (D-10).
+
+---
+
+## 17. Indicateurs d’évaluation du pilote
+
+Le succès ne se mesure pas au nombre de fonctionnalités, mais à l’utilité réelle. **Aucun seuil n’est fixé** : il sera défini avec la MOA avant le lancement. Interpréter avec prudence (petit échantillon, durée limitée).
+
+| Indicateur | Mesure |
+|---|---|
+| Utilisateurs testeurs | Nombre de personnes ayant utilisé le prototype |
+| Annonces | Demandes publiées ; offres publiées |
+| Mises en relation | Contacts initiés |
+| Réponse | Part des demandes ayant reçu au moins un contact |
+| Satisfaction | Part des demandes déclarées satisfaites |
+| Facilité | Temps nécessaire pour publier une annonce |
+| Confiance | Nombre d’annonces signalées ; délai de traitement |
+| Qualitatif | Difficultés rencontrées pendant les tests |
+
+---
+
+## 18. Risques et mesures
+
+| Risque | Mesure proposée |
+|---|---|
+| Annonces frauduleuses ou dangereuses | Signalement, modération, règles claires, mesures graduées, traçabilité |
+| Mise en relation entre inconnus, faible confiance | Contacts non publics, blocage, mention déclaré / vérifié, conseils de prudence, avis seulement plus tard |
+| Mineurs et personnes vulnérables | RM-12 et RM-13 ; services sensibles hors MVP |
+| Connexion mobile instable | Pages légères, états de chargement, validation côté serveur, conservation des saisies |
+| Périmètre trop large | Gel du MVP ; reporter paiement, localisation fine, application native |
+| Rôle de la plateforme mal compris | Conditions d’utilisation et messages clairs : mise en relation, sans garantie d’exécution |
+| Données personnelles exposées | Minimisation, contrôle d’accès, durée de conservation, revue de sécurité |
+| Dépendance à une seule personne ou à un seul outil | Ce README, dépôt partagé, documentation continue |
+
+---
+
+## 19. Méthode de travail et règles de collaboration
+
+### 19.1 Les 8 phases
 
 | Phase | Contenu | État |
 |---|---|---|
@@ -51,87 +676,170 @@ Soutrali n’est ni un logiciel de gestion d’entreprise, ni une place de march
 | 2 | Rassembler l’existant dans le projet | Fait |
 | 3 | Cahier des charges complet | En cours (v2 rédigé, à valider ; maquettes à produire) |
 | 4 | Stack technique | À définir ensemble (version v3) |
-| 5 | Environnement de travail collaboratif | À faire |
+| 5 | Environnement de travail collaboratif (gestion de code, suivi des tâches, documentation) | À faire |
 | 6 | Test interne de validation | À faire |
 | 7 | Documentation de prise en main | À faire |
-| 8 | Présentation à la MOA | À faire |
+| 8 | Présentation à la maîtrise d’ouvrage (problème, public, solution, périmètre MVP, parcours clés, risques, planning, décisions attendues) | À faire |
 
-*Une phase n’est « validée » qu’après un retour explicite du porteur du projet.*
+Une phase n’est « validée » qu’après un retour explicite du porteur du projet.
 
-## 4. Registre des décisions
-
-Statuts : **Validé** (décidé par le porteur) · **Proposé** (à valider) · **Ouvert** (à arbitrer).
-
-| ID | Sujet | Statut | Contenu |
-|---|---|---|---|
-| D-01 | Ville pilote | **Validé** | Abidjan |
-| D-02 | Identité visuelle | Proposé | Logo reçu = modèle de départ ; palette v2 mesurée sur le logo : orange `#FE7402`, vert `#037C30`, dérivés dans la charte v2 |
-| D-03 | Zones | Proposé | Commune obligatoire + quartier libre ; les 13 communes du district d’Abidjan comme base, à confirmer par la MOA |
-| D-04 | Inscription | Ouvert | Téléphone (avec code) ou e-mail ; coût d’envoi des SMS non vérifié |
-| D-05 | Canal de contact | Ouvert | Recommandation : canaux choisis par l’auteur, visibles aux seuls utilisateurs connectés |
-| D-06 | Modération | Ouvert | Recommandation pilote : publication immédiate, modération après signalement |
-| D-07 | Catégories initiales | Ouvert | 8 catégories proposées dans le cahier des charges v2 |
-| D-08 | Langues | Ouvert | Français au lancement |
-| D-09 | Budget, hébergement, nom de domaine | Ouvert | Aucun chiffre inventé |
-| D-10 | Données personnelles, conformité locale | Ouvert | Avis juridique nécessaire ; rien d’affirmé |
-| D-11 | Âge minimum d’inscription | Ouvert | Lié aux règles sur les mineurs |
-| D-12 | Modèle économique | Ouvert | Gratuit au pilote proposé ; rien d’autre défini |
-| D-13 | Stack technique | Ouvert | Mise en attente : la stack v3 sera construite ensemble ; compétences et budget écartés pour l’instant |
-| D-14 | README sans contenu technique | **Validé** | Tant que la stack v3 n’est pas arrêtée |
-| D-15 | Document unique | **Validé** | `README.md` remplace `ContexteSoutrali.md` (contexte + README fusionnés) |
-
-## 5. Documents et fichiers du projet
-
-| Livrable | Version | État |
-|---|---|---|
-| `README.md` (ce fichier) | 3.0 | Vivant |
-| Cahier des charges UML | 2.0 | À valider (pages de garde incluses) |
-| Charte graphique | 2.0 | À valider |
-| Stack technique | 0.1 | **En attente** : base de réflexion pour la v3, sans engagement |
-| Dossier `brand/` | 1 | Logos, icônes, favicons, couleurs : à valider sur appareils réels |
-| Anciennes versions (CDC v1, charte v1, contextualisation v1) | — | Remplacées, à archiver |
-
-Les décisions détaillées, les règles métier (RM-xx), les fonctionnalités (F-xx) et les diagrammes UML sont dans le cahier des charges v2. Les règles visuelles sont dans la charte graphique v2.
-
-## 6. Identité visuelle
-
-- **Signature :** « L’entraide à porter de main ». **Couleurs de marque :** orange et vert, sur fond ivoire.
-- **Contrastes (calculés) :** le blanc sur l’orange est interdit en texte (2,7 : 1) ; texte sombre `#1F2A24` sur orange 5,5 : 1 ; blanc sur vert 5,3 : 1 ; orange de texte `#B24A00` sur ivoire 5,2 : 1.
-- **Fichiers :** 13 variantes SVG du logo, PNG transparents, PDF d’impression, favicons et icônes d’application (dossier `brand/`).
-- **Réserves :** le tracé vectoriel reproduit fidèlement le logo reçu, mais n’est pas un dessin d’origine ; les polices de la charte ne sont pas encore incluses ; le détail du favicon à 16 px est à vérifier sur écran réel.
-
-## 7. Règles de travail (humains et IA)
+### 19.2 Règles pour toute personne ou IA qui contribue
 
 1. Identifier le livrable demandé et son usage ; relire ce fichier avant de commencer.
-2. Distinguer décisions validées, hypothèses, recommandations et questions ouvertes ; ne jamais présenter une proposition comme une décision.
-3. Ne rien inventer : chiffres d’usage, budgets, partenariats, exigences juridiques, résultats de tests.
-4. Garder le périmètre du MVP ; toute extension est d’abord discutée (besoin, coût, conséquences).
-5. Ne pas prétendre qu’un test, une intégration ou un déploiement a eu lieu s’il n’a pas eu lieu.
-6. Lors d’un changement du cahier des charges, citer les sections et diagrammes concernés.
-7. Ne jamais partager de mot de passe ou de jeton d’accès dans une conversation.
-8. Privilégier des solutions simples et proportionnées à un projet pilote.
+2. Répondre en français, sauf demande contraire ; produire des résultats structurés, concrets, directement exploitables.
+3. Distinguer décisions validées, hypothèses, recommandations et questions ouvertes.
+4. **Ne rien inventer** : chiffres d’usage, budgets, partenariats, contraintes réglementaires, résultats de tests.
+5. Ne pas prétendre qu’un fichier, un test, une intégration ou un déploiement a été fait s’il ne l’a pas été.
+6. Ne pas élargir le périmètre sans expliquer le besoin, les coûts et les conséquences.
+7. Si une information essentielle manque : poser **une** question ciblée ; si le travail peut avancer, formuler une hypothèse explicite et continuer.
+8. Pour un choix technique, comparer les options selon : simplicité, coût, maintenance, sécurité, compétences nécessaires, adéquation au contexte.
+9. Pour du code : indiquer fichiers concernés, prérequis, commandes, étapes de vérification.
+10. Lors d’un changement du cahier des charges : citer les sections et diagrammes concernés.
+11. Ne jamais partager de mot de passe ou de jeton d’accès dans une conversation.
+12. Privilégier des solutions simples et proportionnées à un projet pilote.
 
-**Mise à jour de ce fichier :** ajouter une ligne au journal, mettre à jour le registre des décisions, l’état des phases et la liste des documents.
+### 19.3 Instruction de départ pour une IA
 
-## 8. Questions ouvertes principales
+> Aide-moi à faire avancer **Soutrali**, une plateforme ivoirienne d’entraide à l’échelle d’une ville (pilote : Abidjan). Respecte la signature « L’entraide à porter de main », l’identité orange / vert sur fond ivoire et l’objectif d’un MVP simple, mobile et utile dans la vie quotidienne. Appuie-toi sur ce README et sur les documents de référence. Ne transforme pas le projet en outil de gestion d’entreprise et n’ajoute pas de fonctionnalités hors périmètre. Distingue toujours décisions validées, hypothèses et points à confirmer. Propose des livrables concrets, cohérents et directement exploitables.
 
-Inscription et contact (D-04, D-05) · modération (D-06) · catégories (D-07) · budget, hébergement et nom de domaine (D-09) · conservation des données et conformité locale (D-10) · âge minimum (D-11) · modèle économique (D-12) · stack technique v3 (D-13).
+### 19.4 Formats de livrables attendus
 
-## 9. Journal des séances
+Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pas à pas, prérequis, captures quand disponibles) · backlog produit (épics, user stories, priorités, critères d’acceptation, dépendances) · conception UML cohérente avec les règles métier · documentation technique (architecture, configuration, installation, tests, déploiement, maintenance) · présentation MOA. **Ne pas produire de formats non demandés.**
+
+### 19.5 Mettre à jour ce fichier
+
+À la fin de chaque séance : ajouter une ligne au journal (§25) ; mettre à jour le registre des décisions (§20), l’état des phases (§19.1) et la liste des documents (§23) ; si le cahier des charges change, citer sections et diagrammes concernés.
+
+---
+
+## 20. Registre des décisions
+
+| ID | Sujet | Statut | Contenu / recommandation |
+|---|---|---|---|
+| D-01 | Ville pilote | **Validé** | Abidjan |
+| D-02 | Identité visuelle | Proposé | Logo reçu = modèle de départ ; palette v2 (§15.3) à valider ; polices et zone de protection à confirmer |
+| D-03 | Zones géographiques | Proposé | Commune obligatoire + quartier en texte libre ; base de travail : Abobo, Adjamé, Anyama, Attécoubé, Bingerville, Cocody, Koumassi, Marcory, Plateau, Port-Bouët, Songon, Treichville, Yopougon, plus une zone « plusieurs communes » ; **à confirmer par la MOA** |
+| D-04 | Méthode d’inscription | Ouvert | Téléphone avec code de vérification, ou e-mail. Le téléphone est plausiblement plus naturel sur mobile, mais le coût et la fiabilité de l’envoi de SMS ne sont pas vérifiés. Le modèle de données accepte les deux. |
+| D-05 | Canal de contact | Ouvert | Recommandation : l’auteur choisit les canaux visibles (téléphone, lien de messagerie externe), visibles des seuls connectés, interaction tracée. Une messagerie interne reste une évolution possible. |
+| D-06 | Modération | Ouvert | Recommandation pilote : publication immédiate + modération après signalement. Seuil éventuel de masquage automatique : à définir. |
+| D-07 | Catégories initiales | Ouvert | Proposition : Réparations et dépannage · Maison et domestique · Couture, beauté et coiffure · Éducation et cours · Informatique et numérique · Transport léger et déménagement · Petites missions et coups de main · Autres |
+| D-08 | Langues | Ouvert | Français au lancement ; langues locales plus tard |
+| D-09 | Budget, hébergement, nom de domaine | Ouvert | Aucun chiffre inventé |
+| D-10 | Conservation des données, droits, conformité locale | Ouvert | Avis juridique nécessaire |
+| D-11 | Âge minimum d’inscription | Ouvert | Lié à RM-12 |
+| D-12 | Modèle économique | Ouvert | Gratuit au pilote proposé ; rien d’autre défini |
+| D-13 | Stack technique | Ouvert | Mise en attente : la **stack v3** sera construite ensemble ; compétences et budget écartés pour l’instant |
+| D-14 | README sans contenu technique | **Validé** | Tant que la stack v3 n’est pas arrêtée |
+| D-15 | Document unique | **Validé** | `README.md` est le document unique de contexte ; il remplace `ContexteSoutrali.md` |
+| D-16 | README = outil principal de reprise | **Validé** | Description complète, principes inclus, utilisable par une autre équipe et avec une autre technologie |
+
+---
+
+## 21. Questions ouvertes
+
+1. Inscription : téléphone ou e-mail ? Comment vérifier le contact ? (D-04)
+2. Canal de contact entre utilisateurs, visibilité des coordonnées. (D-05)
+3. Modération préalable ou a posteriori ; délais et responsabilités. (D-06)
+4. Catégories initiales et qui les administre. (D-07)
+5. Le champ de budget : facultatif, obligatoire pour certaines catégories, ou absent du MVP ?
+6. Budget, hébergement, région des données, nom de domaine, sauvegardes. (D-09)
+7. Durées de conservation, suppression de compte, responsable de traitement, conformité locale. (D-10)
+8. Âge minimum d’inscription. (D-11)
+9. Modèle économique. (D-12)
+10. Stack technique v3 et environnement collaboratif. (D-13, Phase 5)
+11. Logo : confirmé tel quel ou retravaillé ? Polices : confirmées ? (D-02)
+12. Seuils de réussite du pilote et calendrier de déploiement.
+
+---
+
+## 22. Guide de reprise (autre équipe, autre technologie)
+
+### 22.1 Ce qui est acquis et portable (indépendant de la technologie)
+
+- La vision, les publics, les 18 besoins et leur classement (§2 à §5).
+- Le périmètre MVP, les parcours, les règles métier, le modèle de données conceptuel, le cycle de vie des annonces, les écrans (§6 à §11).
+- Les exigences non fonctionnelles, les critères d’acceptation, les principes de conception (§12 à §14).
+- L’identité visuelle complète : logo vectoriel, palette, typographie, règles (§15).
+- La méthode de travail et les règles de collaboration, y compris avec une IA (§19).
+
+### 22.2 Ce que la nouvelle équipe doit décider ou faire
+
+1. Choisir la stack technique, l’hébergement et l’outillage collaboratif (§21, questions 6 et 10), en comparant les options selon les critères du §19.2, règle 8.
+2. Trancher les décisions « Ouvertes » du registre, en priorité D-04, D-05, D-06.
+3. Faire valider par la MOA les décisions « Proposées ».
+4. Obtenir un avis juridique sur les données personnelles (D-10).
+5. Produire les maquettes, puis un backlog (épics, user stories, critères d’acceptation) à partir des §6, §7, §8 et §13.
+6. Récupérer les polices et valider le rendu du logo et des icônes sur appareils réels.
+
+### 22.3 Ce qui n’existe pas encore
+
+Aucun code, aucun test, aucun déploiement, aucune maquette, aucune politique de confidentialité ni conditions d’utilisation rédigées, aucune donnée de démonstration. Une première réflexion technique (« stack v0.1 ») a été rédigée puis **mise en attente** : elle ne lie personne.
+
+### 22.4 Pièges à éviter
+
+- Transformer Soutrali en outil de gestion d’entreprise ou en place de marché complexe.
+- Ajouter paiement, livraison, localisation en temps réel ou notation avant validation du pilote.
+- Afficher les coordonnées publiquement ou promettre une fiabilité non vérifiée.
+- Confondre aide bénévole et prestation commerciale.
+- Utiliser du texte blanc sur l’orange de la marque (contraste insuffisant).
+- Présenter une proposition comme une décision, ou inventer des chiffres, budgets et exigences légales.
+
+---
+
+## 23. Documents et fichiers du projet
+
+| Livrable | Version | Contenu | État |
+|---|---|---|---|
+| `README.md` (ce fichier) | 4.0 | Contexte complet et outil de reprise | Vivant |
+| Cahier des charges UML | 2.0 | Spécification détaillée, 5 diagrammes UML (PlantUML), page de garde | À valider |
+| Charte graphique | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
+| Stack technique | 0.1 | Première réflexion technique | **En attente** (base pour la v3, sans engagement) |
+| Dossier `brand/` | 1 | Logos, icônes, favicons, couleurs, scripts de génération | À valider sur appareils réels |
+| Anciennes versions (cahier des charges v1, charte v1, contextualisation v1) | — | Historique | Remplacées, à archiver |
+
+En cas d’écart entre ce README et un document Word, signaler l’écart et corriger par une entrée au journal.
+
+---
+
+## 24. Glossaire
+
+| Terme | Définition |
+|---|---|
+| **MVP** | Produit minimum viable : la première version, volontairement limitée, qui permet de tester l’utilité |
+| **MOA** | Maîtrise d’ouvrage : celle qui porte le besoin, valide les décisions et le périmètre |
+| **Pilote** | Lancement limité à une ville (Abidjan) et à un petit groupe d’utilisateurs |
+| **Demande** | Annonce d’un habitant qui cherche une aide ou un service |
+| **Offre** | Annonce d’un habitant qui propose une aide ou un service |
+| **Nature** | Caractère bénévole ou rémunéré d’une annonce |
+| **Commune** | Subdivision d’Abidjan utilisée comme zone de recherche |
+| **Interaction** | Trace d’une prise de contact entre deux utilisateurs |
+| **Signalement** | Alerte d’un utilisateur sur un contenu ou un comportement |
+| **Modération** | Examen des signalements et décisions (masquer, restaurer, suspendre…) |
+| **Déclaré / vérifié** | Information donnée par l’utilisateur / information contrôlée par un processus réel |
+| **UML** | Langage de modélisation : cas d’utilisation, classes, séquence, activité, états |
+| **Responsive / mobile-first** | Conçu d’abord pour l’écran du téléphone, puis adapté aux plus grands |
+| **Stack** | Ensemble des choix techniques (langage, base de données, hébergement) : **à définir** |
+
+---
+
+## 25. Journal des séances
 
 | Date | Réalisé | Décisions |
 |---|---|---|
-| 15 oct. 2026 | Rédaction du cahier des charges v1, de la charte v1 et de la contextualisation v1 (en amont) | — |
-| 19 oct. 2026 | Intégration de l’existant ; cadrage des 18 besoins ; réception du logo ; extraction des couleurs, vectorisation et icônes ; cahier des charges v2, charte v2, stack v0.1 | D-01 Abidjan ; palette et stack proposées |
-| 20 oct. 2026 | Pages de garde des trois documents ; README non technique ; essais d’accès GitHub (lecture seule, écriture impossible depuis la conversation) ; publication manuelle décidée ; fusion contexte + README | D-13 stack remise à la v3 ; D-14 ; D-15 |
+| 15 oct. 2026 | Rédaction en amont du cahier des charges v1, de la charte v1 et de la contextualisation v1 | — |
+| 19 oct. 2026 | Intégration de l’existant ; cadrage des 18 besoins ; réception du logo ; extraction des couleurs, vectorisation, icônes ; cahier des charges v2, charte v2, première réflexion technique v0.1 | D-01 Abidjan ; palette proposée |
+| 20 oct. 2026 | Pages de garde des trois documents ; essais d’accès GitHub (lecture seule, écriture impossible depuis la conversation) ; publication manuelle décidée ; fusion contexte + README ; réécriture complète du README comme outil de reprise | D-13 stack remise à la v3 ; D-14, D-15, D-16 |
 
-## 10. Prochaines étapes
+---
+
+## 26. Prochaines étapes
 
 1. Publier ce `README.md` et le dossier `brand/` dans le dépôt (manuellement).
-2. Valider ou corriger les décisions proposées (D-02, D-03, D-05, D-06).
+2. Valider ou corriger les décisions proposées (D-02, D-03, D-05, D-06) et trancher D-04.
 3. Phase 3 : maquettes des écrans clés (accueil, résultats, détail, publier, mes annonces, modération) sur la charte v2, puis arrêt du cahier des charges.
 4. Phase 4 : construire ensemble la stack technique v3.
 5. Phase 5 : choisir les outils collaboratifs et créer le backlog à partir du cahier des charges.
+6. Phases 6 à 8 : test interne, documentation de prise en main, présentation à la MOA.
 
 ---
 
