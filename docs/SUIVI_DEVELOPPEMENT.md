@@ -33,17 +33,17 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 | Dépôt local | Initialisé le 22 oct. 2026, index aligné sur `main`, arborescence réorganisée |
 | Flutter / Dart | 3.47.7 / 3.13.5 installés et fonctionnels (`flutter --version` exécuté) |
 | PHP CLI | 8.3.33 installé séparément de XAMPP, fonctionnel (`php -v` exécuté) |
-| Composer | **Absent du PATH** de la session de commande. Les dépendances sont pourtant installées (`backend/vendor/` contient 63 paquets) et `composer.lock` existe (452 408 octets) |
+| Composer | **Absent du PATH** de la session de commande (revérifié le 22 oct.). Les dépendances sont pourtant installées (`backend/vendor/` contient 63 paquets) et `composer.lock` existe (452 408 octets) |
 | Git | 2.56.0 fonctionnel |
 | GitHub CLI | 2.102.1 installée, **non authentifiée** (`gh auth status` : aucune session) |
-| MariaDB | 10.4.32 démarrée sur le port 3306 |
-| Base `soutrali` | **Existe mais vide : 0 table.** Les migrations n’ont jamais été appliquées |
-| Utilisateur SQL `soutrali_dev` | **N’existe pas.** Seuls `root` et `pma` sont déclarés. `.env.example` le référence pourtant |
+| MariaDB | 10.4.32 démarrée sur le port 3306 (revérifié le 22 oct. : le port écoute) |
+| Base `soutrali` | **Migrée : 17 tables.** `php artisan migrate:status` affiche les 4 migrations « Ran » (revérifié le 22 oct.) |
+| Utilisateur SQL `soutrali_dev` | **Créé le 22 oct. 2026**, droits limités à `soutrali.*`. `backend/.env` l’utilise et `php artisan migrate:status` s’y connecte sans erreur |
 | `backend/.env` | Présent localement, **correctement ignoré par Git**, non publié |
 | Icônes web | `app/web/icons/*` et `app/web/favicon.png` sont les **icônes par défaut du squelette Flutter**, pas la marque Soutrali |
 | `backend/public/favicon.ico` | **Fichier vide (0 octet)** |
 | Polices | Manrope et Source Sans 3 **non embarquées** ; le thème retombe sur `Arial` |
-| Serveurs de développement | Trois processus hérités de la session du 21 oct. ont été arrêtés le 22 oct. (Laravel figé sur 8000, deux serveurs Flutter sur 8081 et 8082). Aucun serveur n’est actuellement lancé |
+| Serveurs de développement | Trois processus hérités de la session du 21 oct. ont été arrêtés le 22 oct. (Laravel figé sur 8000, deux serveurs Flutter sur 8081 et 8082). À la reprise de séance : l’API Laravel tourne sur `127.0.0.1:8000` (`php.exe`, PID 7248) et répond HTTP 200 ; aucun serveur Flutter n’est lancé sur 8082 |
 
 **Conclusion :** le socle T1 est partiellement en place et **le tir d’essai T1b n’est pas terminé**. Aucun parcours de bout en bout (navigateur → API → base) n’a encore été observé en fonctionnement.
 
@@ -129,6 +129,17 @@ Vérifications locales après correction, avec Flutter 3.47.7 :
 - `flutter build web --release` : **compilation réussie**. La police d’icônes Material est réduite de 1 645 184 à 9 996 octets par tree-shaking. Un avertissement subsiste sur la famille `CupertinoIcons` absente des assets ; il n’empêche pas le build et sera traité avec l’identité visuelle (§5, point 7).
 - L’essai de compilation WebAssembly lancé automatiquement par Flutter réussit (`--wasm`), ce qui documente la piste de repli prévue par T-09.
 
+L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs `backend` et `flutter` passent tous deux, y compris `flutter test` (5 tests) et `flutter build web --release`. L’intégration continue du dépôt est donc verte de bout en bout pour la première fois.
+
+### 22 octobre 2026, étape T0 — environnement débloqué
+
+- MariaDB était arrêtée et n’est pas installée comme service Windows. Elle a été démarrée directement avec le binaire XAMPP : `mysqld.exe --defaults-file=C:/xampp/mysql/bin/my.ini`. Version constatée à la connexion : **10.4.32-MariaDB**.
+- Création du compte dédié **`soutrali_dev`** pour `127.0.0.1` et `localhost`, avec un mot de passe généré aléatoirement. Ce mot de passe n’est écrit **que** dans `backend/.env` ; il n’apparaît ni dans ce document, ni dans un commit, ni dans une capture. Droits limités à `soutrali.*` : le compte ne voit aucune autre base applicative.
+- `backend/.env` basculé de `root` sans mot de passe vers `soutrali_dev`, conformément à la règle « éviter le compte root sans mot de passe ».
+- `php artisan migrate` exécuté avec succès : **17 tables** créées, soit les onze tables du modèle conceptuel (`communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`) plus six tables d’infrastructure Laravel (`cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `migrations`).
+- API démarrée sur `127.0.0.1:8000` : `GET /api/v1/listings` répond **HTTP 200** avec une liste paginée vide au format attendu (`data`, `links`, `meta`, `per_page` 12, `total` 0). C’est la première fois que la chaîne complète navigateur → API → Laravel → MariaDB est observée fonctionnelle.
+- Le seeder reste vide : aucune commune ni catégorie n’est chargée. Les routes `GET /api/v1/categories` et `/communes` n’existent pas encore, et aucune route de publication n’existe ; alimenter le seeder n’aurait donc aucun effet observable tant que ces routes ne sont pas écrites. L’étape T1 est reportée à ce titre.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -158,6 +169,8 @@ Vérifications locales après correction, avec Flutter 3.47.7 :
 - `flutter analyze` : **No issues found** (corrigé le 22 oct., voir §2).
 - `flutter test` : **5 tests passés**.
 - `flutter build web --release` : compilation réussie ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
+- `php artisan migrate` : **17 tables** créées (11 tables du modèle conceptuel + 6 tables d’infrastructure Laravel).
+- `GET /api/v1/listings` : **HTTP 200** avec une liste paginée vide — résultat normal tant que le seeder est vide.
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
 - Contrôle des règles Git d’ignore et scan de secrets : conformes (voir §2, 22 oct.).
 - Ces vérifications sont exécutées sur le poste de développement. Leur passage dans la CI GitHub est suivi au §2.
@@ -166,14 +179,14 @@ Vérifications locales après correction, avec Flutter 3.47.7 :
 
 ## 4. Ce qui bloque, et pourquoi
 
+**Résolus le 22 octobre 2026** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200. Voir §2, étape T0.
+
 | Blocage | Cause vérifiée | Conséquence |
 |---|---|---|
-| L’API ne renvoie aucune donnée | La base `soutrali` existe mais ne contient **aucune table** : `php artisan migrate` n’a jamais été exécuté | `GET /api/v1/listings` renverrait une liste vide même serveur démarré |
-| Laravel ne peut pas se connecter à la base | L’utilisateur SQL `soutrali_dev` référencé par `.env.example` **n’existe pas** | Erreur d’authentification SQL au démarrage des requêtes |
 | Composer introuvable dans la session de commande | Absent du PATH ; les dépendances sont pourtant déjà installées | `composer install` ne peut pas être relancé tel quel ; `php artisan` fonctionne car `vendor/` existe |
-| Le tir d’essai T1b est incomplet | Aucun parcours navigateur → API → base n’a été observé ; les mesures de poids compressé et de temps jusqu’au premier écran utile sur téléphone n’ont pas été faites | Les seuils de réussite ne peuvent pas être présentés à la MOA |
+| Le tir d’essai T1b est incomplet | Le parcours navigateur → API → base n’a pas encore été observé avec des données ; les mesures de poids compressé et de temps jusqu’au premier écran utile sur téléphone n’ont pas été faites | Les seuils de réussite ne peuvent pas être présentés à la MOA |
 | Les parcours compte / publication / contact / signalement n’existent pas | Les décisions produit D-04 (inscription), D-05 (canal de contact) et D-06 (modération) sont **ouvertes** | Impossible d’implémenter sans trancher ; ne pas inventer |
-| Le seeder est vide | Aucune donnée de démonstration n’a été chargée | Même base migrée, l’écran afficherait un état vide |
+| Le seeder est vide et les routes de référentiels n’existent pas | Aucune donnée de démonstration chargée ; `GET /api/v1/categories` et `/communes` ne sont pas écrites | Alimenter le seeder n’aurait aucun effet observable tant que ces routes manquent |
 
 ---
 
@@ -181,10 +194,11 @@ Vérifications locales après correction, avec Flutter 3.47.7 :
 
 L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran avant la fin de T1b.**
 
-1. **T0 — débloquer l’environnement**
-   - Créer l’utilisateur SQL dédié avec des droits limités à la base `soutrali`, ou documenter l’usage d’un compte existant.
-   - Rendre Composer disponible dans la session de commande, ou documenter le chemin exact de l’exécutable.
-   - Exécuter `php artisan migrate` et vérifier les onze tables.
+1. **T0 — débloquer l’environnement : fait le 22 octobre 2026**, sauf un point.
+   - Compte SQL dédié créé, droits limités à `soutrali`. **Fait.**
+   - Migrations exécutées, 17 tables vérifiées. **Fait.**
+   - `GET /api/v1/listings` répond 200. **Fait.**
+   - Reste : rendre Composer disponible dans la session de commande, ou documenter le chemin exact de l’exécutable.
 2. **T1 — données de référence**
    - Alimenter le seeder : les communes d’Abidjan (liste D-03 à confirmer) et les catégories proposées (D-07), sans donnée personnelle réelle.
 3. **T1b — tir d’essai**

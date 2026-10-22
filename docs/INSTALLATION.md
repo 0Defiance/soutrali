@@ -82,9 +82,9 @@ Ou en ligne de commande :
 CREATE DATABASE soutrali CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 3.3 Créer l’utilisateur SQL dédié — **pas manquant le 22 oct. 2026**
+### 3.3 Créer l’utilisateur SQL dédié — **fait sur ce poste le 22 oct. 2026**
 
-`.env.example` référence `DB_USERNAME=soutrali_dev`, mais ce compte **n’existait pas** sur le poste : seuls `root` et `pma` étaient déclarés. C’est la cause directe de l’échec de connexion de Laravel. Créer un compte limité à la base :
+`.env.example` référence `DB_USERNAME=soutrali_dev`, mais ce compte **n’existait pas** sur le poste : seuls `root` et `pma` étaient déclarés. C’était la cause directe de l’échec de connexion de Laravel. Le compte a été créé le 22 octobre 2026 pour `127.0.0.1` et `localhost`, avec des droits limités à `soutrali.*`, et `backend/.env` a été basculé de `root` vers ce compte. Sur une machine neuve, reproduire :
 
 ```sql
 CREATE USER 'soutrali_dev'@'127.0.0.1' IDENTIFIED BY '<MOT_DE_PASSE_CHOISI>';
@@ -210,4 +210,10 @@ netstat -ano | findstr ":8000"
 taskkill /PID <n> /T /F
 ```
 
-MariaDB, elle, se gère depuis le panneau XAMPP et **ne doit pas** être arrêtée pendant une séance de développement.
+MariaDB, elle, se gère depuis le panneau XAMPP et **ne doit pas** être arrêtée pendant une séance de développement. Sur cette machine elle n’est **pas installée comme service Windows** : si le panneau XAMPP n’est pas ouvert, le serveur se démarre directement avec son binaire :
+
+```powershell
+C:\xampp\mysql\bin\mysqld.exe --defaults-file=C:\xampp\mysql\bin\my.ini
+```
+
+Laisser cette fenêtre ouverte pendant la séance ; la fermer arrête la base. Vérifier ensuite que le port 3306 répond avant de lancer Laravel.
