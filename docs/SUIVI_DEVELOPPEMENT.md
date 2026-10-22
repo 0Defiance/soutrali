@@ -85,6 +85,27 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 - Correction des sections périmées du README de cadrage (§15.7 dossier `brand/` inexistant, §19.1 phases, §22.3 « aucun code », §23 liste des documents, §25 journal, §26 prochaines étapes) et de l’image d’en-tête cassée.
 - Rédaction du présent document et de `INSTALLATION.md`, à partir de l’ancien `README.md` du dossier code, scindé en deux pour séparer le *suivi* de la *procédure*.
 - Publication sur `origin/main` : commits créés localement puis push lancé, l’authentification GitHub étant ouverte par Git Credential Manager côté porteur. Le résultat vérifié (empreinte du commit distant, arborescence publiée, état de la CI) est consigné à la suite de cette journée.
+- Résultat vérifié de la publication : `origin/main` pointe sur `e3d8429`, empreinte identique au HEAD local. La racine distante contient `.gitattributes`, `.github/`, `.gitignore`, `README.md`, `app/`, `backend/`, `brand/` et `docs/`. Aucun fichier `.env`, `vendor/`, `build/` ou `.dart_tool/` n’est publié. Le logo distant `brand/logo/soutrali-logo-couleurs.png` (1 149 220 o) est bien au chemin référencé par l’en-tête du README.
+
+### 22 octobre 2026, suite — premier passage de la CI et corrections
+
+La CI s’est exécutée pour la première fois sur le commit de publication (exécution n°1, commit `e3d8429`). Trois défauts réels sont apparus côté backend ; chacun a été reproduit localement avant d’être corrigé.
+
+| Étape CI | Constat | Cause vérifiée | Correction |
+|---|---|---|---|
+| `composer test` | échec, code de sortie 2 | Aucune `.env` en CI : ce fichier est ignoré par Git, `APP_KEY` reste vide et le test fonctionnel lève `MissingAppKeyException` | Le workflow copie `.env.example` en `.env` puis exécute `php artisan key:generate` avant les tests |
+| `composer format:check` | jamais atteinte en CI ; 13 défauts constatés en local | Fins de ligne CRLF, imports non triés, import inutilisé, position d’accolades | `pint` exécuté sur le backend |
+| `composer analyse` | jamais atteinte en CI ; 10 erreurs constatées en local | `PublicListingResource` lit les attributs du modèle sans que Larastan puisse les lui rattacher, et les relations `category` / `commune` ne sont pas typées | `@mixin Listing` sur la ressource et `@return BelongsTo<…>` sur les trois relations du modèle |
+
+Vérifications locales après correction, avec PHP 8.3.33 :
+
+- `pest` : 2 tests passés, 2 assertions.
+- `pint --test` : PASS sur 36 fichiers.
+- `phpstan analyse` (Larastan, niveau 5) : aucune erreur.
+
+Les tests backend utilisent SQLite en mémoire (`backend/phpunit.xml`) : les extensions `pdo_sqlite` et `sqlite3` sont désormais explicitement demandées dans le workflow. Sur le poste de développement, le PHP installé ne les active pas par défaut ; les vérifications locales ont été faites avec un `php.ini` temporaire qui les charge, **sans modifier la configuration globale de PHP**.
+
+Job `flutter` de cette même exécution : `checkout`, installation de Flutter 3.47.7 et `flutter pub get` ont réussi ; `flutter analyze` était encore en cours au moment de la rédaction. Son résultat n’est donc pas affirmé ici.
 
 ---
 
@@ -109,11 +130,15 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 
 ### Vérifications exécutées
 
+- `pest` : 2 tests passés, 2 assertions (PHP 8.3.33, SQLite en mémoire).
+- `pint --test` : PASS sur 36 fichiers.
+- `phpstan analyse` avec Larastan niveau 5 : aucune erreur.
 - `flutter analyze` : propre.
 - `flutter test` : les deux tests passent.
 - `flutter build web --release` : artefacts générés.
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
 - Contrôle des règles Git d’ignore et scan de secrets : conformes (voir §2, 22 oct.).
+- Ces vérifications sont exécutées sur le poste de développement. Leur passage dans la CI GitHub est suivi au §2.
 
 ---
 

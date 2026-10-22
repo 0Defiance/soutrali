@@ -890,6 +890,7 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 20 oct. 2026 | Pages de garde des trois documents ; essais d’accès GitHub (lecture seule, écriture impossible depuis la conversation) ; publication manuelle décidée ; fusion contexte + README ; réécriture complète du README comme outil de reprise | D-13 stack remise à la v3 ; D-14, D-15, D-16 |
 | 20 oct. 2026 | Stack technique v3.1 rédigée et validée par le porteur (T-01 à T-14) ; socle Flutter + Laravel créé ; base `soutrali` créée dans XAMPP (restée vide, migrations non appliquées) | T-01 à T-14 validées |
 | 22 oct. 2026 | Publication du code source sur GitHub : dépôt local initialisé, arborescence réorganisée (`app/`, `backend/`, `docs/`, `brand/`, `.github/`), Documentation v1 archivée, `.gitattributes` ajouté, contrôle des secrets effectué. Correction des sections périmées du présent README (§15.7, §19.1, §22.3, §23) et de l’image d’en-tête cassée. Rédaction de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` | D-17 structure du dépôt |
+| 22 oct. 2026 | Premier passage de l’intégration continue sur le dépôt publié. Trois défauts backend détectés, reproduits localement puis corrigés : clé d’application absente en CI (`MissingAppKeyException`), style non conforme à Pint, annotations de type manquantes pour Larastan. Après correction, `pest`, `pint --test` et `phpstan analyse` passent en local. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` | T-12 intégration continue |
 
 ---
 

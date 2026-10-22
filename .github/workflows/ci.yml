@@ -15,11 +15,16 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, pdo_mysql, xml, curl, zip, bcmath, gd, intl
+          extensions: mbstring, pdo_mysql, pdo_sqlite, sqlite3, xml, curl, zip, bcmath, gd, intl
           coverage: none
       - uses: ramsey/composer-install@v3
         with:
           working-directory: backend
+      - name: Préparer la clé d'application de test
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate
       - run: composer test
         working-directory: backend
       - run: composer format:check

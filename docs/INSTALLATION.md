@@ -157,6 +157,9 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [ ] `backend/.env` renseigné, non versionné
 - [ ] `php artisan migrate` crée les onze tables
 - [ ] `GET /api/v1/listings` répond en JSON (liste vide acceptée)
+- [ ] `vendor/bin/pest` passe (tests sur SQLite en mémoire)
+- [ ] `vendor/bin/pint --test` ne remonte aucun défaut de style
+- [ ] `vendor/bin/phpstan analyse` ne remonte aucune erreur
 - [ ] `flutter analyze` ne remonte aucune erreur
 - [ ] `flutter test` passe
 - [ ] Le site s’affiche sur `http://127.0.0.1:8082`
@@ -176,6 +179,10 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 | Page blanche au premier rendu Flutter | Locale française sans délégués Material/Cupertino | Corrigé dans `app/lib/src/app.dart` ; vérifier que les délégués sont présents |
 | Impossible de déplacer ou renommer `app/` | Éditeur ouvert tenant le dossier (serveur d’analyse Dart) | Fermer l’éditeur ou le dossier de travail, puis réessayer |
 | phpMyAdmin ne répond pas sur `127.0.0.1` | Apache XAMPP non démarré | Démarrer Apache **et** MySQL dans le panneau XAMPP |
+| `php artisan test` échoue avec « could not find driver » | Les tests utilisent SQLite en mémoire (`phpunit.xml`) et le PHP CLI installé n’active ni `pdo_sqlite` ni `sqlite3` | Ajouter `extension=pdo_sqlite` et `extension=sqlite3` au `php.ini` du PHP CLI, ou lancer les tests avec un `php.ini` temporaire : `php -c <chemin.ini> vendor/bin/pest` |
+| La CI échoue sur `composer test` avec `MissingAppKeyException` | Aucune `.env` n’existe en CI : le fichier est ignoré par Git et `APP_KEY` reste vide | Corrigé le 22 oct. 2026 : `.github/workflows/ci.yml` copie `.env.example` en `.env` puis exécute `php artisan key:generate` avant les tests |
+| La CI échoue sur `composer format:check` | Fichiers écrits avec des fins de ligne CRLF sous Windows, imports non triés | Exécuter `vendor/bin/pint` avant de commiter ; `.gitattributes` normalise déjà le dépôt en LF |
+| La CI échoue sur `composer analyse` | Larastan ne rattache pas les attributs lus dans une ressource API non annotée | Annoter la ressource avec `@mixin <Modele>` et typer les relations du modèle avec `@return BelongsTo<…>` |
 
 ---
 

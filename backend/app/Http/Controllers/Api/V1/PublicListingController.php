@@ -30,8 +30,7 @@ class PublicListingController
                         ->orWhere('description', 'like', "%{$term}%");
                 });
             })
-            ->when($filters['commune'] ?? null, fn ($query, $name) =>
-                $query->whereHas('commune', fn ($communes) => $communes->where('name', $name)))
+            ->when($filters['commune'] ?? null, fn ($query, $name) => $query->whereHas('commune', fn ($communes) => $communes->where('name', $name)))
             ->when($filters['category'] ?? null, fn ($query, $id) => $query->where('category_id', $id))
             ->when($filters['type'] ?? null, fn ($query, $type) => $query->where('type', $type))
             ->when($filters['nature'] ?? null, fn ($query, $nature) => $query->where('nature', $nature))

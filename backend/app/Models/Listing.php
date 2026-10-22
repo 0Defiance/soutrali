@@ -28,16 +28,25 @@ class Listing extends Model
         return ['budget' => 'decimal:2'];
     }
 
+    /**
+     * @return BelongsTo<Category, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
+    /**
+     * @return BelongsTo<Commune, $this>
+     */
     public function commune(): BelongsTo
     {
         return $this->belongsTo(Commune::class);
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
