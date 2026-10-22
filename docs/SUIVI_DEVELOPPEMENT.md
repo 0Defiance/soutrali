@@ -60,7 +60,7 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 
 ### 21 octobre 2026 — premier rendu web et premiers blocages
 
-- `flutter analyze` propre et les deux tests Flutter passent depuis `app/`.
+- `flutter analyze` propre et les deux tests Flutter passent depuis `app/`. **Ce constat n’a pas été reproductible le 22 octobre** : voir la correction détaillée plus bas dans la journée du 22.
 - Le squelette navigateur (`app/web/`) n’existait pas : il a été généré dans un dossier temporaire puis copié dans l’application, sans écraser les fichiers existants.
 - Build web release généré. **Mesure partielle :** le JavaScript principal faisait environ **2,96 Mo non compressé**. Cette mesure n’inclut ni le transfert compressé, ni les ressources du moteur, ni le temps jusqu’au premier écran utile. Le tir d’essai n’est donc pas déclaré terminé.
 - Page blanche au premier rendu : cause identifiée et corrigée — l’application fixe la locale française sans fournir les délégués de localisation Material/Cupertino. Correction dans `app/lib/src/app.dart`.
@@ -107,6 +107,28 @@ Les tests backend utilisent SQLite en mémoire (`backend/phpunit.xml`) : les ext
 
 Job `flutter` de cette même exécution : `checkout`, installation de Flutter 3.47.7 et `flutter pub get` ont réussi ; `flutter analyze` était encore en cours au moment de la rédaction. Son résultat n’est donc pas affirmé ici.
 
+### 22 octobre 2026, second passage de la CI
+
+L’exécution n°2 (commit `84961f6`) donne : **job `backend` réussi**, toutes étapes confondues (`composer test`, `format:check`, `analyse`). Les trois corrections ci-dessus sont donc validées par la CI elle-même.
+
+Le **job `flutter` échoue** en revanche sur `flutter analyze`, ce qui bloque `flutter test` et `flutter build web --release`.
+
+**Correction d’un constat antérieur erroné.** Le journal du 21 octobre et le §3 annonçaient « `flutter analyze` propre » et « deux tests passent ». Ce n’était **pas reproductible** le 22 octobre : `flutter analyze` remonte **11 problèmes dont 10 erreurs**, et la suite compte en réalité **5 tests**, dont 3 dans un fichier qui ne compilait pas. Les affirmations antérieures sont remplacées par les mesures ci-dessous.
+
+| Problème | Fichier | Cause vérifiée | Correction |
+|---|---|---|---|
+| `setPhysicalSize` / `setDevicePixelRatio` indéfinis (6 erreurs) | `test/features/discover/publication_actions_test.dart` | Ces méthodes n’existent pas sur `TestFlutterView` ; l’API expose des **accesseurs en écriture** `physicalSize` et `devicePixelRatio` | Affectation directe, sans `await` ; les `reset*` utilisés en `addTearDown` existent bien |
+| « The name 'Size' isn't a class » (3 erreurs) | idem | `Size` n’était importé par aucun des imports présents | Ajout de `import 'package:flutter/material.dart';` |
+| `argument_type_not_assignable` sur l’override (1 erreur) | idem | `listingsProvider(filtres).overrideWith(...)` attend une fonction à **un** paramètre ; la signature à deux paramètres `(ref, arg)` n’existe qu’au niveau de la **famille** Riverpod 3 | Override de la famille : `listingsProvider.overrideWith((ref, filters) => ...)` |
+| `use_build_context_synchronously` (1 info) | `lib/src/features/discover/discover_page.dart` | Un `BuildContext` issu d’une `GlobalKey` était protégé par le `mounted` du `State`, que le lint considère comme sans rapport | Garde remplacée par `headingContext.mounted` |
+
+Vérifications locales après correction, avec Flutter 3.47.7 :
+
+- `flutter analyze` : **No issues found**.
+- `flutter test` : **5 tests passés** (2 sur le modèle d’annonce, 3 sur les actions de publication).
+- `flutter build web --release` : **compilation réussie**. La police d’icônes Material est réduite de 1 645 184 à 9 996 octets par tree-shaking. Un avertissement subsiste sur la famille `CupertinoIcons` absente des assets ; il n’empêche pas le build et sera traité avec l’identité visuelle (§5, point 7).
+- L’essai de compilation WebAssembly lancé automatiquement par Flutter réussit (`--wasm`), ce qui documente la piste de repli prévue par T-09.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -125,7 +147,7 @@ Job `flutter` de cette même exécution : `checkout`, installation de Flutter 3.
 - Page de découverte responsive reliée à l’API, avec filtres et états de chargement / erreur / vide.
 - Thème centralisé aux couleurs de la charte v2 (`app/lib/src/theme/soutrali_theme.dart`) : orange `#FE7402`, vert `#037C30`, ivoire `#FFF9F2`. Aucune couleur écrite dans les écrans.
 - Configuration française fonctionnelle (délégués Material/Cupertino).
-- Deux tests : parsing du modèle d’annonce et comportement des actions de publication.
+- Cinq tests : parsing du modèle d’annonce et filtres (2), comportement des actions de publication (3).
 - Actions « Annonce » et « Prestation de service » avec choix immédiat/programmé et validation de saisie côté interface.
 
 ### Vérifications exécutées
@@ -133,9 +155,9 @@ Job `flutter` de cette même exécution : `checkout`, installation de Flutter 3.
 - `pest` : 2 tests passés, 2 assertions (PHP 8.3.33, SQLite en mémoire).
 - `pint --test` : PASS sur 36 fichiers.
 - `phpstan analyse` avec Larastan niveau 5 : aucune erreur.
-- `flutter analyze` : propre.
-- `flutter test` : les deux tests passent.
-- `flutter build web --release` : artefacts générés.
+- `flutter analyze` : **No issues found** (corrigé le 22 oct., voir §2).
+- `flutter test` : **5 tests passés**.
+- `flutter build web --release` : compilation réussie ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
 - Contrôle des règles Git d’ignore et scan de secrets : conformes (voir §2, 22 oct.).
 - Ces vérifications sont exécutées sur le poste de développement. Leur passage dans la CI GitHub est suivi au §2.

@@ -183,6 +183,9 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 | La CI échoue sur `composer test` avec `MissingAppKeyException` | Aucune `.env` n’existe en CI : le fichier est ignoré par Git et `APP_KEY` reste vide | Corrigé le 22 oct. 2026 : `.github/workflows/ci.yml` copie `.env.example` en `.env` puis exécute `php artisan key:generate` avant les tests |
 | La CI échoue sur `composer format:check` | Fichiers écrits avec des fins de ligne CRLF sous Windows, imports non triés | Exécuter `vendor/bin/pint` avant de commiter ; `.gitattributes` normalise déjà le dépôt en LF |
 | La CI échoue sur `composer analyse` | Larastan ne rattache pas les attributs lus dans une ressource API non annotée | Annoter la ressource avec `@mixin <Modele>` et typer les relations du modèle avec `@return BelongsTo<…>` |
+| La CI échoue sur `flutter analyze` avec `setPhysicalSize`/`setDevicePixelRatio` indéfinis | Ces méthodes n’existent pas sur `TestFlutterView` ; l’API expose des accesseurs en écriture | Écrire `tester.view.physicalSize = const Size(…)` et `tester.view.devicePixelRatio = 1.0`, sans `await`, puis `addTearDown(tester.view.resetPhysicalSize)` |
+| `argument_type_not_assignable` sur un override Riverpod | Sous Riverpod 3, `provider(arg).overrideWith(...)` attend une fonction à un seul paramètre ; la signature `(ref, arg)` n’existe qu’au niveau de la famille | Surcharger la famille entière : `monProvider.overrideWith((ref, arg) => …)` |
+| `use_build_context_synchronously` après un `await` | Un `BuildContext` issu d’une `GlobalKey` était protégé par le `mounted` du `State`, sans rapport avec lui | Garder avec `leContexte.mounted` plutôt qu’avec le `mounted` du `State` |
 
 ---
 

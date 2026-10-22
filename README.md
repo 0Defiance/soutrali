@@ -815,7 +815,7 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 **Existe désormais :**
 
 - un dépôt Git public unique (`github.com/0Defiance/soutrali`) versionnant le cadrage, la documentation et le code ;
-- une application Flutter/Dart avec une page de découverte, un thème aux couleurs de la charte v2, un client HTTP branché sur `GET /api/v1/listings` et deux tests ;
+- une application Flutter/Dart avec une page de découverte, un thème aux couleurs de la charte v2, un client HTTP branché sur `GET /api/v1/listings` et cinq tests ;
 - un backend Laravel 13 avec l’API publique des annonces (filtres, pagination), les migrations des onze tables du modèle conceptuel, et une intégration continue (T-12) ;
 - la stack technique v3.1 validée par le porteur (T-01 à T-14).
 
@@ -891,6 +891,7 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 20 oct. 2026 | Stack technique v3.1 rédigée et validée par le porteur (T-01 à T-14) ; socle Flutter + Laravel créé ; base `soutrali` créée dans XAMPP (restée vide, migrations non appliquées) | T-01 à T-14 validées |
 | 22 oct. 2026 | Publication du code source sur GitHub : dépôt local initialisé, arborescence réorganisée (`app/`, `backend/`, `docs/`, `brand/`, `.github/`), Documentation v1 archivée, `.gitattributes` ajouté, contrôle des secrets effectué. Correction des sections périmées du présent README (§15.7, §19.1, §22.3, §23) et de l’image d’en-tête cassée. Rédaction de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` | D-17 structure du dépôt |
 | 22 oct. 2026 | Premier passage de l’intégration continue sur le dépôt publié. Trois défauts backend détectés, reproduits localement puis corrigés : clé d’application absente en CI (`MissingAppKeyException`), style non conforme à Pint, annotations de type manquantes pour Larastan. Après correction, `pest`, `pint --test` et `phpstan analyse` passent en local. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` | T-12 intégration continue |
+| 22 oct. 2026 | Second passage de l’intégration continue : **job backend réussi**. Le job Flutter échouait sur `flutter analyze` (10 erreurs dans un fichier de test : API de test inexistante, `Size` non importé, signature d’override Riverpod 3 incorrecte) plus un avertissement de `BuildContext` après `await`. Corrigé et vérifié en local : analyse sans problème, **5 tests passés**, build web release réussi. Un constat antérieur (« analyse propre, deux tests ») est explicitement rectifié dans le journal | T-12 intégration continue |
 
 ---
 

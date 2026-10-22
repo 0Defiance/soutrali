@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:soutrali/src/app.dart';
@@ -6,15 +7,15 @@ import 'package:soutrali/src/features/discover/listings_repository.dart';
 
 void main() {
   testWidgets('annonce offers immediate and scheduled request choices', (tester) async {
-    await tester.view.setPhysicalSize(const Size(1200, 900));
-    await tester.view.setDevicePixelRatio(1);
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          listingsProvider(const ListingFilters()).overrideWith((ref) async => []),
+          listingsProvider.overrideWith((ref, filters) async => <Listing>[]),
         ],
         child: const SoutraliApp(),
       ),
@@ -35,15 +36,15 @@ void main() {
   });
 
   testWidgets('service offer can answer a need or list scheduled availability', (tester) async {
-    await tester.view.setPhysicalSize(const Size(1200, 900));
-    await tester.view.setDevicePixelRatio(1);
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          listingsProvider(const ListingFilters()).overrideWith((ref) async => []),
+          listingsProvider.overrideWith((ref, filters) async => <Listing>[]),
         ],
         child: const SoutraliApp(),
       ),
@@ -64,8 +65,8 @@ void main() {
   });
 
   testWidgets('answering a need opens the request results', (tester) async {
-    await tester.view.setPhysicalSize(const Size(1200, 900));
-    await tester.view.setDevicePixelRatio(1);
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -73,9 +74,9 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          listingsProvider(const ListingFilters()).overrideWith((ref, filters) async {
+          listingsProvider.overrideWith((ref, filters) async {
             requestedFilters = filters;
-            return [];
+            return <Listing>[];
           }),
         ],
         child: const SoutraliApp(),

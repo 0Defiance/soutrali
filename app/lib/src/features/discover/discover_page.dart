@@ -205,7 +205,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       });
       await Future<void>.delayed(const Duration(milliseconds: 50));
       final headingContext = _resultsHeadingKey.currentContext;
-      if (mounted && headingContext != null) {
+      if (headingContext != null && headingContext.mounted) {
         await Scrollable.ensureVisible(
           headingContext,
           duration: const Duration(milliseconds: 250),
