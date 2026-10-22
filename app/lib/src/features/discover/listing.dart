@@ -58,6 +58,7 @@ class ListingFilters {
     this.commune = '',
     this.type = '',
     this.nature = '',
+    this.category,
   });
 
   final String query;
@@ -65,9 +66,13 @@ class ListingFilters {
   final String type;
   final String nature;
 
+  /// Identifiant de catégorie, ou `null` pour « toutes ».
+  final int? category;
+
   Map<String, dynamic> toQueryParameters() => {
         if (query.trim().isNotEmpty) 'q': query.trim(),
         if (commune.isNotEmpty) 'commune': commune,
+        if (category != null) 'category': category,
         if (type.isNotEmpty) 'type': type,
         if (nature.isNotEmpty) 'nature': nature,
       };
@@ -79,8 +84,9 @@ class ListingFilters {
           query == other.query &&
           commune == other.commune &&
           type == other.type &&
-          nature == other.nature;
+          nature == other.nature &&
+          category == other.category;
 
   @override
-  int get hashCode => Object.hash(query, commune, type, nature);
+  int get hashCode => Object.hash(query, commune, type, nature, category);
 }

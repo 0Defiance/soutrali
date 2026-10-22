@@ -35,7 +35,7 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 | `brand/logo/` | Logo de marque |
 | `.github/workflows/ci.yml` | Intégration continue : Pest, Pint, Larastan, `flutter analyze`, `flutter test`, build web (T-12) |
 
-**État en une phrase :** le socle T1 est partiellement en place et le tir d’essai T1b n’est pas terminé — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
+**État en une phrase :** les référentiels T1 sont en base et exposés par l’API, le parcours navigateur → API → base est observé avec des données, mais le tir d’essai T1b reste incomplet (session Sanctum et mesures téléphone non faites) — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
 
 ---
 
@@ -754,11 +754,11 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 |---|---|---|---|
 | D-01 | Ville pilote | **Validé** | Abidjan |
 | D-02 | Identité visuelle | Proposé | Logo reçu = modèle de départ ; palette v2 (§15.3) à valider ; polices et zone de protection à confirmer |
-| D-03 | Zones géographiques | Proposé | Commune obligatoire + quartier en texte libre ; base de travail : Abobo, Adjamé, Anyama, Attécoubé, Bingerville, Cocody, Koumassi, Marcory, Plateau, Port-Bouët, Songon, Treichville, Yopougon, plus une zone « plusieurs communes » ; **à confirmer par la MOA** |
+| D-03 | Zones géographiques | **Validé** (22 oct. 2026) | Commune obligatoire + quartier en texte libre ; liste de base des 13 communes d’Abidjan (Abobo, Adjamé, Anyama, Attécoubé, Bingerville, Cocody, Koumassi, Marcory, Plateau, Port-Bouët, Songon, Treichville, Yopougon) plus une zone « Plusieurs communes ». Liste **validée par le porteur le 22 octobre 2026** et chargée en base par le seeder |
 | D-04 | Méthode d’inscription | Ouvert | Téléphone avec code de vérification, ou e-mail. Le téléphone est plausiblement plus naturel sur mobile, mais le coût et la fiabilité de l’envoi de SMS ne sont pas vérifiés. Le modèle de données accepte les deux. |
 | D-05 | Canal de contact | Ouvert | Recommandation : l’auteur choisit les canaux visibles (téléphone, lien de messagerie externe), visibles des seuls connectés, interaction tracée. Une messagerie interne reste une évolution possible. |
 | D-06 | Modération | Ouvert | Recommandation pilote : publication immédiate + modération après signalement. Seuil éventuel de masquage automatique : à définir. |
-| D-07 | Catégories initiales | Ouvert | Proposition : Réparations et dépannage · Maison et domestique · Couture, beauté et coiffure · Éducation et cours · Informatique et numérique · Transport léger et déménagement · Petites missions et coups de main · Autres |
+| D-07 | Catégories initiales | **Validé** (22 oct. 2026) | Réparations et dépannage · Maison et domestique · Couture, beauté et coiffure · Éducation et cours · Informatique et numérique · Transport léger et déménagement · Petites missions et coups de main · Autres. Liste **validée par le porteur le 22 octobre 2026** et chargée en base par le seeder |
 | D-08 | Langues | Ouvert | Français au lancement ; langues locales plus tard |
 | D-09 | Budget, hébergement, nom de domaine | Ouvert | Aucun chiffre inventé |
 | D-10 | Conservation des données, droits, conformité locale | Ouvert | Avis juridique nécessaire |
@@ -777,7 +777,7 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 1. Inscription : téléphone ou e-mail ? Comment vérifier le contact ? (D-04)
 2. Canal de contact entre utilisateurs, visibilité des coordonnées. (D-05)
 3. Modération préalable ou a posteriori ; délais et responsabilités. (D-06)
-4. Catégories initiales et qui les administre. (D-07)
+4. Qui administre au quotidien les catégories et les communes (listes validées le 22 oct. 2026 — D-03, D-07 ; gestion prévue via Filament en T2).
 5. Le champ de budget : facultatif, obligatoire pour certaines catégories, ou absent du MVP ?
 6. Budget, hébergement, région des données, nom de domaine, sauvegardes. (D-09)
 7. Durées de conservation, suppression de compte, responsable de traitement, conformité locale. (D-10)
@@ -893,13 +893,14 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 22 oct. 2026 | Premier passage de l’intégration continue sur le dépôt publié. Trois défauts backend détectés, reproduits localement puis corrigés : clé d’application absente en CI (`MissingAppKeyException`), style non conforme à Pint, annotations de type manquantes pour Larastan. Après correction, `pest`, `pint --test` et `phpstan analyse` passent en local. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` | T-12 intégration continue |
 | 22 oct. 2026 | Second passage de l’intégration continue : **job backend réussi**. Le job Flutter échouait sur `flutter analyze` (10 erreurs dans un fichier de test : API de test inexistante, `Size` non importé, signature d’override Riverpod 3 incorrecte) plus un avertissement de `BuildContext` après `await`. Corrigé et vérifié en local : analyse sans problème, **5 tests passés**, build web release réussi. Un constat antérieur (« analyse propre, deux tests ») est explicitement rectifié dans le journal. L’exécution suivante (commit `2069a1f`) est **entièrement réussie** : les jobs backend et Flutter passent tous deux | T-12 intégration continue |
 | 22 oct. 2026 | **Étape T0 — environnement débloqué** : MariaDB 10.4.32 démarrée, compte SQL dédié `soutrali_dev` créé (droits limités à `soutrali.*`), migrations appliquées (**17 tables**), `GET /api/v1/listings` répond HTTP 200. Le seeder reste vide et les routes de référentiels n’existent pas encore : l’étape T1 reste à faire | T0 socle local |
+| 22 oct. 2026 | **Étape T1 — données de référence** : D-03 et D-07 validées par le porteur ; seeder chargé (14 lignes de communes dont la zone « Plusieurs communes », 8 catégories, 8 annonces fictives et 2 comptes de test en local uniquement) ; nouvelles routes publiques `GET /api/v1/categories` et `GET /api/v1/communes` (uniquement les éléments actifs) ; filtres Flutter commune et catégorie alimentés par l’API. Vérifications : pint PASS (41 fichiers), Larastan sans erreur, **7 tests Pest** (58 assertions) et **9 tests Flutter** verts, `flutter analyze` sans problème | T1 données de référence |
 
 ---
 
 ## 26. Prochaines étapes
 
-1. **Terminer le tir d’essai T1b** : appliquer les migrations sur la base `soutrali` (créer l’utilisateur SQL manquant), alimenter le seeder (13 communes, 8 catégories), faire répondre l’API à l’écran Flutter Web, valider la session Sanctum de bout en bout, puis mesurer poids et temps jusqu’au premier écran utile sur téléphone. Seuils à fixer avec la MOA. Voir `docs/SUIVI_DEVELOPPEMENT.md`.
-2. Valider ou corriger les décisions proposées (D-02, D-03, D-05, D-06) et trancher D-04.
+1. **Terminer le tir d’essai T1b** : migrations appliquées, référentiel et annonces fictives chargés, parcours navigateur → API → base observé en local. Restent : la validation de la session Sanctum de bout en bout (après D-04), la mesure du poids compressé et du temps jusqu’au premier écran utile sur téléphone, et les seuils à fixer avec la MOA. Voir `docs/SUIVI_DEVELOPPEMENT.md`.
+2. Valider ou corriger les décisions proposées (D-02, D-05, D-06) et trancher D-04.
 3. Phase 3 : maquettes des écrans clés (accueil, résultats, détail, publier, mes annonces, modération) sur la charte v2, puis arrêt du cahier des charges.
 4. Phase 5 : créer le backlog produit à partir du cahier des charges ; choisir l’outil de suivi des tâches.
 5. Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../theme/soutrali_theme.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
+import 'references_repository.dart';
 
 class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
@@ -21,12 +22,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   String _commune = '';
   String _type = '';
   String _nature = '';
+  String _categoryId = '';
 
   ListingFilters get _filters => ListingFilters(
         query: _searchController.text,
         commune: _commune,
         type: _type,
         nature: _nature,
+        category: int.tryParse(_categoryId),
       );
 
   @override
@@ -405,6 +408,33 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Widget _buildSearch(bool compact) {
+    final communes = ref.watch(communesProvider);
+    final categories = ref.watch(categoriesProvider);
+
+    final communeNames = communes.when(
+      data: (items) => [for (final item in items) item.name],
+      loading: () => const <String>[],
+      error: (error, stack) => const <String>[],
+    );
+    final communeValues = <String>['', ...communeNames];
+    final communeLabels = <String, String>{
+      '': communes.hasError ? 'Communes indisponibles' : 'Toutes les communes',
+    };
+
+    final categoryItems = categories.when(
+      data: (items) => items,
+      loading: () => const <ReferenceItem>[],
+      error: (error, stack) => const <ReferenceItem>[],
+    );
+    final categoryValues = <String>[
+      '',
+      ...categoryItems.map((item) => item.id.toString()),
+    ];
+    final categoryLabels = <String, String>{
+      '': categories.hasError ? 'Catégories indisponibles' : 'Toutes les catégories',
+      for (final item in categoryItems) item.id.toString(): item.name,
+    };
+
     return Padding(
       padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 24, compact ? 16 : 40, 12),
       child: Center(
@@ -437,8 +467,16 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   _FilterDropdown(
                     label: 'Commune',
                     value: _commune,
-                    values: const ['', 'Abobo', 'Adjamé', 'Cocody', 'Koumassi', 'Marcory', 'Plateau', 'Treichville', 'Yopougon'],
+                    values: communeValues,
+                    labels: communeLabels,
                     onChanged: (value) => setState(() => _commune = value),
+                  ),
+                  _FilterDropdown(
+                    label: 'Catégorie',
+                    value: _categoryId,
+                    values: categoryValues,
+                    labels: categoryLabels,
+                    onChanged: (value) => setState(() => _categoryId = value),
                   ),
                   _FilterDropdown(
                     label: 'Type',

@@ -29,7 +29,7 @@
 |---|---|---|---|
 | Flutter / Dart | 3.47.7 / 3.13.5 | Interface web puis Android | `flutter --version` |
 | PHP CLI | 8.3.33 | Laravel 13, Artisan, tests | `php -v` |
-| Composer | **non vérifié : absent du PATH** le 22 oct. | Dépendances PHP | `composer --version` |
+| Composer | 2.10.3 — absent du PATH, exécutable retrouvé le 22 oct. (voir §1 ci-dessous) | Dépendances PHP | `php "C:\Users\Abd Al Fattah\AppData\Local\Programs\Composer\composer.phar" --version` |
 | Git | 2.56.0 | Versionnement | `git --version` |
 | GitHub CLI | 2.102.1, non authentifiée | Accès compte et dépôts | `gh auth status` |
 | XAMPP / MariaDB | MariaDB 10.4.32 | Base locale + phpMyAdmin | Panneau XAMPP |
@@ -39,7 +39,7 @@
 **Points d’attention relevés le 22 octobre 2026 :**
 
 - **PHP doit être le CLI 8.3+, pas celui de XAMPP.** Laravel 13 exige PHP 8.3 ou plus (P-01). Le PHP livré par Apache XAMPP peut être en 8.2 : vérifier séparément `php -v` en ligne de commande et le PHP chargé par Apache.
-- **Composer peut être installé sans être dans le PATH.** Si `composer --version` échoue alors que `backend/vendor/` existe, les dépendances sont déjà présentes et `php artisan` fonctionne. Pour réinstaller, retrouver l’exécutable (profil utilisateur) ou l’ajouter au PATH.
+- **Composer peut être installé sans être dans le PATH.** Si `composer --version` échoue alors que `backend/vendor/` existe, les dépendances sont déjà présentes et `php artisan` fonctionne. **Constaté sur ce poste le 22 oct. 2026** : l’exécutable est `C:\Users\Abd Al Fattah\AppData\Local\Programs\Composer\composer.phar` et s’appelle avec PHP : `php "C:\Users\Abd Al Fattah\AppData\Local\Programs\Composer\composer.phar" <commande>`. Pour simplifier, ajouter ce dossier au PATH ou créer un alias `composer`.
 - **XAMPP sert uniquement MariaDB et phpMyAdmin.** Apache XAMPP est facultatif : Laravel et Flutter ont leurs propres serveurs de développement.
 
 ---
@@ -107,7 +107,8 @@ XAMPP livre en pratique **MariaDB**, pas MySQL (P-02). Les migrations évitent l
 Depuis `backend/`, dans un terminal :
 
 ```powershell
-composer install
+# Composer hors PATH sur ce poste : utiliser le chemin exact (§1)
+php "C:\Users\Abd Al Fattah\AppData\Local\Programs\Composer\composer.phar" install
 Copy-Item .env.example .env
 php artisan key:generate
 php artisan migrate
@@ -121,7 +122,12 @@ Notes :
 
 - `composer install` résout les versions et crée `composer.lock`, à vérifier puis committer (T-08). Filament 5 et Laravel 13 doivent résoudre ensemble.
 - Si `composer` n’est pas dans le PATH mais que `backend/vendor/` existe déjà, passer directement à `php artisan key:generate`.
-- `php artisan db:seed` est actuellement **sans effet** : le seeder est vide. Les communes et catégories de démonstration restent à écrire (voir `SUIVI_DEVELOPPEMENT.md` §5).
+- `php artisan db:seed` charge le référentiel validé : **14 lignes de communes** (13 communes d’Abidjan + zone « Plusieurs communes », D-03) et **8 catégories** (D-07). En environnement `local` uniquement, il charge aussi `DemoSeeder` : 2 comptes et 8 annonces **fictifs** pour les recettes. Aucun contenu fictif n’est chargé en préproduction ni en production. Vérifier ensuite :
+
+```powershell
+curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/communes
+curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/categories
+```
 - Vérifier que l’API répond :
 
 ```powershell
@@ -143,7 +149,12 @@ flutter run -d chrome --web-port 8082 --dart-define=API_BASE_URL=http://127.0.0.
 ```
 
 - L’écran envoie ses filtres à l’API Laravel. Sans backend démarré, il affiche un état d’indisponibilité et **ne fabrique pas d’annonces fictives**.
-- Le build de contrôle se fait avec `flutter build web --release`, servi ensuite pour valider la session Sanctum sur une même origine.
+- Le build de contrôle se fait avec `flutter build web --release`, servi ensuite pour valider la session Sanctum sur une même origine. Pour servir simplement un build release en local (tir d’essai T1b du 22 oct. 2026) :
+
+```powershell
+flutter build web --release
+python -m http.server 8082 --bind 127.0.0.1 --directory build\web
+```
 
 ---
 
@@ -151,18 +162,18 @@ flutter run -d chrome --web-port 8082 --dart-define=API_BASE_URL=http://127.0.0.
 
 Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été observé.
 
-- [ ] MariaDB écoute sur 3306
-- [ ] La base `soutrali` existe avec `utf8mb4_unicode_ci`
-- [ ] L’utilisateur SQL dédié existe et ses droits sont limités à `soutrali`
-- [ ] `backend/.env` renseigné, non versionné
-- [ ] `php artisan migrate` crée les onze tables
-- [ ] `GET /api/v1/listings` répond en JSON (liste vide acceptée)
-- [ ] `vendor/bin/pest` passe (tests sur SQLite en mémoire)
-- [ ] `vendor/bin/pint --test` ne remonte aucun défaut de style
-- [ ] `vendor/bin/phpstan analyse` ne remonte aucune erreur
-- [ ] `flutter analyze` ne remonte aucune erreur
-- [ ] `flutter test` passe
-- [ ] Le site s’affiche sur `http://127.0.0.1:8082`
+- [x] MariaDB écoute sur 3306
+- [x] La base `soutrali` existe avec `utf8mb4_unicode_ci`
+- [x] L’utilisateur SQL dédié existe et ses droits sont limités à `soutrali`
+- [x] `backend/.env` renseigné, non versionné
+- [x] `php artisan migrate` crée les onze tables du modèle conceptuel (plus les tables d’infrastructure Laravel)
+- [x] `GET /api/v1/listings` répond en JSON (liste vide acceptée)
+- [x] `vendor/bin/pest` passe (tests sur SQLite en mémoire)
+- [x] `vendor/bin/pint --test` ne remonte aucun défaut de style
+- [x] `vendor/bin/phpstan analyse` ne remonte aucune erreur
+- [x] `flutter analyze` ne remonte aucune erreur
+- [x] `flutter test` passe
+- [x] Le site s’affiche sur `http://127.0.0.1:8082`
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
 
@@ -179,7 +190,7 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 | Page blanche au premier rendu Flutter | Locale française sans délégués Material/Cupertino | Corrigé dans `app/lib/src/app.dart` ; vérifier que les délégués sont présents |
 | Impossible de déplacer ou renommer `app/` | Éditeur ouvert tenant le dossier (serveur d’analyse Dart) | Fermer l’éditeur ou le dossier de travail, puis réessayer |
 | phpMyAdmin ne répond pas sur `127.0.0.1` | Apache XAMPP non démarré | Démarrer Apache **et** MySQL dans le panneau XAMPP |
-| `php artisan test` échoue avec « could not find driver » | Les tests utilisent SQLite en mémoire (`phpunit.xml`) et le PHP CLI installé n’active ni `pdo_sqlite` ni `sqlite3` | Ajouter `extension=pdo_sqlite` et `extension=sqlite3` au `php.ini` du PHP CLI, ou lancer les tests avec un `php.ini` temporaire : `php -c <chemin.ini> vendor/bin/pest` |
+| `php artisan test` échoue avec « could not find driver » | Les tests utilisent SQLite en mémoire (`phpunit.xml`) et le PHP CLI installé n’active ni `pdo_sqlite` ni `sqlite3` | Charger les extensions sans toucher au `php.ini` global : `php -d extension=pdo_sqlite -d extension=sqlite3 vendor/bin/pest` (méthode utilisée le 22 oct. 2026) ; alternative : un `php.ini` temporaire avec `php -c <chemin.ini> vendor/bin/pest` |
 | La CI échoue sur `composer test` avec `MissingAppKeyException` | Aucune `.env` n’existe en CI : le fichier est ignoré par Git et `APP_KEY` reste vide | Corrigé le 22 oct. 2026 : `.github/workflows/ci.yml` copie `.env.example` en `.env` puis exécute `php artisan key:generate` avant les tests |
 | La CI échoue sur `composer format:check` | Fichiers écrits avec des fins de ligne CRLF sous Windows, imports non triés | Exécuter `vendor/bin/pint` avant de commiter ; `.gitattributes` normalise déjà le dépôt en LF |
 | La CI échoue sur `composer analyse` | Larastan ne rattache pas les attributs lus dans une ressource API non annotée | Annoter la ressource avec `@mixin <Modele>` et typer les relations du modèle avec `@return BelongsTo<…>` |

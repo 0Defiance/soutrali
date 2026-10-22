@@ -33,7 +33,7 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 | Dépôt local | Initialisé le 22 oct. 2026, index aligné sur `main`, arborescence réorganisée |
 | Flutter / Dart | 3.47.7 / 3.13.5 installés et fonctionnels (`flutter --version` exécuté) |
 | PHP CLI | 8.3.33 installé séparément de XAMPP, fonctionnel (`php -v` exécuté) |
-| Composer | **Absent du PATH** de la session de commande (revérifié le 22 oct.). Les dépendances sont pourtant installées (`backend/vendor/` contient 63 paquets) et `composer.lock` existe (452 408 octets) |
+| Composer | **Absent du PATH** de la session de commande, mais l’exécutable a été retrouvé : `php "C:\Users\Abd Al Fattah\AppData\Local\Programs\Composer\composer.phar"` — Composer 2.10.3, chemin documenté dans `INSTALLATION.md` |
 | Git | 2.56.0 fonctionnel |
 | GitHub CLI | 2.102.1 installée, **non authentifiée** (`gh auth status` : aucune session) |
 | MariaDB | 10.4.32 démarrée sur le port 3306 (revérifié le 22 oct. : le port écoute) |
@@ -43,9 +43,9 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 | Icônes web | `app/web/icons/*` et `app/web/favicon.png` sont les **icônes par défaut du squelette Flutter**, pas la marque Soutrali |
 | `backend/public/favicon.ico` | **Fichier vide (0 octet)** |
 | Polices | Manrope et Source Sans 3 **non embarquées** ; le thème retombe sur `Arial` |
-| Serveurs de développement | Trois processus hérités de la session du 21 oct. ont été arrêtés le 22 oct. (Laravel figé sur 8000, deux serveurs Flutter sur 8081 et 8082). À la reprise de séance : l’API Laravel tourne sur `127.0.0.1:8000` (`php.exe`, PID 7248) et répond HTTP 200 ; aucun serveur Flutter n’est lancé sur 8082 |
+| Serveurs de développement | À la reprise de séance : l’API Laravel tourne sur `127.0.0.1:8000` (`php.exe`) et répond HTTP 200 ; le build web release est servi sur `127.0.0.1:8082` (Python http.server) pour le tir d’essai T1b. MariaDB sur 3306 |
 
-**Conclusion :** le socle T1 est partiellement en place et **le tir d’essai T1b n’est pas terminé**. Aucun parcours de bout en bout (navigateur → API → base) n’a encore été observé en fonctionnement.
+**Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; **le tir d’essai T1b reste incomplet** : le parcours navigateur → API → base est observé avec des données, mais la session Sanctum et les mesures téléphone ne sont pas faites.
 
 ---
 
@@ -140,6 +140,32 @@ L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs 
 - API démarrée sur `127.0.0.1:8000` : `GET /api/v1/listings` répond **HTTP 200** avec une liste paginée vide au format attendu (`data`, `links`, `meta`, `per_page` 12, `total` 0). C’est la première fois que la chaîne complète navigateur → API → Laravel → MariaDB est observée fonctionnelle.
 - Le seeder reste vide : aucune commune ni catégorie n’est chargée. Les routes `GET /api/v1/categories` et `/communes` n’existent pas encore, et aucune route de publication n’existe ; alimenter le seeder n’aurait donc aucun effet observable tant que ces routes ne sont pas écrites. L’étape T1 est reportée à ce titre.
 
+### 22 octobre 2026, étape T1 — référentiels et premier tir d’essai avec données
+
+**Arbitrages reçus du porteur** : D-03 confirmée (13 communes d’Abidjan + zone « Plusieurs communes »), D-07 confirmée (8 catégories), chargement de 6 à 8 annonces fictives et de 2 comptes de test pour le tir d’essai, recherche de l’exécutable Composer autorisée. Ces deux décisions passent de « Proposé » / « Ouvert » à **Validé le 22 octobre 2026** dans le registre du README.
+
+Backend :
+
+- `CommuneSeeder` (14 lignes), `CategorySeeder` (8 catégories avec description) et `DemoSeeder` (2 comptes fictifs, 8 annonces publiées, aucun nom réel). `DatabaseSeeder` charge toujours les référentiels, et ne charge `DemoSeeder` **que** en environnement `local` : aucun contenu fictif en préproduction ni en production.
+- Nouvelles routes publiques `GET /api/v1/categories` et `GET /api/v1/communes` (contrôleur `PublicReferenceController`, throttle 60/min, éléments `active` uniquement, tri par nom côté moteur).
+- Correction de `UserFactory` : la colonne `name` n’existe pas dans `users`, la factory écrivait `display_name`.
+- `php artisan db:seed` exécuté sur la base locale. Vérification par requêtes HTTP réelles sur `127.0.0.1:8000` : `/communes` renvoie **14 communes** (dont « Plusieurs communes »), `/categories` renvoie **8 catégories**, `/listings` renvoie **8 annonces** avec commune et catégorie résolues.
+- Vérifications après correction, avec PHP 8.3.33 : `pint --test` **PASS sur 41 fichiers** ; `phpstan analyse` (Larastan niveau 5) **aucune erreur** ; `pest` **7 tests passés, 58 assertions** (dont 5 créés pour T1 : routes de référentiels, exclusion des éléments inactifs, filtrage des annonces, absence de coordonnée privée). Les extensions SQLite étant toujours absentes de la configuration PHP, les tests sont lancés avec `php -d extension=pdo_sqlite -d extension=sqlite3 vendor/bin/pest` — aucun `php.ini` global modifié.
+
+Application Flutter :
+
+- Nouveau dépôt `references_repository.dart` : modèle `ReferenceItem`, providers `communesProvider` et `categoriesProvider` vers les nouvelles routes.
+- Écran de découverte : le filtre « Commune » n’est plus codé en dur (liste partielle de 8) mais alimenté par l’API ; un filtre « Catégorie » est ajouté ; `ListingFilters` accepte `category` (identifiant) et l’envoie en requête. En cas d’échec de chargement, les listes dégradent en « Communes / Catégories indisponibles » sans casser l’écran.
+- Vérifications : `flutter analyze` **No issues found** ; `flutter test` **9 tests passés** (les 5 précédents + 3 sur `ReferenceItem` / `ListingFilters` + 1 test widget vérifiant que la sélection commune + catégorie est bien transmise au fournisseur d’annonces).
+- `flutter build web --release` : **compilation réussie en 183,6 s**. Poids constatés sur `build/web` : `main.dart.js` **3 294 322 o brut / 942 397 o en gzip** ; `canvaskit/canvaskit.wasm` 7 284 602 o (2 916 585 o en gzip), servi par le CDN `gstatic.com` par défaut ; police d’icônes Material 9 996 o après tree-shaking ; total sur disque du dossier `build/web` 42 799 985 o (variants canvaskit inclus).
+
+**Tir d’essai T1b observé** (build release servi sur `127.0.0.1:8082`, API sur `127.0.0.1:8000`) :
+
+- Requêtes réseau constatées depuis le navigateur, toutes en **HTTP 200** : `GET /api/v1/listings`, `/communes`, `/categories`, puis les filtres réels `GET /api/v1/listings?type=DEMANDE` et `?q=Déménagement&type=DEMANDE`.
+- Aucun message d’erreur console ; CORS OK (origine `127.0.0.1:8082` autorisée avec crédentiels).
+- Rendu constaté via l’arbre d’accessibilité de la page : la carte « Aide au déménagement un samedi — Marcory — 16 oct. — Transport léger et déménagement » apparaît dans la section « Annonces près de vous », issus de la base MariaDB.
+- **Non mesurés :** le temps jusqu’au premier écran utile sur téléphone (aucun téléphone instrumenté dans cette séance), le poids réellement transféré compressé (le serveur local de test ne compresse pas), et la session Sanctum (routes d’authentification inexistantes, D-04 toujours ouverte).
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -147,8 +173,10 @@ L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs 
 ### Backend Laravel
 
 - API publique versionnée : `GET /api/v1/listings` (filtres `q`, `commune`, `category`, `type`, `nature`, pagination `page` / `per_page` plafonnée à 24) et `GET /api/v1/listings/{id}`, toutes deux limitées à 60 requêtes/minute.
+- Référentiels publics : `GET /api/v1/categories` et `GET /api/v1/communes` (éléments `active` uniquement, 60 requêtes/minute), qui alimentent les filtres de l’écran.
 - Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget, catégorie, commune et date.
 - Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14.
+- Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 2 comptes et 8 annonces fictifs de démonstration.
 - Modèles Eloquent avec relations et index de recherche (`status + commune + date`, `status + category + type + nature`).
 - Manifeste Composer Laravel 13 + Sanctum 4 + Filament 5, avec Pest, Pint et Larastan en développement. `composer.lock` versionné.
 - Workflow CI `.github/workflows/ci.yml` : Pest, Pint, Larastan côté backend ; `flutter analyze`, `flutter test`, build web release côté application.
@@ -158,17 +186,19 @@ L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs 
 - Page de découverte responsive reliée à l’API, avec filtres et états de chargement / erreur / vide.
 - Thème centralisé aux couleurs de la charte v2 (`app/lib/src/theme/soutrali_theme.dart`) : orange `#FE7402`, vert `#037C30`, ivoire `#FFF9F2`. Aucune couleur écrite dans les écrans.
 - Configuration française fonctionnelle (délégués Material/Cupertino).
-- Cinq tests : parsing du modèle d’annonce et filtres (2), comportement des actions de publication (3).
+- Filtres « Commune » et « Catégorie » alimentés par l’API de référentiels (le filtre commune n’est plus codé en dur), avec état dégradé propre si l’API est absente.
+- Neuf tests : modèle d’annonce et filtres (5), référentiels et transmission des filtres à l’API (4).
 - Actions « Annonce » et « Prestation de service » avec choix immédiat/programmé et validation de saisie côté interface.
 
 ### Vérifications exécutées
 
-- `pest` : 2 tests passés, 2 assertions (PHP 8.3.33, SQLite en mémoire).
-- `pint --test` : PASS sur 36 fichiers.
+- `pest` : **7 tests passés, 58 assertions** (PHP 8.3.33, SQLite en mémoire).
+- `pint --test` : PASS sur 41 fichiers.
 - `phpstan analyse` avec Larastan niveau 5 : aucune erreur.
 - `flutter analyze` : **No issues found** (corrigé le 22 oct., voir §2).
-- `flutter test` : **5 tests passés**.
-- `flutter build web --release` : compilation réussie ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
+- `flutter test` : **9 tests passés**.
+- `flutter build web --release` : compilation réussie (183,6 s) ; `main.dart.js` 3 294 322 o brut / 942 397 o gzip ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
+- Parcours navigateur → API → MariaDB observé avec données le 22 oct. : requêtes `listings`, `communes`, `categories` et filtres en HTTP 200, annonce rendue à l’écran (voir §2, étape T1).
 - `php artisan migrate` : **17 tables** créées (11 tables du modèle conceptuel + 6 tables d’infrastructure Laravel).
 - `GET /api/v1/listings` : **HTTP 200** avec une liste paginée vide — résultat normal tant que le seeder est vide.
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
@@ -179,14 +209,12 @@ L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs 
 
 ## 4. Ce qui bloque, et pourquoi
 
-**Résolus le 22 octobre 2026** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200. Voir §2, étape T0.
+**Résolus le 22 octobre 2026** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (étape T0). Composer a été retrouvé et son chemin documenté ; les référentiels sont en base et exposés par l’API, le parcours navigateur → API → base est observé avec des données (étape T1).
 
 | Blocage | Cause vérifiée | Conséquence |
 |---|---|---|
-| Composer introuvable dans la session de commande | Absent du PATH ; les dépendances sont pourtant déjà installées | `composer install` ne peut pas être relancé tel quel ; `php artisan` fonctionne car `vendor/` existe |
-| Le tir d’essai T1b est incomplet | Le parcours navigateur → API → base n’a pas encore été observé avec des données ; les mesures de poids compressé et de temps jusqu’au premier écran utile sur téléphone n’ont pas été faites | Les seuils de réussite ne peuvent pas être présentés à la MOA |
+| Le tir d’essai T1b est incomplet | Le parcours navigateur → API → base est observé avec données, mais la session Sanctum n’est pas testée (routes d’authentification inexistantes, D-04 ouverte) et les mesures téléphone (temps jusqu’au premier écran utile, poids réellement transféré compressé) ne sont pas faites | Les seuils de réussite ne peuvent pas être présentés à la MOA |
 | Les parcours compte / publication / contact / signalement n’existent pas | Les décisions produit D-04 (inscription), D-05 (canal de contact) et D-06 (modération) sont **ouvertes** | Impossible d’implémenter sans trancher ; ne pas inventer |
-| Le seeder est vide et les routes de référentiels n’existent pas | Aucune donnée de démonstration chargée ; `GET /api/v1/categories` et `/communes` ne sont pas écrites | Alimenter le seeder n’aurait aucun effet observable tant que ces routes manquent |
 
 ---
 
@@ -194,15 +222,18 @@ L’exécution n°3 (commit `2069a1f`) est **entièrement réussie** : les jobs 
 
 L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran avant la fin de T1b.**
 
-1. **T0 — débloquer l’environnement : fait le 22 octobre 2026**, sauf un point.
+1. **T0 — débloquer l’environnement : fait le 22 octobre 2026**
    - Compte SQL dédié créé, droits limités à `soutrali`. **Fait.**
    - Migrations exécutées, 17 tables vérifiées. **Fait.**
    - `GET /api/v1/listings` répond 200. **Fait.**
-   - Reste : rendre Composer disponible dans la session de commande, ou documenter le chemin exact de l’exécutable.
-2. **T1 — données de référence**
-   - Alimenter le seeder : les communes d’Abidjan (liste D-03 à confirmer) et les catégories proposées (D-07), sans donnée personnelle réelle.
-3. **T1b — tir d’essai**
-   - Faire répondre l’API à l’écran Flutter Web avec des données réelles de la base.
+   - Composer retrouvé et chemin exact documenté dans `INSTALLATION.md`. **Fait.**
+2. **T1 — données de référence : fait le 22 octobre 2026**
+   - Seeder chargé : 14 lignes de communes (D-03 validée), 8 catégories (D-07 validées) +, en local, 2 comptes et 8 annonces fictifs. **Fait.**
+   - Routes `GET /api/v1/categories` et `GET /api/v1/communes` écrites et vérifiées par HTTP réel. **Fait.**
+   - Filtres Flutter commune et catégorie alimentés par l’API. **Fait.**
+   - Hors T1, toujours ouvert : les routes de publication et d’authentification n’existent pas (D-04).
+3. **T1b — tir d’essai : en cours**
+   - Faire répondre l’API à l’écran Flutter Web avec des données de la base. **Fait le 22 oct. 2026** (requêtes 200 observées, annonce rendue à l’écran).
    - Valider la session Sanctum de bout en bout : connexion, requête mutante avec CSRF, déconnexion, en développement puis sur build servi par la même origine.
    - Mesurer le poids compressé et le temps jusqu’au premier écran utile sur un téléphone Android courant en réseau limité. **Seuils à fixer avec la MOA ; aucun chiffre inventé.**
    - Si la mesure échoue durablement : évaluer `--wasm`, chargement différé, assets réduits, puis rouvrir T-01 pour le web seul.

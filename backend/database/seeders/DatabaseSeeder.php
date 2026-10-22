@@ -14,6 +14,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Référentiels et comptes de test seront ajoutés après validation métier.
+        $this->call([
+            CommuneSeeder::class,
+            CategorySeeder::class,
+        ]);
+
+        // Les données de démonstration ne sont chargées qu'en local :
+        // aucun compte ni contenu fictif en préproduction ou en production.
+        if (app()->environment('local')) {
+            $this->call(DemoSeeder::class);
+        }
     }
 }
