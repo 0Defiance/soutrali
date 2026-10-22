@@ -1,0 +1,36 @@
+# Fins de ligne normalisées : le développement se fait sous Windows, la CI
+# (GitHub Actions) et l'hébergement cible tournent sous Linux. Sans cette
+# normalisation, `backend/artisan` et les scripts peuvent recevoir des CRLF et
+# casser leur shebang côté Linux.
+* text=auto eol=lf
+
+# Exécutables et sources interprétés côté serveur
+*.php   text eol=lf
+*.blade text eol=lf
+artisan text eol=lf
+*.sh    text eol=lf
+
+# Sources et configuration du client Flutter
+*.dart text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.svg  text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Binaires : aucune conversion, aucune fusion texte
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.docx binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary

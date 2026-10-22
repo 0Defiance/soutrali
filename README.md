@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Logo Soutrali _ entraide en couleurs.png" alt="Soutrali – L’entraide à porter de main" width="260">
+  <img src="brand/logo/soutrali-logo-couleurs.png" alt="Soutrali – L’entraide à porter de main" width="260">
 </p>
 
 # Soutrali — L’entraide à porter de main
@@ -10,11 +10,38 @@ Plateforme d’entraide et de services de proximité entre habitants d’une mê
 >
 > **Neutralité technologique :** ce document ne choisit aucun langage, framework, base de données ni hébergeur. Le choix technique (« stack v3 ») sera fait ensuite, en équipe.
 >
-> **Version :** 4.0 · **Dernière mise à jour :** 20 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage et conception, aucun code écrit à ce jour.
+> **Version :** 4.1 · **Dernière mise à jour :** 22 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage validé, socle technique en cours de construction.
+>
+> **Ce README reste le document unique de contexte fonctionnel** (décisions D-15 et D-16). Il décrit *ce qu’est Soutrali et ce qui est décidé*. Il ne décrit pas le code.
+
+---
+
+## Où est le code et la documentation technique
+
+Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage.
+
+| Chemin | Contenu |
+|---|---|
+| `app/` | Application Flutter/Dart partagée — site web d’abord, Android ensuite (T-01) |
+| `backend/` | Laravel 13 : API REST `/api/v1`, migrations, panneau Filament sur `/admin` |
+| `docs/INSTALLATION.md` | **Commencer ici.** Prérequis, versions constatées, base de données, démarrage Web et API |
+| `docs/SUIVI_DEVELOPPEMENT.md` | Journal technique étape par étape : ce qui est fait, vérifié, bloqué et restant |
+| `docs/README_TECHNIQUE.md` | Architecture de référence détaillée (v1.0) |
+| `docs/Soutrali_Stack_Technique_v3.docx` | **Décisions techniques T-01 à T-14 validées** par le porteur le 20 octobre 2026 |
+| `docs/Soutrali_Cahier_des_Charges_UML_v2.docx` | Spécification détaillée et diagrammes UML — à valider |
+| `docs/Soutrali_Charte_Graphique_v2.docx` | Logo, palette, typographie, composants — à valider |
+| `docs/Soutrali_Stack_Technique_v0.1.docx` | Première réflexion technique — **remplacée par la v3, conservée pour historique** |
+| `docs/archive/` | Documents de la phase 1, explicitement remplacés (§23) |
+| `brand/logo/` | Logo de marque |
+| `.github/workflows/ci.yml` | Intégration continue : Pest, Pint, Larastan, `flutter analyze`, `flutter test`, build web (T-12) |
+
+**État en une phrase :** le socle T1 est partiellement en place et le tir d’essai T1b n’est pas terminé — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
 
 ---
 
 ## Sommaire
+
+→ [Où est le code et la documentation technique](#où-est-le-code-et-la-documentation-technique)
 
 0. [Comment utiliser ce document](#0-comment-utiliser-ce-document)
 1. [Soutrali en une minute](#1-soutrali-en-une-minute)
@@ -607,9 +634,18 @@ Couleurs de marque **mesurées** sur le logo ; couleurs d’interface dérivées
 
 Français clair, chaleureux, direct, compréhensible par un public large. Pas de jargon technique dans les textes destinés aux habitants. Messages respectueux, inclusifs, orientés vers l’action. Exemple : « Trouver un coup de main » plutôt que « Découvrez nos solutions innovantes ». Afficher clairement étapes, erreurs, états vides, confirmations et prochaines étapes. **Pas de faux témoignages ni de statistiques inventées.**
 
-### 15.7 Fichiers d’identité livrés (dossier `brand/`)
+### 15.7 Fichiers d’identité réellement présents dans le dépôt
 
-13 variantes de logo en SVG · PNG transparents 1600 px · PDF d’impression · favicon (ICO 16/32/48, PNG 32, SVG) · icône iOS 180 · icônes 192 et 512 · icône 512 « maskable » · fichier de couleurs et d’espacements. Tracé vectoriel **fidèle au logo reçu mais non dessiné à l’origine** ; à régénérer si le logo est retravaillé. Le détail du favicon à 16 px est à vérifier sur écran réel.
+**Correction du 22 octobre 2026.** La liste ci-dessous remplace une description antérieure qui annonçait un dossier `brand/` complet (13 variantes SVG, PNG 1600 px, PDF, favicons, icônes 192/512/maskable). **Ces fichiers n’ont jamais été produits** : ils ne figurent ni dans le dépôt ni sur le poste de travail. Conformément à la règle « ne pas prétendre qu’un fichier a été fait s’il ne l’a pas été », voici l’existant vérifié :
+
+| Fichier | État réel |
+|---|---|
+| `brand/logo/soutrali-logo-couleurs.png` | Logo de marque reçu, source unique (1 149 220 octets) |
+| `app/assets/brand/soutrali-logo.png` | Copie redimensionnée utilisée par l’application Flutter (248 267 octets) |
+| `app/web/favicon.png`, `app/web/icons/Icon-192.png`, `Icon-512.png`, `Icon-maskable-192.png`, `Icon-maskable-512.png` | **Icônes par défaut du squelette Flutter généré** (logo Flutter bleu), **pas** la marque Soutrali — à remplacer |
+| `backend/public/favicon.ico` | **Fichier vide (0 octet)** — à régénérer |
+
+**Reste à produire** (aucun de ces éléments n’est livré) : variantes SVG du logo, déclinaisons monochrome et inversée, favicons ICO/PNG/SVG, icônes 192/512/maskable aux couleurs de la marque, PDF d’impression, fichier de couleurs et d’espacements. Le tracé vectoriel devra être **fidèle au logo reçu mais non dessiné à l’origine** ; à régénérer si le logo est retravaillé (D-02). Le détail du favicon à 16 px est à vérifier sur écran réel.
 
 ---
 
@@ -675,10 +711,10 @@ Le succès ne se mesure pas au nombre de fonctionnalités, mais à l’utilité 
 | 1 | Cadrage du projet pilote | Fait |
 | 2 | Rassembler l’existant dans le projet | Fait |
 | 3 | Cahier des charges complet | En cours (v2 rédigé, à valider ; maquettes à produire) |
-| 4 | Stack technique | À définir ensemble (version v3) |
-| 5 | Environnement de travail collaboratif (gestion de code, suivi des tâches, documentation) | À faire |
-| 6 | Test interne de validation | À faire |
-| 7 | Documentation de prise en main | À faire |
+| 4 | Stack technique | **Fait côté porteur** : v3.1 validée le 20 oct. 2026 (T-01 à T-14) ; validation MOA à venir |
+| 5 | Environnement de travail collaboratif (gestion de code, suivi des tâches, documentation) | En cours : dépôt GitHub et code source publiés le 22 oct. 2026, CI active ; backlog et suivi des tâches restants |
+| 6 | Test interne de validation | À faire (tir d’essai T1b non terminé, voir `docs/SUIVI_DEVELOPPEMENT.md`) |
+| 7 | Documentation de prise en main | En cours : `docs/INSTALLATION.md` et `docs/SUIVI_DEVELOPPEMENT.md` rédigés le 22 oct. 2026 |
 | 8 | Présentation à la maîtrise d’ouvrage (problème, public, solution, périmètre MVP, parcours clés, risques, planning, décisions attendues) | À faire |
 
 Une phase n’est « validée » qu’après un retour explicite du porteur du projet.
@@ -732,6 +768,7 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 | D-14 | README sans contenu technique | **Validé** | Tant que la stack v3 n’est pas arrêtée |
 | D-15 | Document unique | **Validé** | `README.md` est le document unique de contexte ; il remplace `ContexteSoutrali.md` |
 | D-16 | README = outil principal de reprise | **Validé** | Description complète, principes inclus, utilisable par une autre équipe et avec une autre technologie |
+| D-17 | Structure du dépôt et documentation du code | **Validé** (22 oct. 2026) | Un seul dépôt `soutrali` : `app/`, `backend/`, `.github/`, `brand/` et `docs/`. Le README de cadrage reste à la racine (D-15, D-16 conservés) ; le suivi technique étape par étape vit dans `docs/SUIVI_DEVELOPPEMENT.md`, la procédure de démarrage dans `docs/INSTALLATION.md`. La Documentation v1 est archivée sous `docs/archive/` |
 
 ---
 
@@ -771,9 +808,27 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 5. Produire les maquettes, puis un backlog (épics, user stories, critères d’acceptation) à partir des §6, §7, §8 et §13.
 6. Récupérer les polices et valider le rendu du logo et des icônes sur appareils réels.
 
-### 22.3 Ce qui n’existe pas encore
+### 22.3 Ce qui existe et ce qui n’existe pas encore
 
-Aucun code, aucun test, aucun déploiement, aucune maquette, aucune politique de confidentialité ni conditions d’utilisation rédigées, aucune donnée de démonstration. Une première réflexion technique (« stack v0.1 ») a été rédigée puis **mise en attente** : elle ne lie personne.
+**Correction du 22 octobre 2026.** Ce paragraphe affirmait « aucun code, aucun test ». C’était exact au 20 octobre mais ne l’est plus : un socle technique a été construit. Voici l’état vérifié.
+
+**Existe désormais :**
+
+- un dépôt Git public unique (`github.com/0Defiance/soutrali`) versionnant le cadrage, la documentation et le code ;
+- une application Flutter/Dart avec une page de découverte, un thème aux couleurs de la charte v2, un client HTTP branché sur `GET /api/v1/listings` et deux tests ;
+- un backend Laravel 13 avec l’API publique des annonces (filtres, pagination), les migrations des onze tables du modèle conceptuel, et une intégration continue (T-12) ;
+- la stack technique v3.1 validée par le porteur (T-01 à T-14).
+
+**N’existe toujours pas :**
+
+- aucun déploiement, aucune préproduction, aucun hébergement choisi (D-09) ;
+- aucune maquette des écrans ;
+- aucune politique de confidentialité ni conditions d’utilisation rédigées (D-10) ;
+- aucune donnée de démonstration : le seeder est vide, ni communes ni catégories ne sont chargées ;
+- aucun parcours d’authentification, de publication, de contact, de signalement ni de modération implémenté ;
+- le tir d’essai T1b n’est pas terminé : l’API n’a jamais été observée en fonctionnement de bout en bout depuis le navigateur.
+
+La première réflexion technique « stack v0.1 » reste conservée sous `docs/` pour historique : elle est **remplacée** par la v3.1 et ne lie personne.
 
 ### 22.4 Pièges à éviter
 
@@ -790,12 +845,16 @@ Aucun code, aucun test, aucun déploiement, aucune maquette, aucune politique de
 
 | Livrable | Version | Contenu | État |
 |---|---|---|---|
-| `README.md` (ce fichier) | 4.0 | Contexte complet et outil de reprise | Vivant |
-| Cahier des charges UML | 2.0 | Spécification détaillée, 5 diagrammes UML (PlantUML), page de garde | À valider |
-| Charte graphique | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
-| Stack technique | 0.1 | Première réflexion technique | **En attente** (base pour la v3, sans engagement) |
-| Dossier `brand/` | 1 | Logos, icônes, favicons, couleurs, scripts de génération | À valider sur appareils réels |
-| Anciennes versions (cahier des charges v1, charte v1, contextualisation v1) | — | Historique | Remplacées, à archiver |
+| `README.md` (ce fichier) | 4.1 | Contexte complet et outil de reprise | Vivant |
+| `docs/SUIVI_DEVELOPPEMENT.md` | 1.0 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
+| `docs/INSTALLATION.md` | 1.0 | Prérequis, versions constatées, base de données, démarrage Web et API | Vivant |
+| `docs/README_TECHNIQUE.md` | 1.0 | Architecture de référence détaillée | Vivant |
+| Cahier des charges UML (`docs/…_v2.docx`) | 2.0 | Spécification détaillée, 5 diagrammes UML, page de garde | À valider |
+| Charte graphique (`docs/…_v2.docx`) | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
+| Stack technique (`docs/…_v3.docx`) | 3.1 | Décisions T-01 à T-14, points d’attention P-01 à P-08, plan T0 à T8 | **Validée par le porteur** ; MOA à venir |
+| Stack technique (`docs/…_v0.1.docx`) | 0.1 | Première réflexion technique | **Remplacée** par la v3, conservée pour historique |
+| `brand/logo/` | 1 | Logo de marque source (PNG) | Icônes et déclinaisons **non produites**, voir §15.7 |
+| `docs/archive/` | — | Cahier des charges v1, charte v1, contextualisation v1 | Remplacées, archivées |
 
 En cas d’écart entre ce README et un document Word, signaler l’écart et corriger par une entrée au journal.
 
@@ -829,16 +888,18 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 15 oct. 2026 | Rédaction en amont du cahier des charges v1, de la charte v1 et de la contextualisation v1 | — |
 | 19 oct. 2026 | Intégration de l’existant ; cadrage des 18 besoins ; réception du logo ; extraction des couleurs, vectorisation, icônes ; cahier des charges v2, charte v2, première réflexion technique v0.1 | D-01 Abidjan ; palette proposée |
 | 20 oct. 2026 | Pages de garde des trois documents ; essais d’accès GitHub (lecture seule, écriture impossible depuis la conversation) ; publication manuelle décidée ; fusion contexte + README ; réécriture complète du README comme outil de reprise | D-13 stack remise à la v3 ; D-14, D-15, D-16 |
+| 20 oct. 2026 | Stack technique v3.1 rédigée et validée par le porteur (T-01 à T-14) ; socle Flutter + Laravel créé ; base `soutrali` créée dans XAMPP (restée vide, migrations non appliquées) | T-01 à T-14 validées |
+| 22 oct. 2026 | Publication du code source sur GitHub : dépôt local initialisé, arborescence réorganisée (`app/`, `backend/`, `docs/`, `brand/`, `.github/`), Documentation v1 archivée, `.gitattributes` ajouté, contrôle des secrets effectué. Correction des sections périmées du présent README (§15.7, §19.1, §22.3, §23) et de l’image d’en-tête cassée. Rédaction de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` | D-17 structure du dépôt |
 
 ---
 
 ## 26. Prochaines étapes
 
-1. Publier ce `README.md` et le dossier `brand/` dans le dépôt (manuellement).
+1. **Terminer le tir d’essai T1b** : appliquer les migrations sur la base `soutrali` (créer l’utilisateur SQL manquant), alimenter le seeder (13 communes, 8 catégories), faire répondre l’API à l’écran Flutter Web, valider la session Sanctum de bout en bout, puis mesurer poids et temps jusqu’au premier écran utile sur téléphone. Seuils à fixer avec la MOA. Voir `docs/SUIVI_DEVELOPPEMENT.md`.
 2. Valider ou corriger les décisions proposées (D-02, D-03, D-05, D-06) et trancher D-04.
 3. Phase 3 : maquettes des écrans clés (accueil, résultats, détail, publier, mes annonces, modération) sur la charte v2, puis arrêt du cahier des charges.
-4. Phase 4 : construire ensemble la stack technique v3.
-5. Phase 5 : choisir les outils collaboratifs et créer le backlog à partir du cahier des charges.
+4. Phase 5 : créer le backlog produit à partir du cahier des charges ; choisir l’outil de suivi des tâches.
+5. Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.
 6. Phases 6 à 8 : test interne, documentation de prise en main, présentation à la MOA.
 
 ---
