@@ -1,9 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../theme/soutrali_theme.dart';
+import '../account/account_repository.dart';
+import '../auth/auth_repository.dart';
+import '../messaging/messaging_repository.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
 import 'references_repository.dart';
@@ -109,15 +113,162 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             const Text('Abidjan', style: TextStyle(color: SoutraliColors.muted)),
             const SizedBox(width: 12),
           ],
-          IconButton(
-            tooltip: 'Profil utilisateur',
-            onPressed: _showProfileDialog,
-            icon: const CircleAvatar(
-              radius: 19,
-              backgroundColor: SoutraliColors.paleGreen,
-              child: Icon(Icons.person_outline, color: SoutraliColors.deepGreen),
+          _buildAccountActions(context, compact: compact),
+        ],
+      ),
+    );
+  }
+
+  /// Actions du compte : visiteur → connexion / inscription ; connecté →
+  /// menu (annonces, messagerie avec compteur de non-lus, profil, déconnexion).
+  Widget _buildAccountActions(BuildContext context, {required bool compact}) {
+    final auth = ref.watch(authProvider);
+    final user = auth.value;
+    final unread = ref.watch(conversationsProvider).value?.unreadTotal ?? 0;
+
+    if (auth.isLoading && !auth.hasValue) {
+      return const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (user == null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextButton(
+            onPressed: () => context.go('/login'),
+            child: const Text('Connexion'),
+          ),
+          const SizedBox(width: 4),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: SoutraliColors.orange,
+              foregroundColor: SoutraliColors.ink,
+              minimumSize: const Size(44, 40),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
             ),
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+            onPressed: () => context.go('/register'),
+            child: const Text('S’inscrire'),
+          ),
+        ],
+      );
+    }
+
+    return PopupMenuButton<String>(
+      tooltip: 'Menu du compte',
+      onSelected: (value) {
+        switch (value) {
+          case 'annonces':
+            context.go('/mes-annonces');
+          case 'messagerie':
+            context.go('/messagerie');
+          case 'profil':
+            _showProfileDialog();
+          case 'deconnexion':
+            _signOut();
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'annonces',
+          child: Row(children: [Icon(Icons.campaign_outlined, size: 20), SizedBox(width: 10), Text('Mes annonces')]),
+        ),
+        PopupMenuItem(
+          value: 'messagerie',
+          child: Row(
+            children: [
+              const Icon(Icons.chat_bubble_outline, size: 20),
+              const SizedBox(width: 10),
+              const Text('Messagerie'),
+              if (unread > 0) ...[
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 10,
+                  backgroundColor: SoutraliColors.orange,
+                  child: Text(
+                    '$unread',
+                    style: const TextStyle(fontSize: 11, color: SoutraliColors.ink),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'profil',
+          child: Row(children: [Icon(Icons.person_outline, size: 20), SizedBox(width: 10), Text('Mon profil')]),
+        ),
+        const PopupMenuDivider(),
+        const PopupMenuItem(
+          value: 'deconnexion',
+          child: Row(children: [Icon(Icons.logout, size: 20), SizedBox(width: 10), Text('Se déconnecter')]),
+        ),
+      ],
+      child: CircleAvatar(
+        radius: 19,
+        backgroundColor: SoutraliColors.green,
+        child: Text(
+          user.initials,
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await ref.read(authProvider.notifier).logout();
+    } catch (_) {
+      ref.read(authProvider.notifier).resetLocally();
+    }
+
+    ref.invalidate(conversationsProvider);
+    ref.invalidate(myListingsProvider);
+    ref.invalidate(myReportsProvider);
+
+    if (mounted) {
+      context.go('/');
+    }
+  }
+
+  Future<void> _showLoginPrompt() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.lock_outline, color: SoutraliColors.orange),
+        title: const Text('Connectez-vous pour publier'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 440),
+          child: const Text(
+            'La publication demande un compte gratuit (e-mail + mot de passe). '
+            'Vous pourrez ensuite gérer vos annonces, contacter les auteurs et suivre vos signalements.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Plus tard'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.go('/register');
+            },
+            child: const Text('Créer un compte'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: SoutraliColors.green,
+              minimumSize: const Size(44, 44),
+            ),
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.go('/login');
+            },
+            child: const Text('Se connecter'),
           ),
         ],
       ),
@@ -125,21 +276,135 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Future<void> _showProfileDialog() async {
+    final user = ref.read(authProvider).value;
+    final reportsFuture = user == null ? null : ref.read(myReportsProvider.future);
+
     await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.person_outline, color: SoutraliColors.green),
-        title: const Text('Votre profil Soutrali'),
-        content: const Text(
-          'La connexion et la création de compte seront disponibles avec le backend. '
-          'Aucune donnée de profil n’est encore enregistrée.',
+        title: Text(user == null ? 'Votre profil Soutrali' : 'Compte de ${user.displayName}'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: user == null
+              ? const Text(
+                  'Créez un compte pour publier vos annonces, contacter les auteurs, '
+                  'suivre vos messages et vos signalements.',
+                )
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _profileLine('Nom', user.displayName),
+                      _profileLine('E-mail', user.email),
+                      _profileLine('Commune', user.communeName ?? '—'),
+                      _profileLine('Rôle', user.role ?? 'UTILISATEUR'),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const Text(
+                        'Mes signalements',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 200,
+                        child: FutureBuilder(
+                          future: reportsFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState != ConnectionState.done) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+
+                            final reports = snapshot.data ?? const [];
+                            if (reports.isEmpty) {
+                              return const Align(
+                                alignment: Alignment.topLeft,
+                                child: Text(
+                                  'Aucun signalement émis.',
+                                  style: TextStyle(color: SoutraliColors.muted),
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              itemCount: reports.length,
+                              itemBuilder: (context, index) {
+                                final report = reports[index];
+                                return ListTile(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(Icons.flag_outlined, size: 18, color: SoutraliColors.orange),
+                                  title: Text(report.reason, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  subtitle: Text(
+                                    '${report.listingTitle} · ${_reportStatusLabel(report.status)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fermer')),
+          if (user == null) ...[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                context.go('/register');
+              },
+              child: const Text('Créer un compte'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: SoutraliColors.green),
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                context.go('/login');
+              },
+              child: const Text('Se connecter'),
+            ),
+          ] else
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _signOut();
+              },
+              child: const Text('Se déconnecter'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Fermer'),
+          ),
         ],
       ),
     );
   }
+
+  Widget _profileLine(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label : ', style: const TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  String _reportStatusLabel(String status) => switch (status) {
+        'NOUVEAU' => 'enregistré',
+        'EN_EXAMEN' => 'en cours d’examen',
+        'TRAITE' => 'traité',
+        'REJETE' => 'classé sans suite',
+        _ => status.toLowerCase(),
+      };
 
   Future<void> _showPublicationChoices({required bool isRequest}) async {
     final color = isRequest ? SoutraliColors.orange : SoutraliColors.green;
@@ -226,105 +491,226 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     required _PublicationChoice choice,
     required Color color,
   }) async {
+    if (ref.read(authProvider).value == null) {
+      await _showLoginPrompt();
+      return;
+    }
+
+    List<ReferenceItem> categories;
+    List<ReferenceItem> communes;
+    try {
+      categories = await ref.read(categoriesProvider.future);
+      communes = await ref.read(communesProvider.future);
+    } catch (_) {
+      categories = const <ReferenceItem>[];
+      communes = const <ReferenceItem>[];
+    }
+
+    if (!mounted) return;
+
     final formKey = GlobalKey<FormState>();
     final titleController = TextEditingController();
     final descriptionController = TextEditingController();
     final availabilityController = TextEditingController();
+    final budgetController = TextEditingController();
     final isScheduled = choice.kind == 'scheduled';
     final dialogTitle = isRequest
         ? (isScheduled ? 'Planifier un besoin' : 'Décrire votre besoin')
         : (isScheduled ? 'Décrire mes disponibilités' : 'Répondre à un besoin');
 
+    var categoryId = '';
+    var communeId = ref.read(authProvider).value?.communeId?.toString() ?? '';
+    var nature = 'BENEVOLE';
+    var submitting = false;
+    var errorMessage = '';
+
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(dialogTitle),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: 520),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: titleController,
-                    maxLength: 120,
-                    decoration: InputDecoration(
-                      labelText: isRequest ? 'Quel est votre besoin ?' : 'Quel service proposez-vous ?',
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Ce champ est obligatoire.'
-                        : null,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: descriptionController,
-                    minLines: 3,
-                    maxLines: 5,
-                    maxLength: 1000,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      alignLabelWithHint: true,
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Ajoutez quelques précisions.'
-                        : null,
-                  ),
-                  if (isScheduled) ...[
-                    const SizedBox(height: 12),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(dialogTitle),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     TextFormField(
-                      controller: availabilityController,
-                      maxLength: 160,
+                      controller: titleController,
+                      maxLength: 120,
                       decoration: InputDecoration(
-                        labelText: isRequest ? 'Date ou période souhaitée' : 'Mes jours et horaires disponibles',
-                        hintText: isRequest ? 'Ex. semaine du 10 novembre' : 'Ex. lundi et mercredi après 16 h',
+                        labelText: isRequest ? 'Quel est votre besoin ?' : 'Quel service proposez-vous ?',
                       ),
                       validator: (value) => value == null || value.trim().isEmpty
-                          ? 'Précisez une date ou vos disponibilités.'
+                          ? 'Ce champ est obligatoire.'
                           : null,
                     ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: descriptionController,
+                      minLines: 3,
+                      maxLines: 5,
+                      maxLength: 1000,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        alignLabelWithHint: true,
+                      ),
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? 'Ajoutez quelques précisions.'
+                          : null,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: categories.any((item) => item.id.toString() == categoryId) ? categoryId : '',
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Catégorie *'),
+                      items: [
+                        const DropdownMenuItem(value: '', child: Text('— Choisir —')),
+                        for (final item in categories)
+                          DropdownMenuItem(value: item.id.toString(), child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                      onChanged: (value) => setDialogState(() => categoryId = value ?? ''),
+                      validator: (value) => (value == null || value.isEmpty) ? 'Catégorie obligatoire.' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: communes.any((item) => item.id.toString() == communeId) ? communeId : '',
+                      isExpanded: true,
+                      decoration: const InputDecoration(labelText: 'Commune *'),
+                      items: [
+                        const DropdownMenuItem(value: '', child: Text('— Choisir —')),
+                        for (final item in communes)
+                          DropdownMenuItem(value: item.id.toString(), child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      ],
+                      onChanged: (value) => setDialogState(() => communeId = value ?? ''),
+                      validator: (value) => (value == null || value.isEmpty) ? 'Commune obligatoire.' : null,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Nature *', style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Bénévole'),
+                          selected: nature == 'BENEVOLE',
+                          onSelected: (_) => setDialogState(() => nature = 'BENEVOLE'),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Rémunérée'),
+                          selected: nature == 'REMUNEREE',
+                          onSelected: (_) => setDialogState(() => nature = 'REMUNEREE'),
+                        ),
+                      ],
+                    ),
+                    if (nature == 'REMUNEREE') ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: budgetController,
+                        keyboardType: TextInputType.number,
+                        maxLength: 12,
+                        decoration: const InputDecoration(
+                          labelText: 'Budget indicatif en FCFA (facultatif)',
+                          hintText: 'Ex. 5000',
+                        ),
+                      ),
+                    ],
+                    if (isScheduled) ...[
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: availabilityController,
+                        maxLength: 160,
+                        decoration: InputDecoration(
+                          labelText: isRequest ? 'Date ou période souhaitée' : 'Mes jours et horaires disponibles',
+                          hintText: isRequest ? 'Ex. semaine du 10 novembre' : 'Ex. lundi et mercredi après 16 h',
+                        ),
+                        validator: (value) => value == null || value.trim().isEmpty
+                            ? 'Précisez une date ou vos disponibilités.'
+                            : null,
+                      ),
+                    ],
+                    if (categories.isEmpty || communes.isEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Référentiels indisponibles : fermez cette fenêtre et réessayez.',
+                        style: TextStyle(color: SoutraliColors.orangeText, fontSize: 13),
+                      ),
+                    ],
+                    if (errorMessage.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(errorMessage, style: const TextStyle(color: SoutraliColors.orangeText, fontSize: 13)),
+                    ],
                   ],
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Ce brouillon reste sur cet écran : la connexion et l’API de publication ne sont pas encore activées.',
-                    style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Fermer'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: color,
-              foregroundColor: isRequest ? SoutraliColors.ink : Colors.white,
-              minimumSize: const Size(44, 44),
+          actions: [
+            TextButton(
+              onPressed: submitting ? null : () => Navigator.pop(dialogContext),
+              child: const Text('Fermer'),
             ),
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                Navigator.pop(dialogContext);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Formulaire vérifié. Connectez-vous lorsque la publication sera activée.'),
-                  ),
-                );
-              }
-            },
-            child: const Text('Vérifier le formulaire'),
-          ),
-        ],
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: color,
+                foregroundColor: isRequest ? SoutraliColors.ink : Colors.white,
+                minimumSize: const Size(44, 44),
+              ),
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      if (!(formKey.currentState?.validate() ?? false)) return;
+
+                      setDialogState(() {
+                        submitting = true;
+                        errorMessage = '';
+                      });
+
+                      try {
+                        await ref.read(accountRepositoryProvider).create(
+                              ListingDraft(
+                                title: titleController.text.trim(),
+                                description: descriptionController.text.trim(),
+                                type: isRequest ? 'DEMANDE' : 'OFFRE',
+                                nature: nature,
+                                categoryId: int.parse(categoryId),
+                                communeId: int.parse(communeId),
+                                availability: isScheduled ? availabilityController.text.trim() : null,
+                                budget: nature == 'REMUNEREE' ? double.tryParse(budgetController.text.trim()) : null,
+                              ),
+                            );
+
+                        if (!dialogContext.mounted) return;
+                        Navigator.pop(dialogContext);
+                        ref.invalidate(listingsProvider);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Annonce publiée : visible immédiatement.')),
+                          );
+                        }
+                      } catch (error) {
+                        setDialogState(() {
+                          submitting = false;
+                          errorMessage = apiErrorMessage(error);
+                        });
+                      }
+                    },
+              child: submitting
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Publier l’annonce'),
+            ),
+          ],
+        ),
       ),
     );
 
     titleController.dispose();
     descriptionController.dispose();
     availabilityController.dispose();
+    budgetController.dispose();
   }
 
   Widget _buildIntro(bool compact) {
@@ -720,9 +1106,14 @@ class _ListingCard extends StatelessWidget {
     final isVolunteer = listing.nature == 'BENEVOLE';
     final date = listing.createdAt == null ? '' : DateFormat('d MMM', 'fr').format(listing.createdAt!);
 
-    return Container(
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () => context.push('/listing/${listing.id}'),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
       decoration: BoxDecoration(
-        color: Colors.white,
         border: Border.all(color: SoutraliColors.border),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -758,6 +1149,8 @@ class _ListingCard extends StatelessWidget {
             Text(listing.category, style: const TextStyle(color: SoutraliColors.orangeText, fontSize: 13, fontWeight: FontWeight.w600)),
           ],
         ],
+        ),
+      ),
       ),
     );
   }

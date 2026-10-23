@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+
+        // Aucune route web de connexion n'existe : la connexion vit dans
+        // l'application Flutter. Les requêtes API non authentifiées doivent
+        // renvoyer du JSON (401), jamais une redirection vers route('login').
+        $middleware->redirectGuestsTo(fn () => '/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -42,6 +42,9 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    /**
+     * @return BelongsTo<Commune, $this>
+     */
     public function commune(): BelongsTo
     {
         return $this->belongsTo(Commune::class);

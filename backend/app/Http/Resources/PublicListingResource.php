@@ -20,9 +20,14 @@ class PublicListingResource extends JsonResource
             'type' => $this->type,
             'nature' => $this->nature,
             'availability' => $this->availability,
-            'budget' => $this->budget,
+            // Le cast decimal:2 renvoie une chaîne : on force un nombre JSON.
+            'budget' => $this->budget !== null ? (float) $this->budget : null,
             'category' => ['name' => $this->category?->name],
             'commune' => ['name' => $this->commune?->name],
+            'author' => $this->whenLoaded('author', fn () => [
+                'id' => $this->author?->id,
+                'display_name' => $this->author?->display_name,
+            ]),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

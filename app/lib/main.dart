@@ -7,5 +7,5 @@ import 'src/app.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('fr');
-  runApp(const ProviderScope(child: SoutraliApp()));
+  runApp(ProviderScope(child: SoutraliApp()));
 }

@@ -45,6 +45,6 @@ class PublicListingController
     {
         abort_unless($listing->status === 'PUBLIEE', 404);
 
-        return new PublicListingResource($listing->load(['category:id,name', 'commune:id,name']));
+        return new PublicListingResource($listing->load(['category:id,name', 'commune:id,name', 'author:id,display_name']));
     }
 }

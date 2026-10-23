@@ -30,7 +30,7 @@ void main() {
                 ReferenceItem(id: 5, name: 'Informatique et numérique'),
               ]),
         ],
-        child: const SoutraliApp(),
+        child: SoutraliApp(),
       ),
     );
     await tester.pumpAndSettle();

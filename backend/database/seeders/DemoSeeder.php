@@ -4,7 +4,9 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Commune;
+use App\Models\Interaction;
 use App\Models\Listing;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -155,6 +157,40 @@ class DemoSeeder extends Seeder
                     'created_at' => now()->subDays(count($listings) - $index),
                     'updated_at' => now()->subDays(count($listings) - $index),
                 ],
+            );
+        }
+
+        $this->seedConversation($koffi, $awa);
+    }
+
+    /**
+     * Un fil de démonstration prêt à consulter en se connectant comme Koffi.
+     *
+     * @param  User  $koffi  auteur de l'annonce « Réparer un ventilateur de plafond »
+     * @param  User  $awa  initiateur du fil
+     */
+    private function seedConversation(User $koffi, User $awa): void
+    {
+        $listing = Listing::where('title', 'Réparer un ventilateur de plafond')->first();
+
+        if ($listing === null) {
+            return;
+        }
+
+        $interaction = Interaction::firstOrCreate([
+            'listing_id' => $listing->id,
+            'initiator_id' => $awa->id,
+        ]);
+
+        $messages = [
+            ['sender_id' => $awa->id, 'body' => 'Bonjour, votre annonce pour le ventilateur est-elle toujours d’actualité ?', 'created_at' => now()->subDay()],
+            ['sender_id' => $koffi->id, 'body' => 'Bonjour Awa, oui toujours ! Je suis disponible en semaine après 16 h.', 'created_at' => now()->subDay()->addMinutes(45)],
+        ];
+
+        foreach ($messages as $message) {
+            Message::firstOrCreate(
+                ['interaction_id' => $interaction->id, 'body' => $message['body']],
+                $message,
             );
         }
     }

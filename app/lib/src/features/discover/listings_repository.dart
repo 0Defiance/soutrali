@@ -26,6 +26,11 @@ final listingsProvider = FutureProvider.family<List<Listing>, ListingFilters>((r
   return ref.watch(listingsRepositoryProvider).search(filters);
 });
 
+/// Détail d’une annonce (`GET /api/v1/listings/{id}`) ; `null` si absente.
+final listingProvider = FutureProvider.family<Listing?, int>((ref, id) {
+  return ref.watch(listingsRepositoryProvider).byId(id);
+});
+
 class ListingsRepository {
   const ListingsRepository(this._dio);
 
@@ -47,5 +52,19 @@ class ListingsRepository {
         .whereType<Map<String, dynamic>>()
         .map(Listing.fromJson)
         .toList(growable: false);
+  }
+
+  Future<Listing?> byId(int id) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>('/api/v1/listings/$id');
+      final data = response.data?['data'];
+
+      return data is Map<String, dynamic> ? Listing.fromJson(data) : null;
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) {
+        return null;
+      }
+      rethrow;
+    }
   }
 }

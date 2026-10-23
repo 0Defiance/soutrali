@@ -8,6 +8,7 @@ class Listing {
     required this.commune,
     required this.category,
     required this.createdAt,
+    this.authorId,
     this.authorName,
     this.availability,
     this.budget,
@@ -21,6 +22,7 @@ class Listing {
   final String commune;
   final String category;
   final DateTime? createdAt;
+  final int? authorId;
   final String? authorName;
   final String? availability;
   final num? budget;
@@ -43,11 +45,13 @@ class Listing {
           ? category['name'] as String? ?? ''
           : json['category_name'] as String? ?? '',
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+      authorId: author is Map<String, dynamic> ? (author['id'] as num?)?.toInt() : null,
       authorName: author is Map<String, dynamic>
           ? author['display_name'] as String?
           : json['author_name'] as String?,
       availability: json['availability'] as String?,
-      budget: json['budget'] as num?,
+      // Tolère un budget renvoyé en chaîne ("5000.00") par l'API.
+      budget: json['budget'] is num ? json['budget'] as num : num.tryParse('${json['budget']}'),
     );
   }
 }
