@@ -29,6 +29,12 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            // Les défauts de colonne (UTILISATEUR / ACTIF) ne s’appliquent
+            // qu’en base : sans ces valeurs, l’instance en mémoire aurait
+            // un statut nul et les gardes de rôle (isModerator, etc.)
+            // échoueraient dans les tests.
+            'role' => 'UTILISATEUR',
+            'status' => 'ACTIF',
             'remember_token' => Str::random(10),
         ];
     }

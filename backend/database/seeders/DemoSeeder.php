@@ -41,6 +41,19 @@ class DemoSeeder extends Seeder
             ],
         );
 
+        // Administrateur du back-office /admin (accès : MODERATEUR ou
+        // ADMINISTRATEUR, voir User::canAccessPanel). Local uniquement.
+        User::firstOrCreate(
+            ['email' => 'admin.demo@soutrali.test'],
+            [
+                'display_name' => 'Admin (compte de test)',
+                'password' => 'password',
+                'role' => 'ADMINISTRATEUR',
+                'commune_id' => Commune::where('name', 'Plateau')->value('id'),
+                'presentation' => 'Compte de démonstration du back-office /admin — aucune donnée réelle.',
+            ],
+        );
+
         $listings = [
             [
                 'title' => 'Réparer un ventilateur de plafond',

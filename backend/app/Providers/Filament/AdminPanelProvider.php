@@ -8,7 +8,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -27,7 +26,22 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->colors(['primary' => Color::Green])
+            ->brandName('Soutrali — Administration')
+            // Charte v2 : orange #FE7402 (accent), vert #037C30 (secondaire).
+            ->colors([
+                'primary' => '#FE7402',
+                'secondary' => '#037C30',
+            ])
+            // Ordre de navigation : le pilote quotidien du modérateur
+            // commence par la file des signalements.
+            ->navigationGroups([
+                'Modération',
+                'Contenus',
+                'Comptes',
+            ])
+            // Mode strict : toute ressource sans policy explicite lève
+            // une exception plutôt que d’autoriser silencieusement.
+            ->strictAuthorization()
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([Pages\Dashboard::class])
