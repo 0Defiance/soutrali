@@ -164,14 +164,14 @@ Exemples de ressources (à ajuster aux décisions produit avant implémentation)
 
 | Domaine | Routes indicatives |
 |---|---|
-| Compte | `POST /api/v1/register`, `POST /api/v1/login`, `POST /api/v1/logout`, `GET /api/v1/me` |
+| Compte | `POST /api/v1/register`, `POST /api/v1/login`, `POST /api/v1/logout`, `GET /api/v1/me`, `GET /api/v1/csrf-token` |
 | Annonces publiques | `GET /api/v1/listings`, `GET /api/v1/listings/{id}` |
-| Annonces du compte | `POST /api/v1/listings`, `PATCH /api/v1/listings/{id}`, `POST /api/v1/listings/{id}/close` |
-| Contact | `POST /api/v1/listings/{id}/interactions` |
-| Signalement | `POST /api/v1/listings/{id}/reports` |
+| Annonces du compte | `POST /api/v1/listings`, `GET /api/v1/me/listings`, `PATCH /api/v1/listings/{id}`, `POST /api/v1/listings/{id}/close` |
+| Contact (messagerie interne, D-05) | `POST /api/v1/listings/{id}/conversations`, `GET /api/v1/conversations`, `GET /api/v1/conversations/{id}`, `POST /api/v1/conversations/{id}/messages` |
+| Signalement | `POST /api/v1/listings/{id}/reports`, `GET /api/v1/me/reports` |
 | Référentiels | `GET /api/v1/categories`, `GET /api/v1/communes` |
 
-Les routes sont indicatives : la méthode d’inscription et le canal de contact (D-04, D-05) ne sont pas encore tranchés dans le README.
+Ces routes sont celles implémentées le 22 octobre 2026 (D-04, D-05, D-06 validées et décrites dans le README de cadrage) ; elles font foi pour le pilote.
 
 ### Contrat de réponse
 

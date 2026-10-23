@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.0 · **Dernière mise à jour :** 22 octobre 2026
+> **Version :** 1.1 · **Dernière mise à jour :** 23 octobre 2026
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 1. État vérifié en un coup d’œil
 
-Constats relevés le **22 octobre 2026** sur le poste de développement, par exécution réelle des commandes.
+Constats relevés le **23 octobre 2026** sur le poste de développement, par exécution réelle des commandes.
 
 | Élément | Constat vérifié |
 |---|---|
@@ -43,9 +43,11 @@ Constats relevés le **22 octobre 2026** sur le poste de développement, par ex�
 | Icônes web | `app/web/icons/*` et `app/web/favicon.png` sont les **icônes par défaut du squelette Flutter**, pas la marque Soutrali |
 | `backend/public/favicon.ico` | **Fichier vide (0 octet)** |
 | Polices | Manrope et Source Sans 3 **non embarquées** ; le thème retombe sur `Arial` |
-| Serveurs de développement | À la reprise de séance : l’API Laravel tourne sur `127.0.0.1:8000` (`php.exe`) et répond HTTP 200 ; le build web release est servi sur `127.0.0.1:8082` (Python http.server) pour le tir d’essai T1b. MariaDB sur 3306 |
+| Serveurs de développement | À la reprise du 23 oct. : MariaDB relancée (`mysqld.exe` XAMPP, port 3306), API Laravel sur `127.0.0.1:8000` (`php artisan serve`) répondant HTTP 200, build web release servi sur `127.0.0.1:8082` (Python http.server). PHP 8.3 (WinGet) : extensions `pdo_sqlite` et `sqlite3` activées dans `php.ini` (sauvegarde `.bak-soutrali` créée) pour permettre `php artisan test` en local |
+| Fonctionnalités pilotes | **Inscription, connexion, session, publication, modification, clôture avec issue, messagerie interne, signalement : implémentées et vérifiées** (D-04, D-05, D-06 validées le 22 oct. 2026) |
+| Tests | 23 oct. 2026 : `flutter analyze` sans problème ; **14 tests Flutter** verts ; **24 tests Pest** verts (163 assertions, SQLite en mémoire) |
 
-**Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; **le tir d’essai T1b reste incomplet** : le parcours navigateur → API → base est observé avec des données, mais la session Sanctum et les mesures téléphone ne sont pas faites.
+**Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; les étapes pilotes T2/T3/T4 (comptes, annonces, contact, signalement, clôture) sont faites et le parcours complet inscription → publication → contact → signalement → clôture est observé en local. **Le tir d’essai T1b n’est plus bloqué** : la session Sanctum est validée de bout en bout ; restent les mesures téléphone (poids compressé, premier écran utile) à cadrer avec la MOA.
 
 ---
 
@@ -166,6 +168,40 @@ Application Flutter :
 - Rendu constaté via l’arbre d’accessibilité de la page : la carte « Aide au déménagement un samedi — Marcory — 16 oct. — Transport léger et déménagement » apparaît dans la section « Annonces près de vous », issus de la base MariaDB.
 - **Non mesurés :** le temps jusqu’au premier écran utile sur téléphone (aucun téléphone instrumenté dans cette séance), le poids réellement transféré compressé (le serveur local de test ne compresse pas), et la session Sanctum (routes d’authentification inexistantes, D-04 toujours ouverte).
 
+### 22 octobre 2026, soir — étapes pilotes T2/T3/T4 : comptes, publication, contact, signalement, clôture
+
+**Arbitrages reçus du porteur** : D-04 validée (inscription e-mail + mot de passe, sans SMS), D-05 validée (messagerie interne tracée, aucune coordonnée privée exposée), D-06 validée (publication immédiate + modération a posteriori par signalement).
+
+Backend :
+
+- `AuthController` : `POST /api/v1/register` (nom affiché, e-mail unique, mot de passe 8 car. minimum avec confirmation, commune facultative ; connexion ouverte immédiatement), `POST /api/v1/login` (message d’erreur identique que le compte existe ou non — pas d’énumération de comptes ; refus si le compte n’est pas `ACTIF`), `POST /api/v1/logout` (invalidation de session), `GET /api/v1/me`, `GET /api/v1/csrf-token` (jeton CSRF renvoyé en JSON pour le client Flutter).
+- `MyListingController` (authentifié) : `POST /api/v1/listings` (publication immédiate, statut `PUBLIEE`), `GET /v1/me/listings`, `PATCH /api/v1/listings/{id}` (seul le propriétaire, sinon 403), `POST /api/v1/listings/{id}/close` avec `closure_outcome` (409 si déjà clôturée).
+- `ConversationController` : `POST /api/v1/listings/{id}/conversations` (démarrer ou reprendre un fil avec un premier message ; refus 403 sur sa propre annonce, 404 si l’annonce n’est pas `PUBLIEE`), `GET /api/v1/conversations` (fils + non-lus), `GET /api/v1/conversations/{id}` (marque les messages reçus comme lus), `POST .../messages`.
+- `ReportController` : `POST /api/v1/listings/{id}/reports` (motif + détails, statut `NOUVEAU`, refus de signaler sa propre annonce), `GET /api/v1/me/reports`.
+- Migration `2026_10_22_000001_create_messages_table.php` ; les tables `interactions` et `reports` de la migration centrale sont désormais exploitées.
+- `DemoSeeder` enrichi d’un fil de démonstration (2 messages) consultable en se connectant comme Koffi.
+
+Application Flutter :
+
+- `auth_repository.dart` (modèle `AuthUser`, `AuthController` Riverpod, `prepareCsrf` avant chaque mutation), `login_page.dart`, `register_page.dart` (validation champ par champ, renvoi des erreurs 422 de l’API).
+- `account_repository.dart` et `my_listings_page.dart` : mes annonces (tous statuts), modification, clôture avec issue.
+- `messaging_repository.dart` et `messages_page.dart` : liste des fils avec non-lus, vue de fil, envoi de messages.
+- `listing_detail_page.dart` : détail d’une annonce, bouton contacter (renvoie vers la connexion si visiteur), signalement, et garde-fou « C’est votre annonce » pour l’auteur.
+- `discover_page.dart` : en-tête avec compte connecté (menu : mes annonces, messagerie avec badge de non-lus, déconnexion), actions publier (choix immédiat/programmé puis formulaire complet), cartes cliquables vers le détail, signalement.
+- `app.dart` : routes `/login`, `/register`, `/listing/:id`, `/mes-annonces`, `/messagerie`, `/messagerie/:id`.
+- Tests : `auth_pages_test.dart` (validation e-mail/mot de passe, liens entre connexion et inscription) et extensions de `publication_actions_test.dart` (visiteur invité à se connecter avant de publier).
+
+### 23 octobre 2026 — tir d’essai complet, correction du contrat `budget`, suites de tests vertes
+
+- Reprise de séance après redémarrage de la machine : MariaDB relancée avec `mysqld.exe` (XAMPP), API et serveur web statique relancés. **Constat** : `GET /api/v1/listings` répond 200 mais l’écran Flutter affiche l’état d’erreur.
+- **Bug identifié** : les listings dont `budget` est renseigné sont sérialisés avec `budget` en **chaîne** (`"10000.00"`, conséquence du cast `decimal:2` d’Eloquent), alors que `Listing.fromJson` faisait `json['budget'] as num?` : le cast lève une exception et **casse l’interprétation de toute la réponse**, d’où l’écran d’erreur malgré un HTTP 200.
+- **Correction double** : `PublicListingResource` et `MyListingResource` forcent un nombre JSON (`(float) $this->budget`) ; `Listing.fromJson` et `MyListing.fromJson` tolèrent désormais la chaîne (`num.tryParse`).
+- Revérification dans le navigateur (build web régénéré) : la liste s’affiche et l’annonce publiée pendant le tir d’essai (« Besoin d'aide pour déménager un frigo », Yopougon) apparaît dans le fil.
+- **Parcours navigateur observé** : inscription complète (création du compte « Aïcha Traoré », HTTP 201 puis redirection), session ouverte, publication d’une annonce (choix « Demande immédiate », catégorie et commune sélectionnées, nature rémunérée, HTTP 201), détail de l’annonce avec garde-fou auteur, rendu de la carte dans le fil.
+- **Chaîne contact → signalement → clôture rejouée par API avec deux comptes** (Koffi et Awa, jeton CSRF JSON, session par cookie) : 12 scénarios exécutés et conformes — démarrage de fil (201), reprise du fil existant, liste des fils avec non-lus, lecture (accusé), réponse (201), non-lus côté autre participant, signalement (201, statut NOUVEAU), refus de signaler sa propre annonce (422), refus de clôturer l’annonce d’autrui (403), clôture (statut CLOTUREE), double clôture (409), contact d’une annonce clôturée (404), liste des signalements de l’auteur.
+- **Extensions PHP** : `pdo_sqlite` et `sqlite3` activées dans le `php.ini` du PHP WinGet (sauvegarde `.bak-soutrali` à côté), nécessaires à `php artisan test` (SQLite en mémoire). Aucune modification de PHP XAMPP.
+- **Vérifications finales, avec PHP 8.3 et Flutter 3.47.7** : `flutter analyze` **No issues found** ; `flutter test` : **14 tests passés** ; `php artisan test` : **24 tests passés, 163 assertions** (AuthTest, MyListingTest, ConversationTest, ReportTest, contrats publics).
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -174,7 +210,11 @@ Application Flutter :
 
 - API publique versionnée : `GET /api/v1/listings` (filtres `q`, `commune`, `category`, `type`, `nature`, pagination `page` / `per_page` plafonnée à 24) et `GET /api/v1/listings/{id}`, toutes deux limitées à 60 requêtes/minute.
 - Référentiels publics : `GET /api/v1/categories` et `GET /api/v1/communes` (éléments `active` uniquement, 60 requêtes/minute), qui alimentent les filtres de l’écran.
-- Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget, catégorie, commune et date.
+- Authentification par session web Sanctum (D-04 validée) : `POST /api/v1/register`, `/login` (message d’erreur identique si le compte est inconnu), `/logout`, `GET /api/v1/me`, `GET /api/v1/csrf-token` (jeton CSRF en JSON). Mutations exigées en session, cookie de session `soutrali-session` et origine contrôlée.
+- Annonces de l’utilisateur : publication immédiate `PUBLIEE`, modification réservée au propriétaire (403 sinon), clôture avec `closure_outcome` (409 si déjà clôturée), liste `GET /api/v1/me/listings`.
+- Messagerie interne tracée (D-05 validée) : fils par couple auteur/initiateur autour d’une annonce publiée, premier message au démarrage, accusés de lecture, compteurs de non-lus. Aucune coordonnée privée n’est échangée.
+- Signalements (D-06 validée) : motif + détails, statut `NOUVEAU`, refus de signaler sa propre annonce, suivi côté auteur du signalement.
+- Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget (nombre JSON), catégorie, commune, auteur (identifiant + nom affiché) et date. Les ressources `author` ne sont chargées que sur la route détail.
 - Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14.
 - Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 2 comptes et 8 annonces fictifs de démonstration.
 - Modèles Eloquent avec relations et index de recherche (`status + commune + date`, `status + category + type + nature`).
@@ -183,22 +223,26 @@ Application Flutter :
 
 ### Application Flutter
 
-- Page de découverte responsive reliée à l’API, avec filtres et états de chargement / erreur / vide.
+- Page d’accueil interactive (`discover_page.dart`) : en-tête avec compte connecté (initiales, menu mes annonces / messagerie avec badge de non-lus / déconnexion), actions « Annonce » et « Prestation de service » avec choix immédiat/programmé, formulaire complet relié à l’API, filtres commune/nature/q, cartes cliquables vers le détail, signalement d’une annonce.
+- Pages `/login` et `/register` : validation champ par champ, erreurs API 422 affichées champ par champ, ouverture de session immédiate après inscription.
+- Détail d’annonce (`listing_detail_page.dart`) : contact de l’auteur par message (renvoi vers la connexion si visiteur, garde-fou « C’est votre annonce »), signalement, lien de retour.
+- `mes-annonces` : liste des annonces de l’utilisateur tous statuts, modification, clôture avec issue (récompensé, besoin satisfait, pas de réponse).
+- `messagerie` : liste des fils avec non-lus et dernier message, vue de fil avec accusés de lecture et envoi.
 - Thème centralisé aux couleurs de la charte v2 (`app/lib/src/theme/soutrali_theme.dart`) : orange `#FE7402`, vert `#037C30`, ivoire `#FFF9F2`. Aucune couleur écrite dans les écrans.
 - Configuration française fonctionnelle (délégués Material/Cupertino).
 - Filtres « Commune » et « Catégorie » alimentés par l’API de référentiels (le filtre commune n’est plus codé en dur), avec état dégradé propre si l’API est absente.
-- Neuf tests : modèle d’annonce et filtres (5), référentiels et transmission des filtres à l’API (4).
-- Actions « Annonce » et « Prestation de service » avec choix immédiat/programmé et validation de saisie côté interface.
+- Quatorze tests : modèle d’annonce et filtres, référentiels et transmission des filtres, pages d’authentification (validation e-mail/mot de passe, liens croisés), actions de publication (visiteur invité à se connecter).
 
 ### Vérifications exécutées
 
-- `pest` : **7 tests passés, 58 assertions** (PHP 8.3.33, SQLite en mémoire).
-- `pint --test` : PASS sur 41 fichiers.
-- `phpstan analyse` avec Larastan niveau 5 : aucune erreur.
-- `flutter analyze` : **No issues found** (corrigé le 22 oct., voir §2).
-- `flutter test` : **9 tests passés**.
+- `pest` / `php artisan test` : **24 tests passés, 163 assertions** le 23 oct. (PHP 8.3, SQLite en mémoire ; 7 tests au niveau T1, +17 tests d’authentification, d’annonces, de conversations et de signalements).
+- `pint --test` : PASS sur 41 fichiers (22 oct.).
+- `phpstan analyse` avec Larastan niveau 5 : aucune erreur (22 oct.).
+- `flutter analyze` : **No issues found** (revérifié le 23 oct.).
+- `flutter test` : **14 tests passés** (revérifié le 23 oct.).
 - `flutter build web --release` : compilation réussie (183,6 s) ; `main.dart.js` 3 294 322 o brut / 942 397 o gzip ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
 - Parcours navigateur → API → MariaDB observé avec données le 22 oct. : requêtes `listings`, `communes`, `categories` et filtres en HTTP 200, annonce rendue à l’écran (voir §2, étape T1).
+- Parcours complet observé dans le navigateur le 23 oct. : inscription, session, publication, détail avec garde-fou auteur, rendu de l’annonce publiée dans le fil ; puis 12 scénarios API à deux comptes (contact, lecture, réponse, non-lus, signalement, refus de signaler sa propre annonce, clôture, 403/404/409 attendus).
 - `php artisan migrate` : **17 tables** créées (11 tables du modèle conceptuel + 6 tables d’infrastructure Laravel).
 - `GET /api/v1/listings` : **HTTP 200** avec une liste paginée vide — résultat normal tant que le seeder est vide.
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
@@ -209,12 +253,13 @@ Application Flutter :
 
 ## 4. Ce qui bloque, et pourquoi
 
-**Résolus le 22 octobre 2026** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (étape T0). Composer a été retrouvé et son chemin documenté ; les référentiels sont en base et exposés par l’API, le parcours navigateur → API → base est observé avec des données (étape T1).
+**Résolus** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (T0). Les référentiels sont en base et exposés par l’API (T1). Les décisions D-04, D-05 et D-06 sont validées et les parcours compte / publication / contact / signalement / clôture sont implémentés et vérifiés (22–23 oct.).
 
 | Blocage | Cause vérifiée | Conséquence |
 |---|---|---|
-| Le tir d’essai T1b est incomplet | Le parcours navigateur → API → base est observé avec données, mais la session Sanctum n’est pas testée (routes d’authentification inexistantes, D-04 ouverte) et les mesures téléphone (temps jusqu’au premier écran utile, poids réellement transféré compressé) ne sont pas faites | Les seuils de réussite ne peuvent pas être présentés à la MOA |
-| Les parcours compte / publication / contact / signalement n’existent pas | Les décisions produit D-04 (inscription), D-05 (canal de contact) et D-06 (modération) sont **ouvertes** | Impossible d’implémenter sans trancher ; ne pas inventer |
+| Le tir d’essai T1b est incomplet sur ses volets mesure | Le parcours navigateur → API → base et la session Sanctum sont observés, mais les mesures téléphone (temps jusqu’au premier écran utile, poids réellement transféré compressé) ne sont pas faites : aucun téléphone instrumenté et le serveur local de test ne compresse pas | Les seuils de réussite ne peuvent pas être présentés à la MOA |
+| La modération des signalements n’a pas d’interface | `Report` est enregistré avec le statut `NOUVEAU` mais aucun écran de traitement n’existe (Filament prévu en T2) | Les signalements s’accumulent sans traitement applicatif |
+| Pas d’identité visuelle embarquée | Icônes Flutter par défaut, favicon backend vide, polices non embarquées (constat du 22 oct., inchangé) | Le rendu n’est pas à l’identité de la marque |
 
 ---
 
@@ -234,12 +279,12 @@ L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran ava
    - Hors T1, toujours ouvert : les routes de publication et d’authentification n’existent pas (D-04).
 3. **T1b — tir d’essai : en cours**
    - Faire répondre l’API à l’écran Flutter Web avec des données de la base. **Fait le 22 oct. 2026** (requêtes 200 observées, annonce rendue à l’écran).
-   - Valider la session Sanctum de bout en bout : connexion, requête mutante avec CSRF, déconnexion, en développement puis sur build servi par la même origine.
-   - Mesurer le poids compressé et le temps jusqu’au premier écran utile sur un téléphone Android courant en réseau limité. **Seuils à fixer avec la MOA ; aucun chiffre inventé.**
+   - Valider la session Sanctum de bout en bout : connexion, requête mutante avec CSRF, déconnexion, en développement puis sur build servi par la même origine. **Fait le 23 oct. 2026** (inscription, connexion, publication, contact, signalement, clôture observés dans le navigateur et rejoués par API à deux comptes).
+   - Mesurer le poids compressé et le temps jusqu’au premier écran utile sur un téléphone Android courant en réseau limité. **Seuils à fixer avec la MOA ; aucun chiffre inventé.** À faire.
    - Si la mesure échoue durablement : évaluer `--wasm`, chargement différé, assets réduits, puis rouvrir T-01 pour le web seul.
-4. **T2 — comptes et administration** (après avoir tranché D-04) : authentification, profils, rôles, Filament, catégories et communes.
-5. **T3 — annonces** : création, recherche filtrée, détail, modification, clôture avec issue.
-6. **T4 — confiance et contact** (après D-05, D-06) : canaux de contact, interactions, signalements, modération traçable.
+4. **T2 — comptes et administration** : les comptes, l’authentification et le profil minimal sont **faits** (22 oct.). Reste : rôles, administration Filament (`/admin`), gestion des catégories et des communes, et traitement des signalements par un modérateur.
+5. **T3 — annonces** : création, recherche filtrée, détail, modification, clôture avec issue : **faits** (22–23 oct.). Reste à tester sur téléphone et à durcir (contrats API dans la CI).
+6. **T4 — confiance et contact** : messagerie interne tracée et signalements **faits** (22 oct.). Reste : blocages d’utilisateurs (`user_blocks`, T-14) et modération traçable (Filament).
 7. **Identité visuelle** : produire les icônes et déclinaisons du logo aux couleurs de la marque, remplacer les icônes Flutter par défaut et régénérer le favicon vide du backend ; embarquer Manrope et Source Sans 3 après vérification de licence.
 8. **Tests** : ajouter des tests Pest couvrant le contrat API, les migrations, les permissions et la visibilité des canaux de contact.
 
