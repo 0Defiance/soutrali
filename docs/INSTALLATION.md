@@ -122,7 +122,7 @@ Notes :
 
 - `composer install` résout les versions et crée `composer.lock`, à vérifier puis committer (T-08). Filament 5 et Laravel 13 doivent résoudre ensemble.
 - Si `composer` n’est pas dans le PATH mais que `backend/vendor/` existe déjà, passer directement à `php artisan key:generate`.
-- `php artisan db:seed` charge le référentiel validé : **14 lignes de communes** (13 communes d’Abidjan + zone « Plusieurs communes », D-03) et **8 catégories** (D-07). En environnement `local` uniquement, il charge aussi `DemoSeeder` : 2 comptes et 8 annonces **fictifs** pour les recettes. Aucun contenu fictif n’est chargé en préproduction ni en production. Vérifier ensuite :
+- `php artisan db:seed` charge le référentiel validé : **14 lignes de communes** (13 communes d’Abidjan + zone « Plusieurs communes », D-03) et **8 catégories** (D-07). En environnement `local` uniquement, il charge aussi `DemoSeeder` : 3 comptes (dont l’administrateur du back-office) et 8 annonces **fictifs** pour les recettes. Aucun contenu fictif n’est chargé en préproduction ni en production. Vérifier ensuite :
 
 ```powershell
 curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/communes
@@ -135,6 +135,13 @@ curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/listings
 ```
 
 Une base migrée mais vide renvoie une liste vide ; c’est un résultat **normal**, pas une erreur.
+
+### Accès au back-office `/admin`
+
+- Ouvrir `http://127.0.0.1:8000/admin` une fois l’API démarrée : le panneau répond (redirection vers `/admin/login`).
+- **Compte local** : `DemoSeeder` (environnement `local` uniquement) crée `admin.demo@soutrali.test`, mot de passe `password`, rôle ADMINISTRATEUR. Hors local, créer un compte habilité avec `php artisan make:filament-user` — aucun compte privilégié n’est créé automatiquement en production.
+- L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` dont le statut est `ACTIF` ; un compte `UTILISATEUR` est refusé.
+- Les assets Filament sont déjà publiés et versionnés dans `public/css|js|fonts/filament` ; pour les régénérer après une mise à jour : `php artisan filament:assets`.
 
 ---
 
@@ -171,6 +178,7 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [x] `vendor/bin/pest` passe (tests sur SQLite en mémoire)
 - [x] `vendor/bin/pint --test` ne remonte aucun défaut de style
 - [x] `vendor/bin/phpstan analyse` ne remonte aucune erreur
+- [x] Le panneau `http://127.0.0.1:8000/admin` répond et redirige vers sa page de connexion
 - [x] `flutter analyze` ne remonte aucune erreur
 - [x] `flutter test` passe
 - [x] Le site s’affiche sur `http://127.0.0.1:8082`

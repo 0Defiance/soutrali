@@ -45,7 +45,8 @@ Constats relevés le **23 octobre 2026** sur le poste de développement, par ex�
 | Polices | Manrope et Source Sans 3 **non embarquées** ; le thème retombe sur `Arial` |
 | Serveurs de développement | À la reprise du 23 oct. : MariaDB relancée (`mysqld.exe` XAMPP, port 3306), API Laravel sur `127.0.0.1:8000` (`php artisan serve`) répondant HTTP 200, build web release servi sur `127.0.0.1:8082` (Python http.server). PHP 8.3 (WinGet) : extensions `pdo_sqlite` et `sqlite3` activées dans `php.ini` (sauvegarde `.bak-soutrali` créée) pour permettre `php artisan test` en local |
 | Fonctionnalités pilotes | **Inscription, connexion, session, publication, modification, clôture avec issue, messagerie interne, signalement : implémentées et vérifiées** (D-04, D-05, D-06 validées le 22 oct. 2026) |
-| Tests | 23 oct. 2026 : `flutter analyze` sans problème ; **14 tests Flutter** verts ; **24 tests Pest** verts (163 assertions, SQLite en mémoire) |
+| Back-office `/admin` | **Opérationnel et testé** (23 oct. 2026) : panneau Filament 5 (7 ressources, 8 policies, mode strict), traitement des signalements tracé dans `moderation_actions`, accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs |
+| Tests | 23 oct. 2026 : `flutter analyze` sans problème ; **14 tests Flutter** verts ; **33 tests Pest** verts (244 assertions, SQLite en mémoire, dont 9 tests du back-office) |
 
 **Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; les étapes pilotes T2/T3/T4 (comptes, annonces, contact, signalement, clôture) sont faites et le parcours complet inscription → publication → contact → signalement → clôture est observé en local. **Le tir d’essai T1b n’est plus bloqué** : la session Sanctum est validée de bout en bout ; restent les mesures téléphone (poids compressé, premier écran utile) à cadrer avec la MOA.
 
@@ -202,6 +203,16 @@ Application Flutter :
 - **Extensions PHP** : `pdo_sqlite` et `sqlite3` activées dans le `php.ini` du PHP WinGet (sauvegarde `.bak-soutrali` à côté), nécessaires à `php artisan test` (SQLite en mémoire). Aucune modification de PHP XAMPP.
 - **Vérifications finales, avec PHP 8.3 et Flutter 3.47.7** : `flutter analyze` **No issues found** ; `flutter test` : **14 tests passés** ; `php artisan test` : **24 tests passés, 163 assertions** (AuthTest, MyListingTest, ConversationTest, ReportTest, contrats publics).
 
+### 23 octobre 2026, après-midi — back-office Filament (T2/T4) : modération traitée et tracée
+
+- **Panneau `/admin` opérationnel** (T-05) : `AdminPanelProvider` affiche « Soutrali — Administration » aux couleurs de la charte v2 (orange `#FE7402`, vert `#037C30`), navigation groupée Modération / Contenus / Comptes, et **`strictAuthorization()`** : toute ressource sans policy explicite lève une exception au lieu d’autoriser silencieusement. L’accès est limité par `User::canAccessPanel` aux comptes `MODERATEUR` ou `ADMINISTRATEUR` dont le statut est `ACTIF` ; anonymes et utilisateurs ordinaires sont renvoyés.
+- **7 ressources** : signalements (consultation + traitement — jamais de création ni de suppression depuis le back-office), annonces (édition limitée, masquage / republication tracés, suppression interdite), utilisateurs (aucune suppression : suspension à la place, rôle et statut réservés aux administrateurs), catégories et communes (création, édition, **désactivation** — la suppression est refusée par policy), interactions (lecture des fils et de leurs messages en lecture seule), journal des actions de modération (lecture seule). Deux widgets sur le tableau de bord : compteurs et derniers signalements.
+- **8 policies** enregistrées explicitement dans `AppServiceProvider` (`Category`, `Commune`, `Interaction`, `Listing`, `Message`, `ModerationAction`, `Report`, `User`) — requis par le mode strict du panneau.
+- **Décisions de modération tracées** : enum `App\Support\Moderation\Decision` (`PRISE_EN_CHARGE`, `ANNONCE_MASQUEE`, `ANNONCE_REPUBLIEE`, `SIGNALEMENT_REJETE`, `SANS_SUITE`, `COMPTE_SUSPENDU`, `COMPTE_REACTIVE`) et service `ReportModerator` : chaque décision crée une ligne `moderation_actions` horodatée (modérateur, décision, justification) et fait évoluer le statut du signalement (`NOUVEAU` → `EN_COURS` / `TRAITE` / `REJETE`). Le masquage d’une annonce déjà clôturée est refusé.
+- **Défaut trouvé par les tests** : `UserFactory` ne renseignait ni `role` ni `status` — les valeurs par défaut (`UTILISATEUR` / `ACTIF`) n’existent qu’en base, l’instance en mémoire avait donc `status = null`, ce qui rendait `isModerator()` / `canAccessPanel()` faux et provoquait des 403 en cascade dans toute la suite. La factory renseigne désormais les deux colonnes.
+- `DemoSeeder` crée en local un compte administrateur de démonstration (`admin.demo@soutrali.test`, mot de passe `password`) pour ouvrir `/admin`. Les assets Filament publiés (`public/css|js|fonts/filament`, 41 fichiers) sont versionnés : `/admin` fonctionne sans commande supplémentaire ; `php artisan filament:assets` les régénère.
+- **Vérifications exécutées, avec PHP 8.3** : `php artisan test` → **33 tests passés, 244 assertions**, dont `AdminPanelTest` (9 tests : ouverture du panneau réservée aux modérateurs et administrateurs actifs, refus de l’anonyme et de l’utilisateur ordinaire, traitement d’un signalement qui masque l’annonce et trace la décision, classement sans suite, refus du masquage sur annonce déjà clôturée, rejet motivé, suspension et réactivation tracées avec refus de l’auto-suspension, gestion des comptes réservée aux administrateurs, suppression interdite partout) ; `pint --test` → **PASS sur 106 fichiers** ; `phpstan analyse` (Larastan niveau 5) → **aucune erreur** ; `GET /admin` sur l’API locale répond **302 → `/admin/login`**.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -214,9 +225,10 @@ Application Flutter :
 - Annonces de l’utilisateur : publication immédiate `PUBLIEE`, modification réservée au propriétaire (403 sinon), clôture avec `closure_outcome` (409 si déjà clôturée), liste `GET /api/v1/me/listings`.
 - Messagerie interne tracée (D-05 validée) : fils par couple auteur/initiateur autour d’une annonce publiée, premier message au démarrage, accusés de lecture, compteurs de non-lus. Aucune coordonnée privée n’est échangée.
 - Signalements (D-06 validée) : motif + détails, statut `NOUVEAU`, refus de signaler sa propre annonce, suivi côté auteur du signalement.
+- Back-office Filament sur `/admin` (T-05) : 7 ressources (signalements, annonces, utilisateurs, catégories, communes, interactions, journal de modération), 8 policies enregistrées, panneau en **mode strict** (`strictAuthorization()`), accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs. Toute décision de modération (prise en charge, masquage, republication, rejet, classement sans suite, suspension, réactivation) passe par le service `ReportModerator` et laisse une trace horodatée dans `moderation_actions` — le back-office ne crée ni ne supprime de signalement.
 - Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget (nombre JSON), catégorie, commune, auteur (identifiant + nom affiché) et date. Les ressources `author` ne sont chargées que sur la route détail.
 - Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14.
-- Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 2 comptes et 8 annonces fictifs de démonstration.
+- Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 3 comptes fictifs de démonstration (dont un administrateur du back-office) et 8 annonces.
 - Modèles Eloquent avec relations et index de recherche (`status + commune + date`, `status + category + type + nature`).
 - Manifeste Composer Laravel 13 + Sanctum 4 + Filament 5, avec Pest, Pint et Larastan en développement. `composer.lock` versionné.
 - Workflow CI `.github/workflows/ci.yml` : Pest, Pint, Larastan côté backend ; `flutter analyze`, `flutter test`, build web release côté application.
@@ -235,9 +247,9 @@ Application Flutter :
 
 ### Vérifications exécutées
 
-- `pest` / `php artisan test` : **24 tests passés, 163 assertions** le 23 oct. (PHP 8.3, SQLite en mémoire ; 7 tests au niveau T1, +17 tests d’authentification, d’annonces, de conversations et de signalements).
-- `pint --test` : PASS sur 41 fichiers (22 oct.).
-- `phpstan analyse` avec Larastan niveau 5 : aucune erreur (22 oct.).
+- `pest` / `php artisan test` : **33 tests passés, 244 assertions** le 23 oct. (PHP 8.3, SQLite en mémoire ; 7 tests au niveau T1, 17 tests d’authentification / annonces / conversations / signalements, 9 tests d’accès et de modération du back-office).
+- `pint --test` : PASS sur 106 fichiers (23 oct.).
+- `phpstan analyse` avec Larastan niveau 5 : aucune erreur (23 oct.).
 - `flutter analyze` : **No issues found** (revérifié le 23 oct.).
 - `flutter test` : **14 tests passés** (revérifié le 23 oct.).
 - `flutter build web --release` : compilation réussie (183,6 s) ; `main.dart.js` 3 294 322 o brut / 942 397 o gzip ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
@@ -253,13 +265,13 @@ Application Flutter :
 
 ## 4. Ce qui bloque, et pourquoi
 
-**Résolus** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (T0). Les référentiels sont en base et exposés par l’API (T1). Les décisions D-04, D-05 et D-06 sont validées et les parcours compte / publication / contact / signalement / clôture sont implémentés et vérifiés (22–23 oct.).
+**Résolus** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (T0). Les référentiels sont en base et exposés par l’API (T1). Les décisions D-04, D-05 et D-06 sont validées et les parcours compte / publication / contact / signalement / clôture sont implémentés et vérifiés (22–23 oct.). La modération des signalements a désormais une interface : le back-office `/admin` traite et trace chaque décision depuis le 23 oct. 2026 (9 tests Pest dédiés).
 
 | Blocage | Cause vérifiée | Conséquence |
 |---|---|---|
 | Le tir d’essai T1b est incomplet sur ses volets mesure | Le parcours navigateur → API → base et la session Sanctum sont observés, mais les mesures téléphone (temps jusqu’au premier écran utile, poids réellement transféré compressé) ne sont pas faites : aucun téléphone instrumenté et le serveur local de test ne compresse pas | Les seuils de réussite ne peuvent pas être présentés à la MOA |
-| La modération des signalements n’a pas d’interface | `Report` est enregistré avec le statut `NOUVEAU` mais aucun écran de traitement n’existe (Filament prévu en T2) | Les signalements s’accumulent sans traitement applicatif |
 | Pas d’identité visuelle embarquée | Icônes Flutter par défaut, favicon backend vide, polices non embarquées (constat du 22 oct., inchangé) | Le rendu n’est pas à l’identité de la marque |
+| Création du premier administrateur en production | Le compte `admin.demo` n’existe qu’en local (`DemoSeeder`, environnement `local`) ; aucun mécanisme de création initial n’est encore arrêté pour la production | Un déploiement ne peut pas encore ouvrir `/admin` sans création manuelle documentée |
 
 ---
 
@@ -282,11 +294,11 @@ L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran ava
    - Valider la session Sanctum de bout en bout : connexion, requête mutante avec CSRF, déconnexion, en développement puis sur build servi par la même origine. **Fait le 23 oct. 2026** (inscription, connexion, publication, contact, signalement, clôture observés dans le navigateur et rejoués par API à deux comptes).
    - Mesurer le poids compressé et le temps jusqu’au premier écran utile sur un téléphone Android courant en réseau limité. **Seuils à fixer avec la MOA ; aucun chiffre inventé.** À faire.
    - Si la mesure échoue durablement : évaluer `--wasm`, chargement différé, assets réduits, puis rouvrir T-01 pour le web seul.
-4. **T2 — comptes et administration** : les comptes, l’authentification et le profil minimal sont **faits** (22 oct.). Reste : rôles, administration Filament (`/admin`), gestion des catégories et des communes, et traitement des signalements par un modérateur.
+4. **T2 — comptes et administration** : comptes, authentification et profil minimal **faits** (22 oct.). Rôles, back-office `/admin`, catégories et communes, traitement des signalements par un modérateur : **faits le 23 octobre 2026**. Reste : définir la procédure de création du premier compte administrateur en production (le compte de démonstration n’existe qu’en local).
 5. **T3 — annonces** : création, recherche filtrée, détail, modification, clôture avec issue : **faits** (22–23 oct.). Reste à tester sur téléphone et à durcir (contrats API dans la CI).
-6. **T4 — confiance et contact** : messagerie interne tracée et signalements **faits** (22 oct.). Reste : blocages d’utilisateurs (`user_blocks`, T-14) et modération traçable (Filament).
+6. **T4 — confiance et contact** : messagerie interne tracée et signalements **faits** (22 oct.), modération traçable **faite le 23 oct. 2026** (back-office + journal `moderation_actions`). Reste : blocages d’utilisateurs (`user_blocks`, T-14).
 7. **Identité visuelle** : produire les icônes et déclinaisons du logo aux couleurs de la marque, remplacer les icônes Flutter par défaut et régénérer le favicon vide du backend ; embarquer Manrope et Source Sans 3 après vérification de licence.
-8. **Tests** : ajouter des tests Pest couvrant le contrat API, les migrations, les permissions et la visibilité des canaux de contact.
+8. **Tests** : les permissions du back-office sont couvertes depuis le 23 oct. (9 tests d’accès et de modération). Reste : tests Pest du contrat API, des migrations et de la visibilité des canaux de contact.
 
 ---
 
