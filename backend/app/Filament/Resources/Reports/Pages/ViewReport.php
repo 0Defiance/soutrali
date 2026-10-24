@@ -20,6 +20,7 @@ class ViewReport extends ViewRecord
                 ->url(fn (): string => ReportResource::getUrl()),
             ReportModerationActions::claim(),
             ReportModerationActions::treat(),
+            ReportModerationActions::transfer(),
             ReportModerationActions::reject(),
         ];
     }

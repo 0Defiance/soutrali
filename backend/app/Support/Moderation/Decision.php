@@ -14,6 +14,7 @@ enum Decision: string
     case AnnonceRepubliee = 'ANNONCE_REPUBLIEE';
     case SignalementRejete = 'SIGNALEMENT_REJETE';
     case SansSuite = 'SANS_SUITE';
+    case Transmis = 'TRANSMIS';
     case CompteSuspendu = 'COMPTE_SUSPENDU';
     case CompteReactive = 'COMPTE_REACTIVE';
 
@@ -25,6 +26,7 @@ enum Decision: string
             self::AnnonceRepubliee => 'Annonce republiée',
             self::SignalementRejete => 'Signalement rejeté',
             self::SansSuite => 'Classé sans suite',
+            self::Transmis => 'Transmis à l’administrateur',
             self::CompteSuspendu => 'Compte suspendu',
             self::CompteReactive => 'Compte réactivé',
         };
@@ -36,7 +38,7 @@ enum Decision: string
     public function reportStatus(): string
     {
         return match ($this) {
-            self::PriseEnCharge => 'EN_COURS',
+            self::PriseEnCharge, self::Transmis => 'EN_COURS',
             self::AnnonceMasquee, self::SansSuite => 'TRAITE',
             self::SignalementRejete => 'REJETE',
             default => 'TRAITE',

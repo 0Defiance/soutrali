@@ -26,3 +26,13 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+    - assets/fonts/
+  fonts:
+    # Charte §15.4 : titres Manrope, texte Source Sans 3 (licences OFL
+    # 1.1 embarquées dans assets/fonts/).
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
+    - family: Source Sans 3
+      fonts:
+        - asset: assets/fonts/SourceSans3.ttf

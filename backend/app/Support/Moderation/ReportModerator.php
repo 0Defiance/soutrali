@@ -29,7 +29,7 @@ final class ReportModerator
             // à l’auteur sans rien changer à la visibilité publique.
             $listing = $report->listing;
 
-            if ($listing !== null && $listing->status === 'PUBLIEE') {
+            if ($listing !== null && $listing->isLive()) {
                 $listing->update(['status' => 'MASQUEE']);
             }
         }

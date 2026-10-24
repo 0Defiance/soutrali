@@ -202,6 +202,43 @@ it('suspends and reactivates an account, tracing both decisions and locking self
         ->assertTableActionHidden('suspendre', $administrator);
 });
 
+it('transfers a report to the administrator with its justification', function () {
+    ['moderator' => $moderator, 'administrator' => $administrator, 'report' => $report] = adminFixture();
+
+    // Un administrateur ne se transmet rien à lui-même : action invisible.
+    $this->actingAs($administrator);
+    Livewire::test(ListReports::class)
+        ->assertTableActionHidden('transmettre', $report);
+
+    $this->actingAs($moderator);
+
+    Livewire::test(ListReports::class)
+        ->callTableAction('transmettre', $report, data: [
+            'justification' => 'Décision sensible : annonce d’un compte déjà suspendu.',
+        ])
+        ->assertNotified();
+
+    $report->refresh();
+    $action = ModerationAction::latest('id')->first();
+
+    // Le signalement reste en cours d’examen, la trace est complète.
+    expect($report->status)->toBe('EN_COURS')
+        ->and($action->decision)->toBe('TRANSMIS')
+        ->and($action->moderator_id)->toBe($moderator->id)
+        ->and($action->justification)->toBe('Décision sensible : annonce d’un compte déjà suspendu.');
+
+    expect(Decision::tryFrom('TRANSMIS')?->label())->toBe('Transmis à l’administrateur')
+        ->and(Decision::Transmis->reportStatus())->toBe('EN_COURS');
+
+    // Après transmission, le signalement reste traitable par la file.
+    Livewire::test(ListReports::class)
+        ->callTableAction('traiter', $report, data: [
+            'decision' => 'SANS_SUITE',
+        ]);
+
+    expect($report->fresh()->status)->toBe('TRAITE');
+});
+
 it('reserves account management and its role fields to administrators', function () {
     ['moderator' => $moderator, 'administrator' => $administrator, 'author' => $author] = adminFixture();
 

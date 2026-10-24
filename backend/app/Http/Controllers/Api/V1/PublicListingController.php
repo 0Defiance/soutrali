@@ -22,8 +22,8 @@ class PublicListingController
         ]);
 
         $listings = Listing::query()
-            ->with(['category:id,name', 'commune:id,name'])
-            ->where('status', 'PUBLIEE')
+            ->with(['category:id,name', 'commune:id,name', 'author:id,display_name'])
+            ->published()
             ->when($filters['q'] ?? null, function ($query, $term) {
                 $query->where(function ($search) use ($term) {
                     $search->where('title', 'like', "%{$term}%")
@@ -43,7 +43,7 @@ class PublicListingController
 
     public function show(Listing $listing): PublicListingResource
     {
-        abort_unless($listing->status === 'PUBLIEE', 404);
+        abort_unless($listing->isLive(), 404);
 
         return new PublicListingResource($listing->load(['category:id,name', 'commune:id,name', 'author:id,display_name']));
     }

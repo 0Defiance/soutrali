@@ -4,7 +4,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+
+        <title>{{ config('app.name', 'Soutrali') }}</title>
 
         @fonts
 

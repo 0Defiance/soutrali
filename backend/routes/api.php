@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BlockController;
+use App\Http\Controllers\Api\V1\ContactChannelController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\MyListingController;
 use App\Http\Controllers\Api\V1\PublicListingController;
@@ -43,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/v1/listings', [MyListingController::class, 'store']);
     Route::get('/v1/me/listings', [MyListingController::class, 'index']);
     Route::patch('/v1/listings/{listing}', [MyListingController::class, 'update']);
+    Route::post('/v1/listings/{listing}/publish', [MyListingController::class, 'publishNow']);
     Route::post('/v1/listings/{listing}/close', [MyListingController::class, 'close']);
 
     Route::post('/v1/listings/{listing}/conversations', [ConversationController::class, 'start']);
@@ -52,4 +55,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/v1/listings/{listing}/reports', [ReportController::class, 'store']);
     Route::get('/v1/me/reports', [ReportController::class, 'myReports']);
+
+    // Blocages d’utilisateurs (T-14)
+    Route::get('/v1/me/blocks', [BlockController::class, 'index']);
+    Route::post('/v1/users/{user}/block', [BlockController::class, 'store']);
+    Route::delete('/v1/users/{user}/block', [BlockController::class, 'destroy']);
+
+    // Canaux de contact du profil (F-02, F-06)
+    Route::get('/v1/me/channels', [ContactChannelController::class, 'index']);
+    Route::post('/v1/me/channels', [ContactChannelController::class, 'store']);
+    Route::delete('/v1/me/channels/{channel}', [ContactChannelController::class, 'destroy']);
+    Route::get('/v1/listings/{listing}/contact-channels', [ContactChannelController::class, 'forListing']);
 });

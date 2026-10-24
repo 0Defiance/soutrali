@@ -6,22 +6,30 @@ use App\Http\Resources\MyListingResource;
 use App\Models\Listing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class MyListingController
 {
     /**
-     * Publier une annonce (F-03). Publication immédiate : statut PUBLIEE
-     * (D-06 validée le 22 oct. 2026).
+     * Publier une annonce (F-03). Publication immédiate (D-06 validée
+     * le 22 oct. 2026) ou programmée : `publish_at` dans le futur →
+     * statut BROUILLON jusqu’à la date, PUBLIEE ensuite.
      */
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate($this->rules());
 
+        $publishAt = ($data['publish_at'] ?? null) !== null
+            ? Carbon::parse($data['publish_at'])
+            : now();
+
         $listing = Listing::create([
             ...$data,
             'user_id' => $request->user()->id,
-            'status' => 'PUBLIEE',
+            'status' => $publishAt->isFuture() ? 'BROUILLON' : 'PUBLIEE',
+            'publish_at' => $publishAt,
         ]);
 
         return response()->json(
@@ -39,6 +47,19 @@ class MyListingController
         abort_unless($listing->user_id === $request->user()->id, 403);
 
         $data = $request->validate($this->rules());
+
+        // `publish_at: null` (ou absent) ne désactive pas une programmation
+        // existante : la date n’est modifiable qu’avant la mise en ligne.
+        if (array_key_exists('publish_at', $data) && $data['publish_at'] === null) {
+            unset($data['publish_at']);
+        }
+
+        if (isset($data['publish_at']) && $listing->status !== 'BROUILLON') {
+            throw ValidationException::withMessages([
+                'publish_at' => 'La date de programmation n’est plus modifiable après la publication.',
+            ]);
+        }
+
         $listing->update($data);
 
         return response()->json(
@@ -58,6 +79,34 @@ class MyListingController
             ->get();
 
         return MyListingResource::collection($listings);
+    }
+
+    /**
+     * Mettre en ligne immédiatement une annonce programmée (ou en
+     * brouillon) : reporte la publication à maintenant.
+     */
+    public function publishNow(Request $request, Listing $listing): JsonResponse
+    {
+        abort_unless($listing->user_id === $request->user()->id, 403);
+
+        if ($listing->status === 'PUBLIEE') {
+            return response()->json(['message' => 'Cette annonce est déjà publiée.'], 409);
+        }
+
+        if ($listing->status !== 'BROUILLON') {
+            return response()->json([
+                'message' => 'Seule une annonce programmée ou en brouillon peut être mise en ligne.',
+            ], 409);
+        }
+
+        $listing->update([
+            'status' => 'PUBLIEE',
+            'publish_at' => now(),
+        ]);
+
+        return response()->json(
+            new MyListingResource($listing->load(['category:id,name', 'commune:id,name'])),
+        );
     }
 
     /**
@@ -100,6 +149,7 @@ class MyListingController
             'neighborhood' => ['nullable', 'string', 'max:100'],
             'availability' => ['nullable', 'string', 'max:160'],
             'budget' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+            'publish_at' => ['nullable', 'date', 'after:now'],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Listings\Schemas;
 
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -66,6 +67,10 @@ class ListingForm
                         'CLOTUREE' => 'Clôturée',
                     ])
                     ->required(),
+                DateTimePicker::make('publish_at')
+                    ->label('Publication programmée')
+                    ->nullable()
+                    ->helperText('Annonce encore en brouillon ; ignorée une fois l’annonce publiée.'),
                 Select::make('closure_outcome')
                     ->label('Issue de clôture')
                     ->options([

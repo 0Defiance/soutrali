@@ -29,20 +29,26 @@ abstract final class SoutraliTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: SoutraliColors.ivory,
-      fontFamily: 'Arial',
+      // Charte §15.4 : Source Sans 3 au corps, Manrope pour les titres,
+      // repli Arial/Helvetica obligatoire.
+      fontFamily: 'Source Sans 3',
+      fontFamilyFallback: const ['Arial', 'Helvetica', 'sans-serif'],
       textTheme: const TextTheme(
         displaySmall: TextStyle(
+          fontFamily: 'Manrope',
           color: SoutraliColors.ink,
           fontSize: 38,
           height: 1.08,
           fontWeight: FontWeight.w700,
         ),
         headlineMedium: TextStyle(
+          fontFamily: 'Manrope',
           color: SoutraliColors.ink,
           fontSize: 26,
           fontWeight: FontWeight.w700,
         ),
         titleLarge: TextStyle(
+          fontFamily: 'Manrope',
           color: SoutraliColors.ink,
           fontSize: 18,
           fontWeight: FontWeight.w700,

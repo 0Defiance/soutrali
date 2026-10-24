@@ -6,6 +6,7 @@ use App\Models\Interaction;
 use App\Models\Listing;
 use App\Models\Message;
 use App\Models\User;
+use App\Models\UserBlock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,8 +25,13 @@ class ConversationController
         /** @var User $user */
         $user = $request->user();
 
-        abort_unless($listing->status === 'PUBLIEE', 404);
+        abort_unless($listing->isLive(), 404);
         abort_if($listing->user_id === $user->id, 403, 'Vous ne pouvez pas contacter l’auteur de votre propre annonce.');
+        abort_if(
+            UserBlock::existsBetween($user->id, $listing->user_id),
+            403,
+            'La messagerie n’est pas possible avec ce compte.',
+        );
 
         $interaction = Interaction::firstOrCreate([
             'listing_id' => $listing->id,
@@ -103,6 +109,16 @@ class ConversationController
         $user = $request->user();
 
         abort_unless($interaction->involves($user), 403);
+
+        $other = $interaction->initiator_id === $user->id
+            ? $interaction->listing?->user_id
+            : $interaction->initiator_id;
+
+        abort_if(
+            $other !== null && UserBlock::existsBetween($user->id, $other),
+            403,
+            'La messagerie n’est pas possible avec ce compte.',
+        );
 
         $data = $request->validate([
             'body' => ['required', 'string', 'min:1', 'max:2000'],

@@ -95,6 +95,9 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
                         itemBuilder: (context, index) => _MyListingCard(
                           listing: listings[index],
                           onEdit: () => _edit(listings[index]),
+                          onPublish: listings[index].status == 'BROUILLON' && listings[index].publishAt != null
+                              ? () => _publishNow(listings[index])
+                              : null,
                           onClose: listings[index].status == 'PUBLIEE'
                               ? () => _close(listings[index])
                               : null,
@@ -120,6 +123,24 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Annonce mise à jour.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(error))),
+      );
+    }
+  }
+
+  Future<void> _publishNow(MyListing listing) async {
+    try {
+      await ref.read(accountRepositoryProvider).publishNow(listing.id);
+      ref.invalidate(myListingsProvider);
+      ref.invalidate(listingsProvider);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Annonce mise en ligne immédiatement.')),
       );
     } catch (error) {
       if (!mounted) return;
@@ -156,18 +177,26 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
 }
 
 class _MyListingCard extends StatelessWidget {
-  const _MyListingCard({required this.listing, required this.onEdit, this.onClose});
+  const _MyListingCard({
+    required this.listing,
+    required this.onEdit,
+    this.onPublish,
+    this.onClose,
+  });
 
   final MyListing listing;
   final VoidCallback onEdit;
+  final VoidCallback? onPublish;
   final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
+    final isProgrammed = listing.status == 'BROUILLON' && listing.publishAt != null;
     final statusColor = switch (listing.status) {
       'PUBLIEE' => SoutraliColors.paleGreen,
       'CLOTUREE' => const Color(0xFFEDEDED),
       'MASQUEE' => SoutraliColors.paleOrange,
+      'BROUILLON' => isProgrammed ? SoutraliColors.paleOrange : Colors.white,
       _ => Colors.white,
     };
 
@@ -191,7 +220,7 @@ class _MyListingCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  _statusLabel(listing.status),
+                  isProgrammed ? 'Programmée' : _statusLabel(listing.status),
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ),
@@ -221,6 +250,13 @@ class _MyListingCard extends StatelessWidget {
             '${listing.status == 'CLOTUREE' && listing.closureOutcome != null ? ' · Issue : ${_outcomeLabel(listing.closureOutcome!)}' : ''}',
             style: const TextStyle(color: SoutraliColors.muted, fontSize: 13),
           ),
+          if (isProgrammed && listing.publishAt != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Publication le ${DateFormat('d MMM yyyy à HH:mm', 'fr').format(listing.publishAt!)}',
+              style: const TextStyle(color: SoutraliColors.muted, fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -229,6 +265,19 @@ class _MyListingCard extends StatelessWidget {
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Modifier'),
               ),
+              if (onPublish != null) ...[
+                const SizedBox(width: 10),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: SoutraliColors.orange,
+                    foregroundColor: SoutraliColors.ink,
+                    minimumSize: const Size(44, 40),
+                  ),
+                  onPressed: onPublish,
+                  icon: const Icon(Icons.rocket_launch_outlined, size: 18),
+                  label: const Text('Publier maintenant'),
+                ),
+              ],
               if (onClose != null) ...[
                 const SizedBox(width: 10),
                 FilledButton.icon(
@@ -282,6 +331,8 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
   late String _nature;
   late int _categoryId;
   late int _communeId;
+  DateTime? _publishAt;
+  bool _scheduleChanged = false;
   bool _saving = false;
   String? _error;
 
@@ -295,6 +346,7 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
     _nature = widget.listing.nature;
     _categoryId = widget.listing.categoryId;
     _communeId = widget.listing.communeId;
+    _publishAt = widget.listing.publishAt;
   }
 
   @override
@@ -305,12 +357,41 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
     super.dispose();
   }
 
+  Future<void> _pickPublishAt() async {
+    final now = DateTime.now();
+    final hasFutureSchedule = _publishAt != null && _publishAt!.isAfter(now);
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: hasFutureSchedule ? _publishAt! : now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(hasFutureSchedule ? _publishAt! : now.add(const Duration(hours: 1))),
+    );
+    if (time == null || !mounted) return;
+
+    setState(() {
+      _publishAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _scheduleChanged = true;
+    });
+  }
+
   Future<void> _submit() async {
     final title = _title.text.trim();
     final description = _description.text.trim();
 
     if (title.length < 4 || description.length < 10) {
       setState(() => _error = 'Titre (4 caractères min.) et description (10 caractères min.) obligatoires.');
+      return;
+    }
+
+    if (_scheduleChanged && (_publishAt == null || !_publishAt!.isAfter(DateTime.now()))) {
+      setState(() => _error = 'Choisissez une date et une heure futures pour la publication.');
       return;
     }
 
@@ -329,6 +410,7 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
         categoryId: _categoryId,
         communeId: _communeId,
         availability: _availability.text,
+        publishAt: _scheduleChanged ? _publishAt : null,
       ),
     );
   }
@@ -408,6 +490,32 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
                 decoration: const InputDecoration(labelText: 'Disponibilité (facultatif)'),
                 onChanged: (value) => _availability.text = value,
               ),
+              if (widget.listing.status == 'BROUILLON') ...[
+                const SizedBox(height: 14),
+                const Text('Publication programmée', style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _publishAt == null
+                            ? 'Aucune date : annonce en attente de mise en ligne.'
+                            : DateFormat('d MMMM yyyy à HH:mm', 'fr').format(_publishAt!),
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ),
+                    OutlinedButton(
+                      onPressed: _pickPublishAt,
+                      child: Text(_publishAt == null ? 'Programmer' : 'Modifier'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'La date n’est modifiable qu’avant la mise en ligne (« Publier maintenant » la déclenche telle quelle).',
+                  style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
+                ),
+              ],
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 10),

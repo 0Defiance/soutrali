@@ -66,6 +66,9 @@ class ListingDetailPage extends ConsumerWidget {
           }
 
           final isMine = user != null && listing.authorId == user.id;
+          final blockedIds = ref.watch(blockedUsersProvider).value ?? const <BlockedUser>[];
+          final isBlocked = listing.authorId != null && blockedIds.any((account) => account.id == listing.authorId);
+          final channels = ref.watch(listingChannelsProvider(listingId)).value ?? const <ContactChannel>[];
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -135,6 +138,38 @@ class ListingDetailPage extends ConsumerWidget {
                         ],
                       ),
                     ),
+                    if (!isMine && !isBlocked && channels.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: SoutraliColors.paleGreen,
+                          border: Border.all(color: SoutraliColors.border),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Canaux de contact choisis par l’auteur',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 8),
+                            for (final channel in channels)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: _DetailLine(label: channel.label, value: channel.value),
+                              ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Visibles uniquement parce que vous êtes connecté ; la messagerie interne reste recommandée.',
+                              style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     if (isMine) ...[
                       Container(
@@ -157,6 +192,41 @@ class ListingDetailPage extends ConsumerWidget {
                               onPressed: () => context.go('/mes-annonces'),
                               icon: const Icon(Icons.manage_accounts_outlined),
                               label: const Text('Gérer mes annonces'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else if (isBlocked) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: SoutraliColors.paleOrange,
+                          border: Border.all(color: SoutraliColors.border),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Vous avez bloqué ce compte : la messagerie est désactivée dans les deux sens.',
+                              style: TextStyle(color: SoutraliColors.ink),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () => _unblock(context, ref, listing),
+                                  icon: const Icon(Icons.check_circle_outline),
+                                  label: const Text('Débloquer'),
+                                ),
+                                const Spacer(),
+                                OutlinedButton.icon(
+                                  icon: const Icon(Icons.flag_outlined),
+                                  label: const Text('Signaler'),
+                                  onPressed: () => _report(context, ref, listing, user),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -187,6 +257,14 @@ class ListingDetailPage extends ConsumerWidget {
                       const Text(
                         'Le contact se fait par la messagerie interne du site, réservée aux comptes connectés.',
                         style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () => _block(context, ref, listing),
+                          icon: const Icon(Icons.block, size: 18),
+                          label: const Text('Bloquer ce compte'),
+                        ),
                       ),
                     ],
                     const SizedBox(height: 32),
@@ -248,6 +326,78 @@ class ListingDetailPage extends ConsumerWidget {
             ),
       ),
     );
+  }
+
+  /// Bloquer l’auteur (T-14) : la messagerie est désactivée dans les deux sens.
+  Future<void> _block(BuildContext context, WidgetRef ref, Listing listing) async {
+    final authorId = listing.authorId;
+    if (authorId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.block, color: SoutraliColors.danger),
+        title: const Text('Bloquer ce compte ?'),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: const Text(
+            'Vous ne pourrez plus échanger par messagerie avec ce compte, '
+            'ni lui, ni vous. Vous pourrez débloquer depuis votre profil. '
+            'Aucune annonce n’est supprimée.',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: SoutraliColors.danger),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Bloquer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref.read(accountRepositoryProvider).block(authorId);
+      ref.invalidate(blockedUsersProvider);
+      ref.invalidate(listingProvider(listingId));
+      ref.invalidate(listingChannelsProvider(listingId));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Compte bloqué : messagerie désactivée.')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(error))),
+      );
+    }
+  }
+
+  Future<void> _unblock(BuildContext context, WidgetRef ref, Listing listing) async {
+    final authorId = listing.authorId;
+    if (authorId == null) return;
+
+    try {
+      await ref.read(accountRepositoryProvider).unblock(authorId);
+      ref.invalidate(blockedUsersProvider);
+      ref.invalidate(listingProvider(listingId));
+      ref.invalidate(listingChannelsProvider(listingId));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Compte débloqué : la messagerie est rétablie.')),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(apiErrorMessage(error))),
+      );
+    }
   }
 }
 

@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
+import '../account/contact_channels_section.dart';
+import '../account/profile_safety_section.dart';
 import '../auth/auth_repository.dart';
 import '../messaging/messaging_repository.dart';
 import 'listing.dart';
@@ -347,6 +349,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           },
                         ),
                       ),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const ContactChannelsSection(),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const BlockedAccountsSection(),
                     ],
                   ),
                 ),
@@ -523,6 +531,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     var nature = 'BENEVOLE';
     var submitting = false;
     var errorMessage = '';
+    DateTime? publishAt;
 
     await showDialog<void>(
       context: context,
@@ -631,6 +640,50 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                             ? 'Précisez une date ou vos disponibilités.'
                             : null,
                       ),
+                      const SizedBox(height: 14),
+                      const Text('Publication de l’annonce', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              publishAt == null
+                                  ? 'Publiée immédiatement après validation.'
+                                  : 'Programmée le ${DateFormat('d MMMM yyyy à HH:mm', 'fr').format(publishAt!)}',
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                          OutlinedButton(
+                            onPressed: () async {
+                              final now = DateTime.now();
+                              final date = await showDatePicker(
+                                context: dialogContext,
+                                initialDate: now,
+                                firstDate: now,
+                                lastDate: now.add(const Duration(days: 365)),
+                              );
+                              if (date == null || !dialogContext.mounted) return;
+                              final time = await showTimePicker(
+                                context: dialogContext,
+                                initialTime: TimeOfDay.fromDateTime(now.add(const Duration(hours: 1))),
+                              );
+                              if (time == null) return;
+                              setDialogState(() {
+                                publishAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                              });
+                            },
+                            child: Text(publishAt == null ? 'Programmer' : 'Modifier'),
+                          ),
+                          if (publishAt != null) ...[
+                            const SizedBox(width: 4),
+                            IconButton(
+                              tooltip: 'Publier immédiatement',
+                              icon: const Icon(Icons.close, size: 18),
+                              onPressed: () => setDialogState(() => publishAt = null),
+                            ),
+                          ],
+                        ],
+                      ),
                     ],
                     if (categories.isEmpty || communes.isEmpty) ...[
                       const SizedBox(height: 8),
@@ -664,6 +717,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   : () async {
                       if (!(formKey.currentState?.validate() ?? false)) return;
 
+                      if (publishAt != null && !publishAt!.isAfter(DateTime.now())) {
+                        setDialogState(() {
+                          errorMessage = 'Choisissez une date et une heure futures pour la publication.';
+                        });
+                        return;
+                      }
+
                       setDialogState(() {
                         submitting = true;
                         errorMessage = '';
@@ -680,6 +740,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                 communeId: int.parse(communeId),
                                 availability: isScheduled ? availabilityController.text.trim() : null,
                                 budget: nature == 'REMUNEREE' ? double.tryParse(budgetController.text.trim()) : null,
+                                publishAt: isScheduled ? publishAt : null,
                               ),
                             );
 
@@ -688,7 +749,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ref.invalidate(listingsProvider);
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Annonce publiée : visible immédiatement.')),
+                            SnackBar(
+                              content: Text(
+                                isScheduled && publishAt != null
+                                    ? 'Annonce programmée : publiée le '
+                                        '${DateFormat('d MMMM yyyy à HH:mm', 'fr').format(publishAt!)}.'
+                                    : 'Annonce publiée : visible immédiatement.',
+                              ),
+                            ),
                           );
                         }
                       } catch (error) {

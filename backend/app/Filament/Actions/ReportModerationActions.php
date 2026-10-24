@@ -100,6 +100,42 @@ final class ReportModerationActions
             });
     }
 
+    /**
+     * Transmettre le signalement à l’administrateur (cadrage §9) :
+     * réservé au modérateur — un administrateur ne se transmet rien à
+     * lui-même — et toujours motivé, la justification rejoint le journal.
+     */
+    public static function transfer(): Action
+    {
+        return Action::make('transmettre')
+            ->label('Transmettre à l’administrateur')
+            ->icon(Heroicon::OutlinedArrowRightCircle)
+            ->color('info')
+            ->visible(function (Report $record): bool {
+                $user = auth()->user();
+
+                return $user instanceof User
+                    && $user->role === 'MODERATEUR'
+                    && ! in_array($record->status, ['TRAITE', 'REJETE'], true);
+            })
+            ->schema([
+                Textarea::make('justification')
+                    ->label('Objet de la transmission')
+                    ->rows(3)
+                    ->required()
+                    ->placeholder('Pourquoi ce signalement demande l’intervention de l’administrateur.')
+                    ->helperText('Consignée dans le journal de modération avec votre nom et l’horodatage.'),
+            ])
+            ->action(function (Report $record, array $data): void {
+                self::apply($record, Decision::Transmis, $data['justification']);
+
+                Notification::make()
+                    ->title('Signalement transmis à l’administrateur')
+                    ->success()
+                    ->send();
+            });
+    }
+
     private static function apply(Report $record, Decision $decision, ?string $justification): void
     {
         $moderator = auth()->user();

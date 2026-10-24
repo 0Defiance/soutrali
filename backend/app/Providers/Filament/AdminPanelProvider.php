@@ -27,6 +27,8 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Soutrali — Administration')
+            // Favicon généré depuis le logo source (brand/generate-icons.php).
+            ->favicon('/favicon.png')
             // Charte v2 : orange #FE7402 (accent), vert #037C30 (secondaire).
             ->colors([
                 'primary' => '#FE7402',

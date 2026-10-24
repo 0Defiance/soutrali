@@ -24,6 +24,7 @@ class MyListingResource extends JsonResource
             'nature' => $this->nature,
             'status' => $this->status,
             'closure_outcome' => $this->closure_outcome,
+            'publish_at' => $this->publish_at?->toISOString(),
             'neighborhood' => $this->neighborhood,
             'availability' => $this->availability,
             // Le cast decimal:2 renvoie une chaîne : on force un nombre JSON.

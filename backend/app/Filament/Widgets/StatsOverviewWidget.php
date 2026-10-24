@@ -36,7 +36,7 @@ class StatsOverviewWidget extends BaseStatsOverviewWidget
                 ))
                 ->descriptionIcon(Heroicon::OutlinedUserGroup)
                 ->color('info'),
-            Stat::make('Annonces publiées', Listing::where('status', 'PUBLIEE')->count())
+            Stat::make('Annonces publiées', Listing::published()->count())
                 ->description(sprintf(
                     '%d masquées · %d clôturées',
                     Listing::where('status', 'MASQUEE')->count(),

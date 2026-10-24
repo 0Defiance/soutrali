@@ -65,6 +65,7 @@ class ReportsTable
                 ViewAction::make()->label('Voir'),
                 ReportModerationActions::claim(),
                 ReportModerationActions::treat(),
+                ReportModerationActions::transfer(),
                 ReportModerationActions::reject(),
             ]);
     }
