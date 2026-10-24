@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.1 · **Dernière mise à jour :** 23 octobre 2026
+> **Version :** 1.2 · **Dernière mise à jour :** 24 octobre 2026
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 1. État vérifié en un coup d’œil
 
-Constats relevés le **23 octobre 2026** sur le poste de développement, par exécution réelle des commandes.
+Constats relevés le **24 octobre 2026** sur le poste de développement, par exécution réelle des commandes (les constats antérieurs du 23 oct. sont conservés dans le journal §2).
 
 | Élément | Constat vérifié |
 |---|---|
@@ -40,15 +40,16 @@ Constats relevés le **23 octobre 2026** sur le poste de développement, par ex�
 | Base `soutrali` | **Migrée : 17 tables.** `php artisan migrate:status` affiche les 4 migrations « Ran » (revérifié le 22 oct.) |
 | Utilisateur SQL `soutrali_dev` | **Créé le 22 oct. 2026**, droits limités à `soutrali.*`. `backend/.env` l’utilise et `php artisan migrate:status` s’y connecte sans erreur |
 | `backend/.env` | Présent localement, **correctement ignoré par Git**, non publié |
-| Icônes web | `app/web/icons/*` et `app/web/favicon.png` sont les **icônes par défaut du squelette Flutter**, pas la marque Soutrali |
-| `backend/public/favicon.ico` | **Fichier vide (0 octet)** |
-| Polices | Manrope et Source Sans 3 **non embarquées** ; le thème retombe sur `Arial` |
+| Icônes web | **Icônes de marque** (24 oct. 2026) : `app/web/favicon.png` et `app/web/icons/*` (192, 512, maskable 192/512) régénérés depuis le logo source par `brand/generate-icons.php` (variante « symbole seul » sur fond ivoire) |
+| `backend/public/favicon.ico` | **Généré le 24 oct. 2026** : ICO multi-tailles (32 + 16 px) + `favicon.png`, aux couleurs de la marque |
+| Polices | **Embarquées depuis le 24 oct. 2026** : Manrope (164 700 o) et Source Sans 3 (646 340 o) en TTF variable dans `app/assets/fonts/`, licences SIL OFL 1.1 jointes (`OFL-Manrope.txt`, `OFL-SourceSans3.txt`), familles déclarées dans `pubspec.yaml` (sections `assets:` et `fonts:`) et chargées par le moteur Flutter (présentes dans `FontManifest.json` du build) |
 | Serveurs de développement | À la reprise du 23 oct. : MariaDB relancée (`mysqld.exe` XAMPP, port 3306), API Laravel sur `127.0.0.1:8000` (`php artisan serve`) répondant HTTP 200, build web release servi sur `127.0.0.1:8082` (Python http.server). PHP 8.3 (WinGet) : extensions `pdo_sqlite` et `sqlite3` activées dans `php.ini` (sauvegarde `.bak-soutrali` créée) pour permettre `php artisan test` en local |
-| Fonctionnalités pilotes | **Inscription, connexion, session, publication, modification, clôture avec issue, messagerie interne, signalement : implémentées et vérifiées** (D-04, D-05, D-06 validées le 22 oct. 2026) |
+| Fonctionnalités pilotes | **Inscription, connexion, session, publication immédiate et programmée, modification, clôture avec issue, messagerie interne, signalement, blocages d’utilisateurs, canaux de contact du profil : implémentées et vérifiées** (D-04, D-05, D-06 validées le 22 oct. 2026 ; D-05 complétée et T-14 intégrés le 24 oct. 2026) |
+| Publication programmée | Colonne `publish_at` (migration du 24 oct. 2026), commande `soutrali:publish-due` planifiée chaque minute dans `routes/console.php` (à exécuter via `schedule:work` en local ou cron en production) |
 | Back-office `/admin` | **Opérationnel et testé** (23 oct. 2026) : panneau Filament 5 (7 ressources, 8 policies, mode strict), traitement des signalements tracé dans `moderation_actions`, accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs |
-| Tests | 23 oct. 2026 : `flutter analyze` sans problème ; **14 tests Flutter** verts ; **33 tests Pest** verts (244 assertions, SQLite en mémoire, dont 9 tests du back-office) |
+| Tests | 24 oct. 2026 : `flutter analyze` sans problème ; **14 tests Flutter** verts ; **61 tests Pest** verts (**558 assertions**, SQLite en mémoire : 27 tests dans 5 nouveaux fichiers — contrat API, blocages, canaux de contact, migrations, publication programmée — et 1 test ajouté au back-office) |
 
-**Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; les étapes pilotes T2/T3/T4 (comptes, annonces, contact, signalement, clôture) sont faites et le parcours complet inscription → publication → contact → signalement → clôture est observé en local. **Le tir d’essai T1b n’est plus bloqué** : la session Sanctum est validée de bout en bout ; restent les mesures téléphone (poids compressé, premier écran utile) à cadrer avec la MOA.
+**Conclusion :** l’étape T1 (référentiels en base, exposés par l’API, consommés par l’écran) est faite et vérifiée ; les étapes pilotes T2/T3/T4 (comptes, annonces, contact, signalement, clôture) sont faites et le parcours complet inscription → publication → contact → signalement → clôture est observé en local ; le reste du MVP prévu (T-14 blocages, canaux de contact F-02/F-06, publication programmée F-04, polices et icônes D-02) est intégré le 24 oct. 2026. **Le tir d’essai T1b n’est plus bloqué** : la session Sanctum est validée de bout en bout et les **mesures locales** (poids du build, premier écran utile sur machine de développement) sont relevées au §2 du 24 oct. ; restent les mesures sur téléphone Android en réseau limité, dont les seuils sont à fixer avec la MOA (aucun chiffre n’est proposé sans leur validation).
 
 ---
 
@@ -213,6 +214,20 @@ Application Flutter :
 - `DemoSeeder` crée en local un compte administrateur de démonstration (`admin.demo@soutrali.test`, mot de passe `password`) pour ouvrir `/admin`. Les assets Filament publiés (`public/css|js|fonts/filament`, 41 fichiers) sont versionnés : `/admin` fonctionne sans commande supplémentaire ; `php artisan filament:assets` les régénère.
 - **Vérifications exécutées, avec PHP 8.3** : `php artisan test` → **33 tests passés, 244 assertions**, dont `AdminPanelTest` (9 tests : ouverture du panneau réservée aux modérateurs et administrateurs actifs, refus de l’anonyme et de l’utilisateur ordinaire, traitement d’un signalement qui masque l’annonce et trace la décision, classement sans suite, refus du masquage sur annonce déjà clôturée, rejet motivé, suspension et réactivation tracées avec refus de l’auto-suspension, gestion des comptes réservée aux administrateurs, suppression interdite partout) ; `pint --test` → **PASS sur 106 fichiers** ; `phpstan analyse` (Larastan niveau 5) → **aucune erreur** ; `GET /admin` sur l’API locale répond **302 → `/admin/login`**.
 
+### 24 octobre 2026 — reste du MVP intégré (T-14, F-02/F-06, F-04, D-02) et mesures locales T1b
+
+- **Blocages d’utilisateurs (T-14), de bout en bout** : table `user_blocks` (déjà présente dans la migration du 20 oct., couple auteur/bloqué unique), nouveau `BlockController` — `GET /api/v1/me/blocks` (liste des comptes bloqués, id : identifiant du compte bloqué, libellé, horodatage), `POST /api/v1/users/{user}/block` et `DELETE /api/v1/users/{user}/block` (idempotents, 403 sur soi-même). Effets : `ConversationController` refuse le démarrage (403) et l’envoi (403) quand l’un des deux a bloqué l’autre ; les canaux de contact d’une annonce sont refusés (403) pour un compte bloqué ; côté Flutter, section « Comptes bloqués » dans l’écran du compte (débloquer), bouton bloquer/débloquer sur le détail d’une annonce, garde-fou affiché à la place du contact. 5 tests Pest (`BlockTest`).
+- **Canaux de contact du profil (F-02, F-06 — complétion de D-05, arbitrage du 24 oct.)** : table `contact_channels` (déjà présente depuis le 20 oct.) avec `ContactChannelController` — `GET/POST/DELETE /api/v1/me/channels` (3 types : `EMAIL`, `TELEPHONE`, `WHATSAPP` ; **un seul canal par type** et par compte — création ou mise à jour par `updateOrCreate` ; validation e-mail pour `EMAIL`, expression régulière téléphone sinon ; visibilité propre à chaque canal via `visible_to_members` ; 404 sur le canal d’un autre compte), et `GET /api/v1/listings/{id}/contact-channels` : exposé **aux membres connectés uniquement** (visiteur : 401), **uniquement les canaux que leur propriétaire a marqués visibles**, jamais pour ses propres annonces (403), 403 si bloqué dans les deux sens, 404 si l’annonce n’est pas en ligne. Section « Canaux de contact » dans l’écran du compte ; sur le détail d’une annonce connecté, canaux affichés à côté de l’action messagerie. 6 tests Pest (`ContactChannelTest`).
+- **Publication programmée (F-04)** : migration `add_publish_at_to_listings` (colonne `publish_at`, non destructrice), `publishNow` (publication immédiate d’un brouillon programmé) et règle « date de programmation non modifiable après publication » dans `MyListingController` ; commande `soutrali:publish-due` (passe les annonces `BROUILLON` échues en `PUBLIEE`) planifiée chaque minute dans `routes/console.php` — **à exécuter** en local via `php artisan schedule:work` et en production via un cron `schedule:run`, sinon les annonces programmées ne passent pas automatiquement ; le filtre de visibilité publique intègre les annonces échues même sans la commande. Côté Flutter : bouton « Publier maintenant » et encart « Publication programmée » dans « mes annonces » ; champ `publish_at` éditable dans le back-office. 6 tests Pest (`ScheduledPublicationTest`, dont voyage dans le temps pour la bascule automatique).
+- **Transmission à l’administrateur (complétion D-06)** : enum `Decision` enrichie du cas `TRANSMIS` (le statut du signalement reste `EN_COURS`) et action « transmettre » dans `ReportModerationActions` — justification obligatoire, objet de la transmission renseigné, trace dans `moderation_actions`. 1 test ajouté à `AdminPanelTest` (« transfers a report to the administrator with its justification »).
+- **Migrations et contrats sous test** : `MigrationTest` (17 tables, colonnes `publish_at` et `status` présentes) et `ApiContractTest` (structure JSON des listes publiques, nombre `budget`, absence de champs privés) ajoutés à la suite.
+- **Identité visuelle (D-02)** : **polices Manrope et Source Sans 3 embarquées** — TTF variables récupérés depuis le dépôt officiel `google/fonts` (licences SIL OFL 1.1 vérifiées et jointes : `app/assets/fonts/OFL-Manrope.txt`, `OFL-SourceSans3.txt`), **déclarées dans `pubspec.yaml`** (sections `assets:` et `fonts:`, familles « Manrope » et « Source Sans 3 ») — le moteur Flutter les charge au démarrage (présentes dans `FontManifest.json` du build ; 164 700 o + 646 340 o). **Icônes et favicons générés depuis le logo source** par `brand/generate-icons.php` : cadrage automatique du symbole, fond ivoire de charte (`#FFF9F2`), icônes Flutter (favicon 48 px, Icon-192/512 et maskable) dans `app/web/`, favicon du backend `backend/public/favicon.ico` (conteneur PNG, tailles 32 et 16 px) et `favicon.png` (32 px) — remplacement des icônes du squelette Flutter et du favicon vide (0 octet).
+- **Mesures T1b locales (non définitives)** — build web release servi sur `127.0.0.1:8082`, API sur `127.0.0.1:8000`, MariaDB locale :
+  - **Poids du build** (`flutter build web --release`, postérieure à l’ajout des polices) : `main.dart.js` **3 790 546 o brut / 1 071 108 o gzip** ; `canvaskit/canvaskit.wasm` 7 284 602 o brut / 2 922 578 o gzip (servi par le CDN `gstatic.com` par défaut) ; polices `Manrope.ttf` 164 700 o (68 197 o gzip) et `SourceSans3.ttf` 646 340 o (235 336 o gzip) ; dossier `build/web` complet : **43 Mo** (variants inclus).
+  - **Premier écran utile, deux relevés dans Chromium** : premier rendu peint (FCP) à **1 273 ms** (chargement à froid) et **1 009 ms** (rechargement à cache chaud) ; la réponse `GET /api/v1/listings` arrive à ~3,0 s (froid) / ~3,3 s (chaud) et le canvas Flutter est rendu ; console propre (seul le 401 `/me` attendu en visiteur).
+  - **Limites de ces mesures** : poste de développement en réseau local, serveur statique Python **sans compression gzip** (le chiffre « gzip » ci-dessus est calculé à la volée, pas mesuré sur le fil), aucun téléphone instrumenté, aucune mesure en réseau contraint. **Ce ne sont pas les mesures de recette T1b** ; les seuils restent à fixer avec la MOA (aucun chiffre n’est proposé comme objectif).
+- **Vérifications exécutées, avec PHP 8.3 et Flutter 3.47.7** : `php artisan test` → **61 tests passés, 558 assertions** (33 du 23 oct. + 27 tests dans les 5 nouveaux fichiers — contrat API, blocages, canaux de contact, migrations, publication programmée — + 1 test ajouté au back-office pour la transmission) ; `pint --test` → **PASS sur 115 fichiers** ; `phpstan analyse` (Larastan niveau 5) → **aucune erreur** ; `flutter analyze` → **No issues found** ; `flutter test` → **14 tests passés** ; `flutter build web --release` → **succès**.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -222,12 +237,14 @@ Application Flutter :
 - API publique versionnée : `GET /api/v1/listings` (filtres `q`, `commune`, `category`, `type`, `nature`, pagination `page` / `per_page` plafonnée à 24) et `GET /api/v1/listings/{id}`, toutes deux limitées à 60 requêtes/minute.
 - Référentiels publics : `GET /api/v1/categories` et `GET /api/v1/communes` (éléments `active` uniquement, 60 requêtes/minute), qui alimentent les filtres de l’écran.
 - Authentification par session web Sanctum (D-04 validée) : `POST /api/v1/register`, `/login` (message d’erreur identique si le compte est inconnu), `/logout`, `GET /api/v1/me`, `GET /api/v1/csrf-token` (jeton CSRF en JSON). Mutations exigées en session, cookie de session `soutrali-session` et origine contrôlée.
-- Annonces de l’utilisateur : publication immédiate `PUBLIEE`, modification réservée au propriétaire (403 sinon), clôture avec `closure_outcome` (409 si déjà clôturée), liste `GET /api/v1/me/listings`.
+- Annonces de l’utilisateur : publication immédiate `PUBLIEE` ou **programmée** (`publish_at` futur → statut `BROUILLON`, publication automatique par `soutrali:publish-due` planifiée chaque minute ; date non modifiable après mise en ligne ; publication immédiate `POST /listings/{id}/publish` renvoie 409 si déjà publiée), modification réservée au propriétaire (403 sinon), clôture avec `closure_outcome` (409 si déjà clôturée), liste `GET /api/v1/me/listings`.
 - Messagerie interne tracée (D-05 validée) : fils par couple auteur/initiateur autour d’une annonce publiée, premier message au démarrage, accusés de lecture, compteurs de non-lus. Aucune coordonnée privée n’est échangée.
 - Signalements (D-06 validée) : motif + détails, statut `NOUVEAU`, refus de signaler sa propre annonce, suivi côté auteur du signalement.
-- Back-office Filament sur `/admin` (T-05) : 7 ressources (signalements, annonces, utilisateurs, catégories, communes, interactions, journal de modération), 8 policies enregistrées, panneau en **mode strict** (`strictAuthorization()`), accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs. Toute décision de modération (prise en charge, masquage, republication, rejet, classement sans suite, suspension, réactivation) passe par le service `ReportModerator` et laisse une trace horodatée dans `moderation_actions` — le back-office ne crée ni ne supprime de signalement.
+- Blocages d’utilisateurs (T-14, 24 oct. 2026) : `GET /api/v1/me/blocks`, `POST` / `DELETE /api/v1/users/{user}/block` (idempotents, 403 sur soi-même). Un blocage désactive la mise en relation dans les deux sens : démarrage et envoi dans une conversation refusés (403), canaux de contact refusés (403) — rien n’est supprimé.
+- Canaux de contact du profil (F-02/F-06, complétion de D-05 le 24 oct. 2026) : `GET/POST/DELETE /api/v1/me/channels` (types `EMAIL`, `TELEPHONE`, `WHATSAPP` — un seul canal par type, visibilité propre à chaque canal) et `GET /api/v1/listings/{id}/contact-channels` : membres connectés uniquement (visiteur 401), canaux visibles de l’auteur uniquement, jamais ses propres (403), 403 en cas de blocage.
+- Back-office Filament sur `/admin` (T-05) : 7 ressources (signalements, annonces, utilisateurs, catégories, communes, interactions, journal de modération), 8 policies enregistrées, panneau en **mode strict** (`strictAuthorization()`), accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs. Toute décision de modération (prise en charge, masquage, republication, rejet, classement sans suite, **transmission à l’administrateur** — `TRANSMIS`, statut maintenu `EN_COURS`, 24 oct. —, suspension, réactivation) passe par le service `ReportModerator` et laisse une trace horodatée dans `moderation_actions` — le back-office ne crée ni ne supprime de signalement.
 - Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget (nombre JSON), catégorie, commune, auteur (identifiant + nom affiché) et date. Les ressources `author` ne sont chargées que sur la route détail.
-- Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14.
+- Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14 ; colonne `publish_at` ajoutée aux `listings` le 24 oct. 2026 (migration non destructrice).
 - Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 3 comptes fictifs de démonstration (dont un administrateur du back-office) et 8 annonces.
 - Modèles Eloquent avec relations et index de recherche (`status + commune + date`, `status + category + type + nature`).
 - Manifeste Composer Laravel 13 + Sanctum 4 + Filament 5, avec Pest, Pint et Larastan en développement. `composer.lock` versionné.
@@ -237,26 +254,28 @@ Application Flutter :
 
 - Page d’accueil interactive (`discover_page.dart`) : en-tête avec compte connecté (initiales, menu mes annonces / messagerie avec badge de non-lus / déconnexion), actions « Annonce » et « Prestation de service » avec choix immédiat/programmé, formulaire complet relié à l’API, filtres commune/nature/q, cartes cliquables vers le détail, signalement d’une annonce.
 - Pages `/login` et `/register` : validation champ par champ, erreurs API 422 affichées champ par champ, ouverture de session immédiate après inscription.
-- Détail d’annonce (`listing_detail_page.dart`) : contact de l’auteur par message (renvoi vers la connexion si visiteur, garde-fou « C’est votre annonce »), signalement, lien de retour.
-- `mes-annonces` : liste des annonces de l’utilisateur tous statuts, modification, clôture avec issue (récompensé, besoin satisfait, pas de réponse).
+- Détail d’annonce (`listing_detail_page.dart`) : contact de l’auteur par message (renvoi vers la connexion si visiteur, garde-fou « C’est votre annonce »), **canaux de contact de l’auteur affichés aux membres connectés** (section masquée si blocage ou pour sa propre annonce), **bouton bloquer / débloquer l’auteur**, signalement, lien de retour.
+- `mes-annonces` : liste des annonces de l’utilisateur tous statuts, modification, clôture avec issue (récompensé, besoin satisfait, pas de réponse), **« Publier maintenant » et encart « Publication programmée » pour les annonces à date future**.
 - `messagerie` : liste des fils avec non-lus et dernier message, vue de fil avec accusés de lecture et envoi.
-- Thème centralisé aux couleurs de la charte v2 (`app/lib/src/theme/soutrali_theme.dart`) : orange `#FE7402`, vert `#037C30`, ivoire `#FFF9F2`. Aucune couleur écrite dans les écrans.
+- Thème centralisé aux couleurs de la charte v2 (`app/lib/src/theme/soutrali_theme.dart`) : orange `#FE7402`, vert `#037C30`, ivoire `#FFF9F2`. Aucune couleur écrite dans les écrans. **Polices de charte embarquées depuis le 24 oct. 2026** : familles « Manrope » (titres) et « Source Sans 3 » (corps) déclarées dans `pubspec.yaml`, fichiers TTF et licences OFL dans `assets/fonts/`, repli Arial/Helvetica conservé.
+- Écran du compte : sections « **Canaux de contact** » (ajout / modification / visibilité) et « **Comptes bloqués** » (liste, déblocage).
 - Configuration française fonctionnelle (délégués Material/Cupertino).
 - Filtres « Commune » et « Catégorie » alimentés par l’API de référentiels (le filtre commune n’est plus codé en dur), avec état dégradé propre si l’API est absente.
 - Quatorze tests : modèle d’annonce et filtres, référentiels et transmission des filtres, pages d’authentification (validation e-mail/mot de passe, liens croisés), actions de publication (visiteur invité à se connecter).
 
 ### Vérifications exécutées
 
-- `pest` / `php artisan test` : **33 tests passés, 244 assertions** le 23 oct. (PHP 8.3, SQLite en mémoire ; 7 tests au niveau T1, 17 tests d’authentification / annonces / conversations / signalements, 9 tests d’accès et de modération du back-office).
-- `pint --test` : PASS sur 106 fichiers (23 oct.).
-- `phpstan analyse` avec Larastan niveau 5 : aucune erreur (23 oct.).
-- `flutter analyze` : **No issues found** (revérifié le 23 oct.).
-- `flutter test` : **14 tests passés** (revérifié le 23 oct.).
-- `flutter build web --release` : compilation réussie (183,6 s) ; `main.dart.js` 3 294 322 o brut / 942 397 o gzip ; police d’icônes Material réduite de 1 645 184 à 9 996 octets.
+- `pest` / `php artisan test` : **61 tests passés, 558 assertions** le 24 oct. (PHP 8.3, SQLite en mémoire) — dont 5 nouveaux fichiers : `ApiContractTest` (7), `BlockTest` (5), `ContactChannelTest` (6), `MigrationTest` (3), `ScheduledPublicationTest` (6), plus 1 test ajouté à `AdminPanelTest` (transmission à l’administrateur).
+- `pint --test` : PASS sur 115 fichiers (24 oct.).
+- `phpstan analyse` avec Larastan niveau 5 : aucune erreur (24 oct.).
+- `flutter analyze` : **No issues found** (revérifié le 24 oct.).
+- `flutter test` : **14 tests passés** (revérifié le 24 oct.).
+- `flutter build web --release` : compilation réussie en 152 s (24 oct., après ajout des polices) ; `main.dart.js` **3 790 546 o brut / 1 071 108 o gzip** (relevé local), polices `Manrope.ttf` 164 700 o et `SourceSans3.ttf` 646 340 o, dossier `build/web` 43 Mo. Relevé antérieur du 22 oct. : 183,6 s, 3 294 322 o / 942 397 o gzip.
+- **Mesures locales T1b (24 oct., non définitives)** : FCP 1 273 ms à froid / 1 009 ms à cache chaud dans Chromium, réponse `GET /api/v1/listings` à ~3,0 s / ~3,3 s, console propre — détails et limites au §2. Les mesures sur téléphone Android en réseau limité restent à faire.
 - Parcours navigateur → API → MariaDB observé avec données le 22 oct. : requêtes `listings`, `communes`, `categories` et filtres en HTTP 200, annonce rendue à l’écran (voir §2, étape T1).
 - Parcours complet observé dans le navigateur le 23 oct. : inscription, session, publication, détail avec garde-fou auteur, rendu de l’annonce publiée dans le fil ; puis 12 scénarios API à deux comptes (contact, lecture, réponse, non-lus, signalement, refus de signaler sa propre annonce, clôture, 403/404/409 attendus).
 - `php artisan migrate` : **17 tables** créées (11 tables du modèle conceptuel + 6 tables d’infrastructure Laravel).
-- `GET /api/v1/listings` : **HTTP 200** avec une liste paginée vide — résultat normal tant que le seeder est vide.
+- `GET /api/v1/listings` : **HTTP 200** (relevé le 22 oct. sur base sans annonce, résultat normal à l’époque ; depuis le 22 oct., le seeder local charge 8 annonces fictives).
 - Rendu navigateur contrôlé sur ordinateur et à 390 px : aucun débordement horizontal.
 - Contrôle des règles Git d’ignore et scan de secrets : conformes (voir §2, 22 oct.).
 - Ces vérifications sont exécutées sur le poste de développement. Leur passage dans la CI GitHub est suivi au §2.
@@ -265,12 +284,11 @@ Application Flutter :
 
 ## 4. Ce qui bloque, et pourquoi
 
-**Résolus** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (T0). Les référentiels sont en base et exposés par l’API (T1). Les décisions D-04, D-05 et D-06 sont validées et les parcours compte / publication / contact / signalement / clôture sont implémentés et vérifiés (22–23 oct.). La modération des signalements a désormais une interface : le back-office `/admin` traite et trace chaque décision depuis le 23 oct. 2026 (9 tests Pest dédiés).
+**Résolus** : la base `soutrali` est migrée (17 tables) et le compte SQL dédié `soutrali_dev` existe avec des droits limités ; `GET /api/v1/listings` répond 200 (T0). Les référentiels sont en base et exposés par l’API (T1). Les décisions D-04, D-05 et D-06 sont validées et les parcours compte / publication / contact / signalement / clôture sont implémentés et vérifiés (22–23 oct.). La modération des signalements a désormais une interface : le back-office `/admin` traite et trace chaque décision depuis le 23 oct. 2026 (10 tests Pest dédiés). L’**identité visuelle embarquée** est en place depuis le 24 oct. 2026 : polices Manrope et Source Sans 3 (licences OFL vérifiées), icônes et favicons générés depuis le logo source — il reste à valider le rendu sur appareils réels et à produire les déclinaisons restantes (§5, étape 7).
 
 | Blocage | Cause vérifiée | Conséquence |
 |---|---|---|
-| Le tir d’essai T1b est incomplet sur ses volets mesure | Le parcours navigateur → API → base et la session Sanctum sont observés, mais les mesures téléphone (temps jusqu’au premier écran utile, poids réellement transféré compressé) ne sont pas faites : aucun téléphone instrumenté et le serveur local de test ne compresse pas | Les seuils de réussite ne peuvent pas être présentés à la MOA |
-| Pas d’identité visuelle embarquée | Icônes Flutter par défaut, favicon backend vide, polices non embarquées (constat du 22 oct., inchangé) | Le rendu n’est pas à l’identité de la marque |
+| Le tir d’essai T1b est incomplet sur ses volets mesure téléphone | Le parcours navigateur → API → base et la session Sanctum sont observés ; les **mesures locales** (poids du build, FCP, réponse API) ont été relevées le 24 oct. (§2), mais les mesures sur téléphone Android en réseau limité ne sont pas faites : aucun téléphone instrumenté, serveur local sans compression gzip | Les seuils de réussite ne peuvent pas être présentés à la MOA |
 | Création du premier administrateur en production | Le compte `admin.demo` n’existe qu’en local (`DemoSeeder`, environnement `local`) ; aucun mécanisme de création initial n’est encore arrêté pour la production | Un déploiement ne peut pas encore ouvrir `/admin` sans création manuelle documentée |
 
 ---
@@ -288,17 +306,17 @@ L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran ava
    - Seeder chargé : 14 lignes de communes (D-03 validée), 8 catégories (D-07 validées) +, en local, 2 comptes et 8 annonces fictifs. **Fait.**
    - Routes `GET /api/v1/categories` et `GET /api/v1/communes` écrites et vérifiées par HTTP réel. **Fait.**
    - Filtres Flutter commune et catégorie alimentés par l’API. **Fait.**
-   - Hors T1, toujours ouvert : les routes de publication et d’authentification n’existent pas (D-04).
+   - ~~Hors T1, toujours ouvert : les routes de publication et d’authentification n’existent pas (D-04).~~ **Résolu le 22 oct. 2026** : routes d’authentification et de publication implémentées.
 3. **T1b — tir d’essai : en cours**
    - Faire répondre l’API à l’écran Flutter Web avec des données de la base. **Fait le 22 oct. 2026** (requêtes 200 observées, annonce rendue à l’écran).
    - Valider la session Sanctum de bout en bout : connexion, requête mutante avec CSRF, déconnexion, en développement puis sur build servi par la même origine. **Fait le 23 oct. 2026** (inscription, connexion, publication, contact, signalement, clôture observés dans le navigateur et rejoués par API à deux comptes).
-   - Mesurer le poids compressé et le temps jusqu’au premier écran utile sur un téléphone Android courant en réseau limité. **Seuils à fixer avec la MOA ; aucun chiffre inventé.** À faire.
+   - ~~Mesurer le poids compressé et le temps jusqu’au premier écran utile~~ — **mesures locales faites le 24 oct. 2026** (poids du build gzip calculé, FCP et réponse API relevés dans Chromium, voir §2) ; **mesure sur un téléphone Android courant en réseau limité : à faire. Seuils à fixer avec la MOA ; aucun chiffre inventé.**
    - Si la mesure échoue durablement : évaluer `--wasm`, chargement différé, assets réduits, puis rouvrir T-01 pour le web seul.
 4. **T2 — comptes et administration** : comptes, authentification et profil minimal **faits** (22 oct.). Rôles, back-office `/admin`, catégories et communes, traitement des signalements par un modérateur : **faits le 23 octobre 2026**. Reste : définir la procédure de création du premier compte administrateur en production (le compte de démonstration n’existe qu’en local).
 5. **T3 — annonces** : création, recherche filtrée, détail, modification, clôture avec issue : **faits** (22–23 oct.). Reste à tester sur téléphone et à durcir (contrats API dans la CI).
-6. **T4 — confiance et contact** : messagerie interne tracée et signalements **faits** (22 oct.), modération traçable **faite le 23 oct. 2026** (back-office + journal `moderation_actions`). Reste : blocages d’utilisateurs (`user_blocks`, T-14).
-7. **Identité visuelle** : produire les icônes et déclinaisons du logo aux couleurs de la marque, remplacer les icônes Flutter par défaut et régénérer le favicon vide du backend ; embarquer Manrope et Source Sans 3 après vérification de licence.
-8. **Tests** : les permissions du back-office sont couvertes depuis le 23 oct. (9 tests d’accès et de modération). Reste : tests Pest du contrat API, des migrations et de la visibilité des canaux de contact.
+6. **T4 — confiance et contact** : messagerie interne tracée et signalements **faits** (22 oct.), modération traçable **faite le 23 oct. 2026** (back-office + journal `moderation_actions`), **blocages d’utilisateurs (T-14) et canaux de contact du profil (F-02/F-06) faits le 24 oct. 2026**, transmission à l’administrateur ajoutée le même jour. **T4 complet pour le MVP.**
+7. **Identité visuelle** : ~~produire les icônes et favicons ; embarquer Manrope et Source Sans 3~~ **fait le 24 oct. 2026** (icônes/favicons générés par `brand/generate-icons.php`, polices OFL embarquées). Reste : déclinaisons restantes du logo (SVG, monochrome, inversée, §15.7), validation du rendu sur appareils réels, confirmation du logo et de la palette (D-02).
+8. **Tests** : permissions du back-office couvertes depuis le 23 oct. (10 tests d’accès et de modération), **contrat API, migrations, blocages, canaux de contact et publication programmée couverts depuis le 24 oct.** Reste : exécuter ces suites dans la CI à chaque dépôt (workflow existant) et tester le parcours complet sur téléphone.
 
 ---
 

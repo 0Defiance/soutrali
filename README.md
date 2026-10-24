@@ -35,7 +35,7 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 | `brand/logo/` | Logo de marque |
 | `.github/workflows/ci.yml` | Intégration continue : Pest, Pint, Larastan, `flutter analyze`, `flutter test`, build web (T-12) |
 
-**État en une phrase :** les référentiels T1 sont en base et exposés par l’API, le parcours complet (inscription → publication → contact → signalement → clôture) est validé de bout en bout, le back-office `/admin` traite et trace les signalements (23 oct. 2026), mais le tir d’essai T1b reste incomplet (mesures téléphone non faites) — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
+**État en une phrase :** les référentiels T1 sont en base et exposés par l’API, le parcours complet (inscription → publication → contact → signalement → clôture) est validé de bout en bout, le back-office `/admin` traite et trace les signalements (23 oct. 2026), le reste du MVP (blocages T-14, canaux de contact, publication programmée, identité visuelle) est intégré et testé (24 oct. 2026), mais le tir d’essai T1b reste incomplet (mesures téléphone non faites) — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
 
 ---
 
@@ -617,7 +617,7 @@ Couleurs de marque **mesurées** sur le logo ; couleurs d’interface dérivées
 | Texte et interface | Source Sans 3 | Poids 400 à 600 |
 | Repli | Arial, Helvetica, sans-serif | Obligatoire ; deux familles maximum par écran |
 
-Échelle de référence : Display 40–48 px · H1 32 · H2 24 · H3 20 · H4 16–18 · corps 16 (interligne 1,55) · compact 14 · label 12–14. Les polices doivent être hébergées localement ; **les fichiers ne sont pas encore récupérés** (licence à vérifier).
+Échelle de référence : Display 40–48 px · H1 32 · H2 24 · H3 20 · H4 16–18 · corps 16 (interligne 1,55) · compact 14 · label 12–14. Les polices doivent être hébergées localement ; **Manrope et Source Sans 3 sont embarquées** depuis le dépôt officiel Google Fonts (fichiers variables TTF dans `app/assets/fonts/`, licences SIL OFL 1.1 vérifiées et jointes : `OFL-Manrope.txt`, `OFL-SourceSans3.txt` — 24 oct. 2026).
 
 ### 15.5 Système visuel
 
@@ -642,10 +642,10 @@ Français clair, chaleureux, direct, compréhensible par un public large. Pas de
 |---|---|
 | `brand/logo/soutrali-logo-couleurs.png` | Logo de marque reçu, source unique (1 149 220 octets) |
 | `app/assets/brand/soutrali-logo.png` | Copie redimensionnée utilisée par l’application Flutter (248 267 octets) |
-| `app/web/favicon.png`, `app/web/icons/Icon-192.png`, `Icon-512.png`, `Icon-maskable-192.png`, `Icon-maskable-512.png` | **Icônes par défaut du squelette Flutter généré** (logo Flutter bleu), **pas** la marque Soutrali — à remplacer |
-| `backend/public/favicon.ico` | **Fichier vide (0 octet)** — à régénérer |
+| `app/web/favicon.png`, `app/web/icons/Icon-192.png`, `Icon-512.png`, `Icon-maskable-192.png`, `Icon-maskable-512.png` | **Icônes de marque générées** depuis le logo source (variante « symbole seul » sur fond ivoire, §15.2) par `brand/generate-icons.php` — 24 oct. 2026 |
+| `backend/public/favicon.ico` | **Généré le 24 oct. 2026** : ICO multi-tailles (32 + 16 px, conteneur PNG) + `favicon.png` aux couleurs de la marque |
 
-**Reste à produire** (aucun de ces éléments n’est livré) : variantes SVG du logo, déclinaisons monochrome et inversée, favicons ICO/PNG/SVG, icônes 192/512/maskable aux couleurs de la marque, PDF d’impression, fichier de couleurs et d’espacements. Le tracé vectoriel devra être **fidèle au logo reçu mais non dessiné à l’origine** ; à régénérer si le logo est retravaillé (D-02). Le détail du favicon à 16 px est à vérifier sur écran réel.
+**Produit le 24 octobre 2026** : favicons et icônes 192/512/maskable générés depuis le logo source (`brand/generate-icons.php`, cadrage automatique du symbole, fond recoloré en ivoire de charte). **Reste à produire** : variantes SVG du logo, déclinaisons monochrome et inversée, favicon SVG, PDF d’impression, fichier de couleurs et d’espacements. Le tracé vectoriel devra être **fidèle au logo reçu mais non dessiné à l’origine** ; à régénérer si le logo est retravaillé (D-02). Le détail du favicon à 16 px est à vérifier sur écran réel.
 
 ---
 
@@ -713,7 +713,7 @@ Le succès ne se mesure pas au nombre de fonctionnalités, mais à l’utilité 
 | 3 | Cahier des charges complet | En cours (v2 rédigé, à valider ; maquettes à produire) |
 | 4 | Stack technique | **Fait côté porteur** : v3.1 validée le 20 oct. 2026 (T-01 à T-14) ; validation MOA à venir |
 | 5 | Environnement de travail collaboratif (gestion de code, suivi des tâches, documentation) | En cours : dépôt GitHub et code source publiés le 22 oct. 2026, CI active ; backlog et suivi des tâches restants |
-| 6 | Test interne de validation | À faire (tir d’essai T1b non terminé, voir `docs/SUIVI_DEVELOPPEMENT.md`) |
+| 6 | Test interne de validation | En cours : parcours et suites de tests vérifiés en local, mesures locales T1b relevées le 24 oct. 2026 ; reste la mesure sur téléphone (voir `docs/SUIVI_DEVELOPPEMENT.md`) |
 | 7 | Documentation de prise en main | En cours : `docs/INSTALLATION.md` et `docs/SUIVI_DEVELOPPEMENT.md` rédigés le 22 oct. 2026 |
 | 8 | Présentation à la maîtrise d’ouvrage (problème, public, solution, périmètre MVP, parcours clés, risques, planning, décisions attendues) | À faire |
 
@@ -753,11 +753,11 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 | ID | Sujet | Statut | Contenu / recommandation |
 |---|---|---|---|
 | D-01 | Ville pilote | **Validé** | Abidjan |
-| D-02 | Identité visuelle | Proposé | Logo reçu = modèle de départ ; palette v2 (§15.3) à valider ; polices et zone de protection à confirmer |
+| D-02 | Identité visuelle | Proposé | Logo reçu = modèle de départ ; palette v2 (§15.3) à valider ; polices et zone de protection à confirmer. **Fait le 24 oct. 2026** : polices embarquées (Manrope + Source Sans 3, OFL) et icônes/favicons produits (§15.7) ; restent à confirmer le logo, la palette et la zone de protection |
 | D-03 | Zones géographiques | **Validé** (22 oct. 2026) | Commune obligatoire + quartier en texte libre ; liste de base des 13 communes d’Abidjan (Abobo, Adjamé, Anyama, Attécoubé, Bingerville, Cocody, Koumassi, Marcory, Plateau, Port-Bouët, Songon, Treichville, Yopougon) plus une zone « Plusieurs communes ». Liste **validée par le porteur le 22 octobre 2026** et chargée en base par le seeder |
 | D-04 | Méthode d’inscription | **Validé** (22 oct. 2026) | E-mail + mot de passe (8 caractères minimum, confirmation), nom affiché, commune facultative. Session web Sanctum (cookie chiffré + CSRF), aucun code SMS au MVP. Implémenté : `POST /api/v1/register`, `/login`, `/logout`, `GET /api/v1/me` |
-| D-05 | Canal de contact | **Validé** (22 oct. 2026) | Messagerie interne tracée : un fil par couple auteur/initiateur autour d’une annonce publiée, messages internes, compteur de non-lus. Aucune coordonnée privée exposée. Implémenté : routes `/conversations` |
-| D-06 | Modération | **Validé** (22 oct. 2026) | Publication immédiate (statut PUBLIEE) + modération a posteriori : signalement motivé par un utilisateur connecté (statut NOUVEAU), refus de signaler sa propre annonce. Traitement du signalement implémenté le **23 oct. 2026** via le back-office `/admin` : chaque décision (prise en charge, masquage, republication, rejet motivé, classement sans suite) est tracée dans `moderation_actions` avec son auteur et son horodatage |
+| D-05 | Canal de contact | **Validé** (22 oct. 2026) | Messagerie interne tracée : un fil par couple auteur/initiateur autour d’une annonce publiée, messages internes, compteur de non-lus. Aucune coordonnée privée exposée. Implémenté : routes `/conversations`. **Complété le 24 oct. 2026 (porteur)** : les canaux de contact choisis au profil (F-02 : téléphone, e-mail, WhatsApp) s’ajoutent à la messagerie **uniquement s’ils sont marqués visibles par leur propriétaire** et **uniquement pour les membres connectés**, sur le détail de l’annonce ; un blocage les rend indisponibles. Implémenté : `GET/POST/DELETE /api/v1/me/channels`, `GET /api/v1/listings/{id}/contact-channels` |
+| D-06 | Modération | **Validé** (22 oct. 2026) | Publication immédiate (statut PUBLIEE) + modération a posteriori : signalement motivé par un utilisateur connecté (statut NOUVEAU), refus de signaler sa propre annonce. Traitement du signalement implémenté le **23 oct. 2026** via le back-office `/admin` : chaque décision (prise en charge, masquage, republication, rejet motivé, classement sans suite) est tracée dans `moderation_actions` avec son auteur et son horodatage. **Ajout du 24 oct. 2026** : action « **transmettre à l’administrateur** » (réservée au modérateur, justification obligatoire, statut du signalement maintenu `EN_COURS`, trace `TRANSMIS` au journal) |
 | D-07 | Catégories initiales | **Validé** (22 oct. 2026) | Réparations et dépannage · Maison et domestique · Couture, beauté et coiffure · Éducation et cours · Informatique et numérique · Transport léger et déménagement · Petites missions et coups de main · Autres. Liste **validée par le porteur le 22 octobre 2026** et chargée en base par le seeder |
 | D-08 | Langues | Ouvert | Français au lancement ; langues locales plus tard |
 | D-09 | Budget, hébergement, nom de domaine | Ouvert | Aucun chiffre inventé |
@@ -775,7 +775,7 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 ## 21. Questions ouvertes
 
 1. ~~Inscription : téléphone ou e-mail ?~~ **Tranché** : e-mail + mot de passe (D-04 validée le 22 oct. 2026).
-2. ~~Canal de contact entre utilisateurs, visibilité des coordonnées.~~ **Tranché** : messagerie interne tracée, aucune coordonnée privée (D-05 validée le 22 oct. 2026).
+2. ~~Canal de contact entre utilisateurs, visibilité des coordonnées.~~ **Tranché** : messagerie interne tracée, aucune coordonnée privée (D-05 validée le 22 oct. 2026) ; **complété le 24 oct. 2026** : canaux du profil exposés à la demande de l’auteur, aux membres connectés uniquement.
 3. ~~Modération préalable ou a posteriori ; délais et responsabilités.~~ **Tranché** : publication immédiate + signalement a posteriori ; traitement modérateur via Filament en T2 (D-06 validée le 22 oct. 2026).
 4. Qui administre au quotidien les catégories et les communes (listes validées le 22 oct. 2026 — D-03, D-07 ; l’outil de gestion, le back-office `/admin`, est en place depuis le 23 oct. 2026 ; la désignation des personnes reste ouverte).
 5. Le champ de budget : facultatif, obligatoire pour certaines catégories, ou absent du MVP ?
@@ -806,27 +806,26 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 3. Faire valider par la MOA les décisions « Proposées ».
 4. Obtenir un avis juridique sur les données personnelles (D-10).
 5. Produire les maquettes, puis un backlog (épics, user stories, critères d’acceptation) à partir des §6, §7, §8 et §13.
-6. Récupérer les polices et valider le rendu du logo et des icônes sur appareils réels.
+6. ~~Récupérer les polices~~ — **fait le 24 oct. 2026** (Manrope + Source Sans 3, licences OFL 1.1 vérifiées et embarquées) ; il reste à **valider le rendu du logo et des icônes sur appareils réels**.
 
 ### 22.3 Ce qui existe et ce qui n’existe pas encore
 
 **Correction du 22 octobre 2026.** Ce paragraphe affirmait « aucun code, aucun test ». C’était exact au 20 octobre mais ne l’est plus : un socle technique a été construit. Voici l’état vérifié.
 
-**Existe désormais :**
+**Existe désormais (état vérifié le 24 octobre 2026) :**
 
 - un dépôt Git public unique (`github.com/0Defiance/soutrali`) versionnant le cadrage, la documentation et le code ;
-- une application Flutter/Dart avec une page de découverte, un thème aux couleurs de la charte v2, un client HTTP branché sur `GET /api/v1/listings` et cinq tests ;
-- un backend Laravel 13 avec l’API publique des annonces (filtres, pagination), les migrations des onze tables du modèle conceptuel, et une intégration continue (T-12) ;
+- une application Flutter/Dart avec la découverte, le détail d’annonce, l’inscription et la connexion, la publication immédiate ou programmée, « mes annonces » (modification, clôture avec issue), la messagerie interne, les signalements, les blocages d’utilisateurs et les canaux de contact du profil, un thème aux couleurs de la charte v2 avec les polices Manrope / Source Sans 3, un client HTTP branché sur l’API, et 14 tests ;
+- un backend Laravel 13 avec l’API versionnée `/api/v1` (annonces, référentiels, comptes, messagerie, signalements, blocages, canaux de contact, publication programmée), les migrations des onze tables du modèle conceptuel, le back-office `/admin` (modération traitée et tracée) et une intégration continue (T-12) — 61 tests Pest ;
 - la stack technique v3.1 validée par le porteur (T-01 à T-14).
 
-**N’existe toujours pas :**
+**N’existe toujours pas (vérifié le 24 octobre 2026) :**
 
 - aucun déploiement, aucune préproduction, aucun hébergement choisi (D-09) ;
 - aucune maquette des écrans ;
 - aucune politique de confidentialité ni conditions d’utilisation rédigées (D-10) ;
-- aucune donnée de démonstration : le seeder est vide, ni communes ni catégories ne sont chargées ;
-- aucun parcours d’authentification, de publication, de contact, de signalement ni de modération implémenté ;
-- le tir d’essai T1b n’est pas terminé : l’API n’a jamais été observée en fonctionnement de bout en bout depuis le navigateur.
+- mesure du tir d’essai T1b sur téléphone Android en réseau limité (parcours observés depuis le 23 oct., mesures locales faites le 24 oct.) ;
+- création du premier compte administrateur en production (procédure non arrêtée).
 
 La première réflexion technique « stack v0.1 » reste conservée sous `docs/` pour historique : elle est **remplacée** par la v3.1 et ne lie personne.
 
@@ -845,15 +844,15 @@ La première réflexion technique « stack v0.1 » reste conservée sous `docs/`
 
 | Livrable | Version | Contenu | État |
 |---|---|---|---|
-| `README.md` (ce fichier) | 4.1 | Contexte complet et outil de reprise | Vivant |
-| `docs/SUIVI_DEVELOPPEMENT.md` | 1.0 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
-| `docs/INSTALLATION.md` | 1.0 | Prérequis, versions constatées, base de données, démarrage Web et API | Vivant |
-| `docs/README_TECHNIQUE.md` | 1.0 | Architecture de référence détaillée | Vivant |
+| `README.md` (ce fichier) | 4.2 | Contexte complet et outil de reprise | Vivant |
+| `docs/SUIVI_DEVELOPPEMENT.md` | 1.2 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
+| `docs/INSTALLATION.md` | 1.1 | Prérequis, versions constatées, base de données, démarrage Web et API | Vivant |
+| `docs/README_TECHNIQUE.md` | 1.1 | Architecture de référence détaillée | Vivant |
 | Cahier des charges UML (`docs/…_v2.docx`) | 2.0 | Spécification détaillée, 5 diagrammes UML, page de garde | À valider |
 | Charte graphique (`docs/…_v2.docx`) | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
 | Stack technique (`docs/…_v3.docx`) | 3.1 | Décisions T-01 à T-14, points d’attention P-01 à P-08, plan T0 à T8 | **Validée par le porteur** ; MOA à venir |
 | Stack technique (`docs/…_v0.1.docx`) | 0.1 | Première réflexion technique | **Remplacée** par la v3, conservée pour historique |
-| `brand/logo/` | 1 | Logo de marque source (PNG) | Icônes et déclinaisons **non produites**, voir §15.7 |
+| `brand/logo/` | 1 | Logo de marque source (PNG) | Icônes et favicons **produits le 24 oct. 2026** (`brand/generate-icons.php`) ; déclinaisons restantes, voir §15.7 |
 | `docs/archive/` | — | Cahier des charges v1, charte v1, contextualisation v1 | Remplacées, archivées |
 
 En cas d’écart entre ce README et un document Word, signaler l’écart et corriger par une entrée au journal.
@@ -897,16 +896,17 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 22 oct. 2026 | **Étapes T2/T3/T4 pilote — comptes, publication, contact, signalement, clôture** : D-04, D-05 et D-06 validées par le porteur puis implémentées de bout en bout. Backend : inscription/connexion/déconnexion en session Sanctum (CSRF JSON via `GET /api/v1/csrf-token`, message d’erreur identique si le compte n’existe pas), routes authentifiées de publication, modification et clôture avec issue (`MyListingController`), messagerie interne tracée (`ConversationController` : fils, non-lus, accusés de lecture), signalements motivés (`ReportController`). Application Flutter : page d’inscription, page de connexion, page d’accueil interactive (publier, mes annonces, messagerie avec badge de non-lus, signalement), détail d’annonce avec contact et garde-fou « votre propre annonce », pages « mes annonces » (modification, clôture avec issue) et messagerie. Nouveaux tests Pest (auth, annonce, conversation, signalement) et tests Flutter des pages d’authentification | D-04, D-05, D-06 validées |
 | 23 oct. 2026 | **Tir d’essai complet en conditions réelles + correction d’un bug de contrat API** : le parcours inscription → publication → liste → contact → réponse → signalement → clôture est observé dans le navigateur (build web release servi sur 127.0.0.1:8082, API sur 127.0.0.1:8000). Correction du bug « liste vide » : le cast `decimal:2` fait sérialiser `budget` en **chaîne** JSON (« 10000.00 ») alors que `Listing.fromJson` castait en `num?` : la conversion lançait une exception et cassait l’interprétation de toute la liste. Corrigé des deux côtés : les ressources PHP forcent un nombre JSON, les parseurs Flutter tolèrent la chaîne. Revérification navigateur : la liste s’affiche et la nouvelle annonce apparaît. Chaîne contact → signalement → clôture rejouée par API avec deux comptes (12 scénarios conformes, y c. refus de contacter/clôturer/signaler sa propre annonce, 409 sur double clôture, 404 sur contact d’une annonce clôturée). `flutter analyze` sans problème, **14 tests Flutter** et **24 tests Pest** (163 assertions) verts | Correction contrat API budget |
 | 23 oct. 2026 | **Back-office Filament (T2/T4) — traitement et traçabilité de la modération** : panneau `/admin` opérationnel aux couleurs de la charte v2, en mode strict (toute ressource sans policy lève une exception), accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs. 7 ressources (signalements, annonces, utilisateurs, catégories, communes, interactions en lecture seule, journal de modération) et 8 policies. Chaque décision passe par le service `ReportModerator` et laisse une trace horodatée dans `moderation_actions` : prise en charge, masquage, republication, rejet motivé, classement sans suite, suspension et réactivation de compte — aucune suppression (signalements, annonces, comptes, catégories et communes se désactivent ou se suspendent). Correction de `UserFactory` (les colonnes `role` / `status` n’étaient pas renseignées en mémoire, d’où des 403 en cascade dans les tests). Compte administrateur de démonstration ajouté au `DemoSeeder` (local uniquement). Vérifications : **33 tests Pest** (244 assertions, dont 9 dédiés au back-office), pint PASS (106 fichiers), Larastan niveau 5 sans erreur, `/admin` répond en local | T-05 back-office ; D-06 traitement implémenté |
+| 24 oct. 2026 | **Intégration du reste du MVP** : **blocages d’utilisateurs (T-14)** — table `user_blocks`, routes `GET /api/v1/me/blocks`, `POST` / `DELETE /api/v1/users/{user}/block` (idempotents, refus de se bloquer soi-même), refus de démarrer ou poursuivre une conversation avec un bloquant (403), canaux de contact masqués en cas de blocage, section « comptes bloqués » et bouton bloquer/débloquer sur le détail de l’annonce, auteur automatiquement exclu de ses propres blocages. **Canaux de contact du profil (F-02/F-06, D-05 complétée)** — table `contact_channels` (types `TELEPHONE`, `EMAIL`, `WHATSAPP` — un seul canal par type, visibilité propre à chaque canal), routes `GET/POST /api/v1/me/channels`, `DELETE /api/v1/me/channels/{id}` et `GET /api/v1/listings/{id}/contact-channels` : canaux exposés **aux membres connectés uniquement**, choisis et rendus visibles par leur propriétaire, indisponibles en cas de blocage ; sections « Canaux de contact » et « Comptes bloqués » dans l’écran du compte, affichage des canaux sur le détail de l’annonce côté connecté. **Publication programmée (F-04)** — colonne `publish_at` (migration dédiée), annonce créée `BROUILLON` avec date future et publiée automatiquement par la commande `soutrali:publish-due` planifiée chaque minute (`routes/console.php`), filtre de visibilité côté serveur, gestion (voir / publier / replanifier) dans « mes annonces » et date éditable dans le back-office. **Identité visuelle (D-02, §15)** — polices **Manrope + Source Sans 3** (TTF variables du dépôt officiel Google Fonts, licences SIL OFL 1.1 vérifiées et jointes dans `app/assets/fonts/`) déclarées dans `pubspec.yaml` (sections `assets:` et `fonts:`) et chargées par le moteur Flutter ; icônes et favicons **générés depuis le logo source** par `brand/generate-icons.php` (icônes Flutter 192/512/maskable en variante « symbole seul » sur ivoire, favicon du back-office ICO 32+16 px + PNG). **Mesures T1b locales** (détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2) : poids du build web release et premier écran utile relevés en local. Vérifications : **61 tests Pest (558 assertions)**, pint PASS (115 fichiers), Larastan niveau 5 sans erreur, `flutter analyze` sans problème, **14 tests Flutter**, build web release réussi | T-14 blocages ; F-02/F-06 canaux ; F-04 publication programmée ; D-02 polices et icônes |
 
 ---
 
 ## 26. Prochaines étapes
 
-1. **Terminer le tir d’essai T1b** : migrations appliquées, référentiel et annonces fictives chargés, parcours navigateur → API → base observé en local, session Sanctum validée de bout en bout (inscription, connexion, mutations CSRF, déconnexion — 23 oct. 2026). Restent : la mesure du poids compressé et du temps jusqu’au premier écran utile sur téléphone, et les seuils à fixer avec la MOA. Voir `docs/SUIVI_DEVELOPPEMENT.md`.
-2. ~~Valider ou corriger les décisions proposées (D-02, D-05, D-06) et trancher D-04.~~ **Fait le 22 oct. 2026** : D-04, D-05 et D-06 validées et implémentées. Reste à valider : D-02 (identité visuelle).
+1. **Terminer le tir d’essai T1b** : migrations appliquées, référentiel et annonces fictives chargés, parcours navigateur → API → base observé en local, session Sanctum validée de bout en bout (inscription, connexion, mutations CSRF, déconnexion — 23 oct. 2026). **Mesures locales relevées le 24 oct. 2026** (poids du build release, premier écran utile sur machine de développement) : détails et limites dans `docs/SUIVI_DEVELOPPEMENT.md` §2. Restent : la mesure sur téléphone Android en réseau limité, et les seuils à fixer avec la MOA (aucun chiffre n’est proposé sans leur validation).
+2. ~~Valider ou corriger les décisions proposées (D-02, D-05, D-06) et trancher D-04.~~ **Fait le 22 oct. 2026** : D-04, D-05 et D-06 validées et implémentées ; D-05 et D-06 complétées les 23 et 24 oct. (transmettre à l’administrateur, canaux du profil). Reste à valider : D-02 (identité visuelle — polices et icônes produits le 24 oct., logo et palette à confirmer).
 3. Phase 3 : maquettes des écrans clés (accueil, résultats, détail, publier, mes annonces, modération) sur la charte v2, puis arrêt du cahier des charges.
 4. Phase 5 : créer le backlog produit à partir du cahier des charges ; choisir l’outil de suivi des tâches.
-5. Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.
+5. ~~Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.~~ **Icônes et favicons produits le 24 oct. 2026** (§15.7) ; reste : déclinaisons SVG/monochrome du logo, validation du rendu sur appareils réels.
 6. Phases 6 à 8 : test interne, documentation de prise en main, présentation à la MOA.
 
 ---

@@ -166,12 +166,14 @@ Exemples de ressources (à ajuster aux décisions produit avant implémentation)
 |---|---|
 | Compte | `POST /api/v1/register`, `POST /api/v1/login`, `POST /api/v1/logout`, `GET /api/v1/me`, `GET /api/v1/csrf-token` |
 | Annonces publiques | `GET /api/v1/listings`, `GET /api/v1/listings/{id}` |
-| Annonces du compte | `POST /api/v1/listings`, `GET /api/v1/me/listings`, `PATCH /api/v1/listings/{id}`, `POST /api/v1/listings/{id}/close` |
+| Annonces du compte | `POST /api/v1/listings`, `GET /api/v1/me/listings`, `PATCH /api/v1/listings/{id}`, `POST /api/v1/listings/{id}/publish`, `POST /api/v1/listings/{id}/close` |
 | Contact (messagerie interne, D-05) | `POST /api/v1/listings/{id}/conversations`, `GET /api/v1/conversations`, `GET /api/v1/conversations/{id}`, `POST /api/v1/conversations/{id}/messages` |
 | Signalement | `POST /api/v1/listings/{id}/reports`, `GET /api/v1/me/reports` |
+| Blocages (T-14) | `GET /api/v1/me/blocks`, `POST /api/v1/users/{id}/block`, `DELETE /api/v1/users/{id}/block` |
+| Canaux de contact (F-02/F-06) | `GET/POST /api/v1/me/channels`, `DELETE /api/v1/me/channels/{id}`, `GET /api/v1/listings/{id}/contact-channels` |
 | Référentiels | `GET /api/v1/categories`, `GET /api/v1/communes` |
 
-Ces routes sont celles implémentées le 22 octobre 2026 (D-04, D-05, D-06 validées et décrites dans le README de cadrage) ; elles font foi pour le pilote.
+Ces routes sont celles implémentées entre le 22 et le 24 octobre 2026 (D-04, D-05, D-06 validées et décrites dans le README de cadrage, complétées le 24 oct. par les blocages, les canaux de contact et la publication programmée) ; elles font foi pour le pilote.
 
 ### Contrat de réponse
 
@@ -193,10 +195,12 @@ Le schéma suit le modèle conceptuel du README et est créé par migrations ver
 | `users` | Identifiant de connexion, mot de passe haché par Laravel, rôle unique, statut, profil et préférence de contact. L’identifiant et les contacts privés ont des règles d’accès strictes. |
 | `categories` | Libellé et statut actif ; une catégorie désactivée n’est plus proposée, mais les anciennes annonces restent consultables selon les règles métier. |
 | `communes` | Référentiel géographique d’Abidjan ; quartier stocké séparément comme texte libre si ce choix est confirmé. |
-| `listings` | Auteur, catégorie, commune, type, nature, texte, disponibilité, budget facultatif, statut, issue de clôture et dates. Les clés étrangères et index correspondent aux recherches prévues. |
+| `listings` | Auteur, catégorie, commune, type, nature, texte, disponibilité, budget facultatif, statut, issue de clôture, dates et date de publication programmée `publish_at` (colonne du 24 oct. 2026). Les clés étrangères et index correspondent aux recherches prévues. |
 | `interactions` | Trace d’une prise de contact, protégée et non publique ; n’enregistrer que les champs nécessaires à la fonctionnalité validée. |
 | `reports` | Motif, détails facultatifs, auteur du signalement, annonce ciblée, état et dates ; accès restreint. |
 | `moderation_actions` | Décision, justification, modérateur, signalement concerné et date ; historique append-only autant que possible. |
+| `contact_channels` | Canaux du profil (TÉLÉPHONE, E-MAIL, WHATSAPP) : un seul canal par type et par compte, visibilité propre à chaque canal (T-14, F-02/F-06). |
+| `user_blocks` | Blocages entre comptes (T-14) : couple auteur/bloqué unique ; désactive la mise en relation dans les deux sens sans rien supprimer. |
 | tables Laravel nécessaires | Sessions, jetons Sanctum et tâches planifiées éventuelles, uniquement lorsque la fonctionnalité correspondante est activée. |
 
 Principes de stockage : identifiants et relations par clés étrangères ; dates normalisées ; montants stockés dans un type décimal approprié si le budget est retenu ; index sur statut, commune, catégorie, type et date selon les requêtes observées. Éviter les colonnes JSON pour remplacer des relations structurées.
@@ -229,7 +233,7 @@ Filament est l’outil métier des personnes qui administrent Soutrali, distinct
 - consultation limitée des comptes, suspension et réactivation selon une procédure traçable ;
 - journal des actions de modération, avec auteur et horodatage.
 
-**État au 23 octobre 2026 — implémenté et testé** (détail et vérifications dans `SUIVI_DEVELOPPEMENT.md`) : le panneau `/admin` existe avec 7 ressources — signalements (filtre par statut, recherche par motif et titre, tri sur la date de dépôt, vue détaillée avec l’annonce visée, le signalant et le journal des décisions), annonces (édition limitée, masquage / republication tracés), utilisateurs (aucune suspension à la place, rôle et statut réservés aux administrateurs), catégories et communes (désactivation ; suppression refusée par policy), interactions en lecture seule, et journal `moderation_actions` en lecture seule. Les décisions implémentées sont : prise en charge, masquage, republication, rejet motivé, classement sans suite, suspension et réactivation de compte (l’action « transmettre » n’existe pas encore). L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` actifs, le panneau tourne en mode strict (`strictAuthorization()`), et la création du premier compte administrateur en production reste à définir (le compte de démonstration n’existe qu’en local).
+**État au 24 octobre 2026 — implémenté et testé** (détail et vérifications dans `SUIVI_DEVELOPPEMENT.md`) : le panneau `/admin` existe avec 7 ressources — signalements (filtre par statut, recherche par motif et titre, tri sur la date de dépôt, vue détaillée avec l’annonce visée, le signalant et le journal des décisions), annonces (édition limitée, masquage / republication tracés), utilisateurs (aucune suspension à la place, rôle et statut réservés aux administrateurs), catégories et communes (désactivation ; suppression refusée par policy), interactions en lecture seule, et journal `moderation_actions` en lecture seule. Les décisions implémentées sont : prise en charge, masquage, republication, rejet motivé, classement sans suite, **transmission à l’administrateur** (action « transmettre », justification obligatoire, statut maintenu `EN_COURS`, ajoutée le 24 oct. 2026), suspension et réactivation de compte. L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` actifs, le panneau tourne en mode strict (`strictAuthorization()`), et la création du premier compte administrateur en production reste à définir (le compte de démonstration n’existe qu’en local).
 
 Le rôle administrateur est accordé explicitement par un mécanisme de création initiale contrôlé. Ne jamais laisser une inscription publique choisir son propre rôle. En production, protéger `/admin` par HTTPS, limiter les comptes privilégiés, appliquer une politique de mots de passe et prévoir une procédure de récupération. L’authentification à deux facteurs peut être ajoutée après analyse du niveau de risque et des options réellement maintenues.
 

@@ -136,6 +136,8 @@ curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/listings
 
 Une base migrée mais vide renvoie une liste vide ; c’est un résultat **normal**, pas une erreur.
 
+- **Publication programmée (24 oct. 2026)** : les annonces créées avec une date future restent en `BROUILLON` puis basculent en `PUBLIEE` via la commande `soutrali:publish-due`, planifiée chaque minute dans `routes/console.php` (`php artisan schedule:list` affiche `* * * * * php artisan soutrali:publish-due`). **En local**, exécuter dans un second terminal `php artisan schedule:work` pendant les tests ; **en production**, un cron `* * * * * cd /chemin/backend && php artisan schedule:run`. Sans cette étape, les annonces programmées ne passent pas automatiquement (la route publique les montre quand même une fois leur date atteinte).
+
 ### Accès au back-office `/admin`
 
 - Ouvrir `http://127.0.0.1:8000/admin` une fois l’API démarrée : le panneau répond (redirection vers `/admin/login`).
@@ -163,6 +165,8 @@ flutter build web --release
 python -m http.server 8082 --bind 127.0.0.1 --directory build\web
 ```
 
+- **Polices et icônes de marque** : Manrope et Source Sans 3 sont déclarées dans `pubspec.yaml` (fichiers et licences OFL dans `app/assets/fonts/`). Les icônes web et favicons sont générés depuis le logo source ; depuis la racine du dépôt, `php brand/generate-icons.php` les régénère si le logo est retravaillé (§15.7 du README).
+
 ---
 
 ## 6. Liste de vérification
@@ -179,11 +183,14 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [x] `vendor/bin/pint --test` ne remonte aucun défaut de style
 - [x] `vendor/bin/phpstan analyse` ne remonte aucune erreur
 - [x] Le panneau `http://127.0.0.1:8000/admin` répond et redirige vers sa page de connexion
+- [x] `php artisan schedule:list` affiche `soutrali:publish-due` (publication programmée, vérifié le 24 oct. 2026)
+- [x] Icônes web et favicons aux couleurs de la marque présents dans `app/web/` et `backend/public/` (générés le 24 oct. 2026)
 - [x] `flutter analyze` ne remonte aucune erreur
 - [x] `flutter test` passe
 - [x] Le site s’affiche sur `http://127.0.0.1:8082`
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
+- [ ] `php artisan schedule:work` (local) ou le cron (production) tourne pour la publication programmée
 
 ---
 
