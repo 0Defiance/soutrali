@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../auth/auth_repository.dart';
@@ -49,7 +50,11 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
-      body: user == null
+      body: InteractiveMotif(
+        style: MotifStyle.light,
+        density: 44,
+        opacity: 0.6,
+        child: user == null
           ? const Center(child: CircularProgressIndicator())
           : ref.watch(myListingsProvider).when(
                 loading: () => const Center(child: CircularProgressIndicator()),
@@ -92,7 +97,9 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
                         padding: const EdgeInsets.all(16),
                         itemCount: listings.length,
                         separatorBuilder: (context, index) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) => _MyListingCard(
+                        itemBuilder: (context, index) => HoverLift(
+                          rise: 4,
+                          child: _MyListingCard(
                           listing: listings[index],
                           onEdit: () => _edit(listings[index]),
                           onPublish: listings[index].status == 'BROUILLON' && listings[index].publishAt != null
@@ -101,9 +108,11 @@ class _MyListingsPageState extends ConsumerState<MyListingsPage> {
                           onClose: listings[index].status == 'PUBLIEE'
                               ? () => _close(listings[index])
                               : null,
+                          ),
                         ),
                       ),
               ),
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../theme/soutrali_theme.dart';
 import 'auth_repository.dart';
+import 'auth_shell.dart';
 
 /// Page de connexion (D-04 : e-mail + mot de passe).
 class LoginPage extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _submitting = false;
+  bool _obscurePassword = true;
   String? _error;
 
   @override
@@ -61,91 +63,106 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SoutraliColors.ivory,
-      appBar: AppBar(
-        backgroundColor: SoutraliColors.deepGreen,
-        foregroundColor: Colors.white,
-        title: const Text('Connexion'),
+    // Copie locale : la promotion de type ne s’applique pas aux champs.
+    final error = _error;
+
+    return AuthShell(
+      title: 'Heureux de vous revoir',
+      subtitle: 'Connectez-vous pour publier, contacter et gérer vos annonces.',
+      footer: TextButton(
+        onPressed: () => context.go('/register'),
+        child: const Text('Pas encore de compte ? Créer un compte'),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: SoutraliColors.border),
-                borderRadius: BorderRadius.circular(8),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                prefixIcon: Icon(Icons.mail_outline),
               ),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Heureux de vous revoir',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Connectez-vous pour publier, contacter et gérer vos annonces.',
-                      style: TextStyle(color: SoutraliColors.muted),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'E-mail'),
-                      validator: (value) {
-                        final email = value?.trim() ?? '';
-                        if (email.isEmpty) return 'E-mail obligatoire.';
-                        if (!email.contains('@')) return 'Saisissez un e-mail valide.';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: const InputDecoration(labelText: 'Mot de passe'),
-                      validator: (value) => (value == null || value.isEmpty) ? 'Mot de passe obligatoire.' : null,
-                      onFieldSubmitted: (_) => _submit(),
-                    ),
-                    if (_error != null) ...[
-                      const SizedBox(height: 14),
-                      Text(_error!, style: const TextStyle(color: SoutraliColors.orangeText)),
-                    ],
-                    const SizedBox(height: 20),
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: SoutraliColors.green,
-                        minimumSize: const Size(44, 48),
-                      ),
-                      onPressed: _submitting ? null : _submit,
-                      child: _submitting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Se connecter'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text('Pas encore de compte ? Créer un compte'),
-                    ),
-                  ],
+              validator: (value) {
+                final email = value?.trim() ?? '';
+                if (email.isEmpty) return 'E-mail obligatoire.';
+                if (!email.contains('@')) return 'Saisissez un e-mail valide.';
+                return null;
+              },
+            ),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              decoration: InputDecoration(
+                labelText: 'Mot de passe',
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  tooltip: _obscurePassword ? 'Afficher le mot de passe' : 'Masquer le mot de passe',
+                  icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
+              validator: (value) => (value == null || value.isEmpty) ? 'Mot de passe obligatoire.' : null,
+              onFieldSubmitted: (_) => _submit(),
             ),
-          ),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(begin: const Offset(0, -0.3), end: Offset.zero).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: error == null
+                  ? const SizedBox.shrink()
+                  : Container(
+                      key: ValueKey<String>(error),
+                      margin: const EdgeInsets.only(top: 14),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: SoutraliColors.paleOrange,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.error_outline, size: 18, color: SoutraliColors.orangeText),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              error,
+                              style: const TextStyle(color: SoutraliColors.orangeText, fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+            ),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: SoutraliColors.green,
+                minimumSize: const Size(44, 52),
+              ),
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox.shrink()
+                  : const Icon(Icons.login_rounded, size: 19),
+              label: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Se connecter'),
+            ),
+          ],
         ),
       ),
     );

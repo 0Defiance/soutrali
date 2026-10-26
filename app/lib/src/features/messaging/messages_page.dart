@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../auth/auth_repository.dart';
 import 'messaging_repository.dart';
@@ -91,11 +92,16 @@ class _MessagesPageState extends ConsumerState<MessagesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Messagerie',
-              style: Theme.of(context).textTheme.titleLarge,
+          InteractiveMotif(
+            style: MotifStyle.light,
+            density: 30,
+            opacity: 0.7,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Messagerie',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
           ),
           Expanded(
@@ -162,9 +168,14 @@ class _MessagesPageState extends ConsumerState<MessagesPage> {
     );
 
     final threadPanel = selectedId == null
-        ? const Center(
-            child: Text('Choisissez une conversation pour lire les messages.',
-                style: TextStyle(color: SoutraliColors.muted)),
+        ? InteractiveMotif(
+            style: MotifStyle.light,
+            density: 40,
+            opacity: 0.7,
+            child: const Center(
+              child: Text('Choisissez une conversation pour lire les messages.',
+                  style: TextStyle(color: SoutraliColors.muted)),
+            ),
           )
         : thread == null
             ? const Center(child: CircularProgressIndicator())

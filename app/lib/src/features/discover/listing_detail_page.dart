@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../auth/auth_repository.dart';
@@ -34,7 +35,11 @@ class ListingDetailPage extends ConsumerWidget {
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
-      body: listingAsync.when(
+      body: InteractiveMotif(
+        style: MotifStyle.light,
+        density: 44,
+        opacity: 0.6,
+        child: listingAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Padding(
@@ -96,6 +101,8 @@ class ListingDetailPage extends ConsumerWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(listing.title, style: Theme.of(context).textTheme.headlineMedium),
+                    const SizedBox(height: 10),
+                    const AnimatedAccent(),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 16,
@@ -274,6 +281,7 @@ class ListingDetailPage extends ConsumerWidget {
             ),
           );
         },
+      ),
       ),
     );
   }

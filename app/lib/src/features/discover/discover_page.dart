@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../account/contact_channels_section.dart';
@@ -46,6 +47,17 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   void _refresh() => setState(() {});
+
+  /// Retire d’un geste le mot-clé et tous les filtres actifs.
+  void _clearFilters() {
+    _searchController.clear();
+    setState(() {
+      _commune = '';
+      _type = '';
+      _nature = '';
+      _categoryId = '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -788,8 +800,14 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         color: SoutraliColors.paleGreen,
         border: Border(bottom: BorderSide(color: SoutraliColors.border)),
       ),
-      padding: EdgeInsets.fromLTRB(24, compact ? 34 : 52, 24, compact ? 32 : 48),
-      child: Center(
+      // Fond réactif : la grille de points s’éclaire sous le pointeur.
+      child: InteractiveMotif(
+        style: MotifStyle.light,
+        density: 42,
+        opacity: 0.9,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, compact ? 34 : 52, 24, compact ? 32 : 48),
+          child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
           child: Row(
@@ -797,7 +815,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             children: [
               Expanded(
                 flex: 3,
-                child: Column(
+                child: Reveal(
+                  delay: 40,
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const _Eyebrow(label: 'ABIDJAN · ENTRAIDE DE PROXIMITÉ'),
@@ -828,12 +848,15 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                     ),
                   ],
                 ),
+                ),
               ),
               if (!compact) ...[
                 const SizedBox(width: 32),
                 Expanded(
                   flex: 2,
-                  child: Container(
+                  child: Reveal(
+                    delay: 160,
+                    child: Container(
                     constraints: const BoxConstraints(maxHeight: 270),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.72),
@@ -852,10 +875,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       ],
                     ),
                   ),
+                  ),
                 ),
               ],
             ],
           ),
+        ),
+      ),
         ),
       ),
     );
@@ -889,87 +915,173 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       for (final item in categoryItems) item.id.toString(): item.name,
     };
 
+    final hasActiveFilter = _searchController.text.trim().isNotEmpty ||
+        _commune.isNotEmpty ||
+        _type.isNotEmpty ||
+        _nature.isNotEmpty ||
+        _categoryId.isNotEmpty;
+
     return Padding(
-      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 24, compact ? 16 : 40, 12),
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 12, compact ? 16 : 40, 4),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Qu’est-ce qu’il vous faut ?', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                crossAxisAlignment: WrapCrossAlignment.center,
+          // Le panneau se pose en fondu-glissé : entrée finie, pas de boucle.
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 440),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) => Opacity(
+              opacity: value,
+              child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: child),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(compact ? 18 : 26),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: SoutraliColors.border),
+                boxShadow: [
+                  BoxShadow(
+                    color: SoutraliColors.ink.withValues(alpha: 0.06),
+                    blurRadius: 28,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InteractiveMotif(
+                style: MotifStyle.light,
+                density: 44,
+                opacity: 0.8,
+                child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: compact ? double.infinity : 360,
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: (_) => _refresh(),
-                      decoration: const InputDecoration(
-                        hintText: 'Ex. réparation, cours, déménagement',
-                        prefixIcon: Icon(Icons.search),
-                        labelText: 'Mot-clé',
+                  Text(
+                    'Qu’est-ce qu’il vous faut ?',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 25),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Décrivez votre besoin, choisissez votre commune : le reste se joue d’un geste.',
+                    style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
+                  ),
+                  const SizedBox(height: 14),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final field = TextField(
+                        controller: _searchController,
+                        focusNode: _searchFocusNode,
+                        textInputAction: TextInputAction.search,
+                        onSubmitted: (_) => _refresh(),
+                        style: const TextStyle(fontSize: 15),
+                        decoration: const InputDecoration(
+                          hintText: 'Ex. réparation, cours, déménagement',
+                          prefixIcon: Icon(Icons.search),
+                          labelText: 'Mot-clé',
+                        ),
+                      );
+                      final button = FilledButton.icon(
+                        onPressed: _refresh,
+                        icon: const Icon(Icons.search_rounded, size: 19),
+                        label: const Text('Rechercher'),
+                        style: FilledButton.styleFrom(minimumSize: const Size(132, 56)),
+                      );
+
+                      // Barre de recherche d’un seul tenant dès que la place
+                      // le permet : le bouton reste au-dessus de la ligne de
+                      // flottaison sur un écran de 1000 px de haut.
+                      if (constraints.maxWidth < 560) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [field, const SizedBox(height: 10), button],
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          Expanded(child: field),
+                          const SizedBox(width: 10),
+                          button,
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 14,
+                    crossAxisAlignment: WrapCrossAlignment.end,
+                    children: [
+                      _FilterDropdown(
+                        label: 'Commune',
+                        value: _commune,
+                        values: communeValues,
+                        labels: communeLabels,
+                        onChanged: (value) => setState(() => _commune = value),
                       ),
-                    ),
+                      _FilterDropdown(
+                        label: 'Catégorie',
+                        value: _categoryId,
+                        values: categoryValues,
+                        labels: categoryLabels,
+                        onChanged: (value) => setState(() => _categoryId = value),
+                      ),
+                      _SegmentedFilter(
+                        label: 'Type',
+                        value: _type,
+                        options: const {'': 'Tous', 'DEMANDE': 'Demande', 'OFFRE': 'Offre'},
+                        accents: const {
+                          '': SoutraliColors.deepGreen,
+                          'DEMANDE': SoutraliColors.orange,
+                          'OFFRE': SoutraliColors.green,
+                        },
+                        onChanged: (value) => setState(() => _type = value),
+                      ),
+                      _SegmentedFilter(
+                        label: 'Nature',
+                        value: _nature,
+                        options: const {'': 'Toutes', 'BENEVOLE': 'Bénévole', 'REMUNEREE': 'Rémunérée'},
+                        accents: const {
+                          '': SoutraliColors.deepGreen,
+                          'BENEVOLE': SoutraliColors.green,
+                          'REMUNEREE': SoutraliColors.orange,
+                        },
+                        onChanged: (value) => setState(() => _nature = value),
+                      ),
+                    ],
                   ),
-                  _FilterDropdown(
-                    label: 'Commune',
-                    value: _commune,
-                    values: communeValues,
-                    labels: communeLabels,
-                    onChanged: (value) => setState(() => _commune = value),
-                  ),
-                  _FilterDropdown(
-                    label: 'Catégorie',
-                    value: _categoryId,
-                    values: categoryValues,
-                    labels: categoryLabels,
-                    onChanged: (value) => setState(() => _categoryId = value),
-                  ),
-                  _FilterDropdown(
-                    label: 'Type',
-                    value: _type,
-                    values: const ['', 'DEMANDE', 'OFFRE'],
-                    labels: const {'': 'Tous les types', 'DEMANDE': 'Demande', 'OFFRE': 'Offre'},
-                    onChanged: (value) => setState(() => _type = value),
-                  ),
-                  _FilterDropdown(
-                    label: 'Nature',
-                    value: _nature,
-                    values: const ['', 'BENEVOLE', 'REMUNEREE'],
-                    labels: const {'': 'Toutes les natures', 'BENEVOLE': 'Bénévole', 'REMUNEREE': 'Rémunérée'},
-                    onChanged: (value) => setState(() => _nature = value),
-                  ),
-                  FilledButton.icon(
-                    onPressed: _refresh,
-                    icon: const Icon(Icons.tune),
-                    label: const Text('Rechercher'),
-                    style: FilledButton.styleFrom(minimumSize: const Size(44, 52)),
+                  const SizedBox(height: 14),
+                  Container(height: 1, width: double.infinity, color: SoutraliColors.border),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      for (final suggestion in const ['Réparation', 'Cours', 'Aide à domicile', 'Déménagement'])
+                        _FilterPill(
+                          label: suggestion,
+                          selected: false,
+                          dense: true,
+                          onTap: () {
+                            _searchController.text = suggestion;
+                            _refresh();
+                          },
+                        ),
+                      if (hasActiveFilter)
+                        TextButton.icon(
+                          onPressed: _clearFilters,
+                          icon: const Icon(Icons.close, size: 17),
+                          label: const Text('Réinitialiser'),
+                        ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final suggestion in ['Réparation', 'Cours', 'Aide à domicile', 'Déménagement'])
-                    ActionChip(
-                      label: Text(suggestion),
-                      onPressed: () {
-                        _searchController.text = suggestion;
-                        _refresh();
-                      },
-                    ),
-                ],
-              ),
-            ],
+            ),
+            ),
           ),
         ),
       ),
@@ -977,21 +1089,33 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Widget _buildMainActions(bool compact) {
-    final announcement = _MainActionButton(
-      title: 'Annonce',
-      subtitle: 'Demander un service ou exprimer un besoin',
-      icon: Icons.campaign_outlined,
-      color: SoutraliColors.orange,
-      foreground: SoutraliColors.ink,
-      onPressed: () => _showPublicationChoices(isRequest: true),
+    final announcement = Reveal(
+      delay: 60,
+      child: HoverLift(
+        rise: 5,
+        child: _MainActionButton(
+          title: 'Annonce',
+          subtitle: 'Demander un service ou exprimer un besoin',
+          icon: Icons.campaign_outlined,
+          color: SoutraliColors.orange,
+          foreground: SoutraliColors.ink,
+          onPressed: () => _showPublicationChoices(isRequest: true),
+        ),
+      ),
     );
-    final service = _MainActionButton(
-      title: 'Prestation de service',
-      subtitle: 'Proposer mes services à la communauté',
-      icon: Icons.handyman_outlined,
-      color: SoutraliColors.green,
-      foreground: Colors.white,
-      onPressed: () => _showPublicationChoices(isRequest: false),
+    final service = Reveal(
+      delay: 140,
+      child: HoverLift(
+        rise: 5,
+        child: _MainActionButton(
+          title: 'Prestation de service',
+          subtitle: 'Proposer mes services à la communauté',
+          icon: Icons.handyman_outlined,
+          color: SoutraliColors.green,
+          foreground: Colors.white,
+          onPressed: () => _showPublicationChoices(isRequest: false),
+        ),
+      ),
     );
 
     return Padding(
@@ -1031,11 +1155,18 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  'Annonces près de vous',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 26),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Annonces près de vous',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 26),
+                    ),
+                    const SizedBox(height: 8),
+                    const AnimatedAccent(),
+                  ],
                 ),
               ),
               if (!compact) ...[
@@ -1112,12 +1243,151 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         border: Border(top: BorderSide(color: SoutraliColors.border)),
       ),
       padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 40, vertical: 24),
-      child: const Center(
-        child: Text(
-          'Soutrali · L’entraide à porter de main · Abidjan',
-          style: TextStyle(color: Colors.white, fontSize: 14),
+      child: InteractiveMotif(
+        style: MotifStyle.dark,
+        density: 26,
+        child: const Center(
+          child: Text(
+            'Soutrali · L’entraide à porter de main · Abidjan',
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Pilule de filtre animée : sélection colorée, survol relevé, appui
+/// immédiat. Sert aux filtres gestuels (type, nature) et aux suggestions.
+class _FilterPill extends StatefulWidget {
+  const _FilterPill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.accent = SoutraliColors.deepGreen,
+    this.dense = false,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  final Color accent;
+  final bool dense;
+
+  @override
+  State<_FilterPill> createState() => _FilterPillState();
+}
+
+class _FilterPillState extends State<_FilterPill> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = widget.selected;
+    final accent = widget.accent;
+    // L’orange de marque se lit mieux en encre sombre qu’en blanc.
+    final foreground = selected
+        ? (accent == SoutraliColors.orange ? SoutraliColors.ink : Colors.white)
+        : SoutraliColors.ink;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.dense ? 13 : 15,
+              vertical: widget.dense ? 8 : 10,
+            ),
+            decoration: BoxDecoration(
+              color: selected
+                  ? accent
+                  : (_hovered ? SoutraliColors.paleGreen : Colors.white),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: selected
+                    ? accent
+                    : _hovered
+                        ? SoutraliColors.green.withValues(alpha: 0.55)
+                        : SoutraliColors.border,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: widget.dense ? 13 : 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Groupe de pilules segmentées (Type, Nature) : libellé au-dessus,
+/// sélection immédiate sans menu déroulant.
+class _SegmentedFilter extends StatelessWidget {
+  const _SegmentedFilter({
+    required this.label,
+    required this.value,
+    required this.options,
+    required this.accents,
+    required this.onChanged,
+  });
+
+  final String label;
+  final String value;
+  final Map<String, String> options;
+  final Map<String, Color> accents;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: SoutraliColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+            ),
+          ),
+        ),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (final entry in options.entries)
+              _FilterPill(
+                label: entry.value,
+                selected: value == entry.key,
+                accent: accents[entry.key] ?? SoutraliColors.deepGreen,
+                onTap: () => onChanged(entry.key),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -1163,27 +1433,54 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
-class _ListingCard extends StatelessWidget {
+class _ListingCard extends StatefulWidget {
   const _ListingCard({required this.listing});
 
   final Listing listing;
 
   @override
+  State<_ListingCard> createState() => _ListingCardState();
+}
+
+class _ListingCardState extends State<_ListingCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final listing = widget.listing;
     final isRequest = listing.type == 'DEMANDE';
     final isVolunteer = listing.nature == 'BENEVOLE';
     final date = listing.createdAt == null ? '' : DateFormat('d MMM', 'fr').format(listing.createdAt!);
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: () => context.push('/listing/${listing.id}'),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
+    // Carte vivante : le survol la relève et fait apparaître liseré et
+    // ombre de marque en 200 ms.
+    return HoverLift(
+      rise: 6,
+      onHoverChanged: (hovered) => setState(() => _hovered = hovered),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: () => context.push('/listing/${listing.id}'),
+          borderRadius: BorderRadius.circular(16),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
       decoration: BoxDecoration(
-        border: Border.all(color: SoutraliColors.border),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        border: Border.all(
+          color: _hovered ? SoutraliColors.green : SoutraliColors.border,
+          width: _hovered ? 1.6 : 1,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          if (_hovered)
+            BoxShadow(
+              color: SoutraliColors.green.withValues(alpha: 0.18),
+              blurRadius: 26,
+              offset: const Offset(0, 10),
+            ),
+        ],
       ),
       padding: const EdgeInsets.all(18),
       child: Column(
@@ -1218,6 +1515,7 @@ class _ListingCard extends StatelessWidget {
           ],
         ],
         ),
+      ),
       ),
       ),
     );
