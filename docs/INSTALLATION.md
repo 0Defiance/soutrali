@@ -191,12 +191,14 @@ Get-Content storage\logs\laravel.log -Tail 40
 MAIL_MAILER=smtp
 MAIL_HOST=in-v3.mailjet.com
 MAIL_PORT=587
-MAIL_SCHEME=tls
+MAIL_SCHEME=
 MAIL_USERNAME=<clé API Mailjet>
 MAIL_PASSWORD=<clé secrète Mailjet>
 MAIL_FROM_ADDRESS=<adresse expéditrice vérifiée>
 MAIL_FROM_NAME="Soutrali"
 ```
+
+> `MAIL_SCHEME` doit rester **vide** sur le port 587 : Laravel monte alors automatiquement en STARTTLS. La valeur `tls` fait lever `UnsupportedSchemeException` (« the "tls" scheme is not supported ») — corrigé le 26 oct. 2026 après premier envoi réel ; alternative : `MAIL_SCHEME=smtps` avec le port 465.
 
 4. **Redémarrer `php artisan serve`** (le `.env` ne se recharge pas à chaud), puis inscrire un compte : l’e-mail de bienvenue arrive dans la boîte du destinataire.
 
@@ -250,7 +252,8 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [x] `storage/logs/access.log` se remplit pendant que l’API reçoit des requêtes (26 oct. 2026 : 200 / 401 / 302 relus après trois `curl`)
 - [x] Un compte `MODERATEUR` ou `ADMINISTRATEUR` voit l’entrée et le bouton **« Espace admin »** dans l’application ; un `UTILISATEUR` ne les voit pas (26 oct. 2026)
 - [x] `EmailNotificationTest` passe : les trois e-mails partent aux bons destinataires, rien n’est envoyé avant la mise en ligne, une panne SMTP n’empêche pas l’inscription (26 oct. 2026)
-- [ ] Un e-mail de bienvenue réellement reçu dans une boîte Mailjet (nécessite les clés du compte Mailjet dans `backend/.env`)
+- [x] Envoi réel accepté par Mailjet (26 oct. 2026) : inscription réelle → e-mail de bienvenue accepté en SMTP, aucune erreur dans `error.log`
+- [ ] L’e-mail de bienvenue réellement **reçu** dans la boîte du destinataire (spams compris) — le porteur confirme
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
 - [ ] `php artisan schedule:work` (local) ou le cron (production) tourne pour la publication programmée
@@ -274,6 +277,7 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 | La CI échoue sur `composer analyse` | Larastan ne rattache pas les attributs lus dans une ressource API non annotée | Annoter la ressource avec `@mixin <Modele>` et typer les relations du modèle avec `@return BelongsTo<…>` |
 | La CI échoue sur `flutter analyze` avec `setPhysicalSize`/`setDevicePixelRatio` indéfinis | Ces méthodes n’existent pas sur `TestFlutterView` ; l’API expose des accesseurs en écriture | Écrire `tester.view.physicalSize = const Size(…)` et `tester.view.devicePixelRatio = 1.0`, sans `await`, puis `addTearDown(tester.view.resetPhysicalSize)` |
 | `argument_type_not_assignable` sur un override Riverpod | Sous Riverpod 3, `provider(arg).overrideWith(...)` attend une fonction à un seul paramètre ; la signature `(ref, arg)` n’existe qu’au niveau de la famille | Surcharger la famille entière : `monProvider.overrideWith((ref, arg) => …)` |
+| `UnsupportedSchemeException` « The "tls" scheme is not supported » à l’envoi d’un e-mail | `MAIL_SCHEME=tls` n’est pas un schéma SMTP valide (seuls `smtp` et `smtps` le sont) | Laisser `MAIL_SCHEME=` vide sur le port 587 (STARTTLS automatique), ou `MAIL_SCHEME=smtps` + port 465 (26 oct. 2026) |
 | `use_build_context_synchronously` après un `await` | Un `BuildContext` issu d’une `GlobalKey` était protégé par le `mounted` du `State`, sans rapport avec lui | Garder avec `leContexte.mounted` plutôt qu’avec le `mounted` du `State` |
 
 ---

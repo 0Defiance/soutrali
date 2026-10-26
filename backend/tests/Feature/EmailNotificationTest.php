@@ -157,6 +157,10 @@ it('notifies both sides of a conversation when a message arrives', function () {
 });
 
 it('keeps the API working when the mail transport fails', function () {
+    // L’échec simulé ne doit pas salir le vrai `error.log` d’exploitation :
+    // même isolation que `AccessLogTest`.
+    config()->set('logging.channels.errors.path', storage_path('logs/testing-error.log'));
+
     Mail::shouldReceive('to')->andThrow(new RuntimeException('SMTP injoignable'));
 
     // L’inscription et la publication restent acquises malgré la panne :
