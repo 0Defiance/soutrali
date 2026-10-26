@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.2 · **Dernière mise à jour :** 24 octobre 2026
+> **Version :** 1.3 · **Dernière mise à jour :** 26 octobre 2026
 
 ---
 
@@ -227,6 +227,16 @@ Application Flutter :
   - **Premier écran utile, deux relevés dans Chromium** : premier rendu peint (FCP) à **1 273 ms** (chargement à froid) et **1 009 ms** (rechargement à cache chaud) ; la réponse `GET /api/v1/listings` arrive à ~3,0 s (froid) / ~3,3 s (chaud) et le canvas Flutter est rendu ; console propre (seul le 401 `/me` attendu en visiteur).
   - **Limites de ces mesures** : poste de développement en réseau local, serveur statique Python **sans compression gzip** (le chiffre « gzip » ci-dessus est calculé à la volée, pas mesuré sur le fil), aucun téléphone instrumenté, aucune mesure en réseau contraint. **Ce ne sont pas les mesures de recette T1b** ; les seuils restent à fixer avec la MOA (aucun chiffre n’est proposé comme objectif).
 - **Vérifications exécutées, avec PHP 8.3 et Flutter 3.47.7** : `php artisan test` → **61 tests passés, 558 assertions** (33 du 23 oct. + 27 tests dans les 5 nouveaux fichiers — contrat API, blocages, canaux de contact, migrations, publication programmée — + 1 test ajouté au back-office pour la transmission) ; `pint --test` → **PASS sur 115 fichiers** ; `phpstan analyse` (Larastan niveau 5) → **aucune erreur** ; `flutter analyze` → **No issues found** ; `flutter test` → **14 tests passés** ; `flutter build web --release` → **succès**.
+
+### 26 octobre 2026 — règle de travail : toute fonctionnalité accessible, testée, committée
+
+- **Constat** : pendant la séance du 24-25 octobre, des changements sont restés invisibles plusieurs heures alors que le code était correct — la cause n’était pas le code mais deux caches empilés : le port 8082 sert une **compilation statique** (`python -m http.server --directory app/build/web`), et ce serveur n’envoie aucun en-tête `Cache-Control`, donc le navigateur conserve son ancien `main.dart.js` jugé « frais » par heuristique sans jamais revérifier. Par ailleurs, une fonctionnalité n’était parfois atteignable qu’en modifiant le code (route ou point d’entrée manquant).
+- **Décision** : dépôt racine **`AGENTS.md`** (v1.0), lu automatiquement par l’agent à chaque ouverture du projet, qui fixe la définition de « fait » :
+  1. **Accessible** — route enregistrée (`app/lib/src/app.dart` / `backend/routes/api.php`) **et** point d’entrée visible depuis un écran déjà utilisable ; atteignable en suivant uniquement `docs/INSTALLATION.md` ;
+  2. **Testable directement** — test ajouté à la suite existante (`backend/tests/Feature/…` Pest, `app/test/…` Flutter), qui reproduit l’usage réel (appel HTTP authentifié avec assertions de statut **et** de contenu, ou parcours de widgets jusqu’à l’écran) ; aucun second outil de test introduit ;
+  3. **Vérifié puis committé** — mêmes commandes que la CI (`composer test && composer format:check && composer analyse`, `flutter analyze && flutter test`), recompilation web release, **Ctrl+F5 obligatoire** après chaque build (serveur statique sans en-têtes de cache), entrée ici même, puis commit à la française et push — dépôt local et distant au même niveau d’information.
+- **Modifications** : création de `AGENTS.md` ; `README.md` : ligne `AGENTS.md` ajoutée au tableau §0 « Où est le code et la documentation technique » et au tableau des livrables §23 ; entrée de journal ci-dessus.
+- **Vérifications exécutées** : aucun code applicatif modifié — les suites ne sont pas relancées pour cette seule documentation ; `git status` ne montre que ces fichiers, aucun changement tiers en attente, `origin/main` identique à `HEAD` avant commit.
 
 ---
 
