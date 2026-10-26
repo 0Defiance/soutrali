@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
@@ -183,6 +184,8 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             context.go('/messagerie');
           case 'profil':
             _showProfileDialog();
+          case 'espace-admin':
+            _openAdminPanel();
           case 'deconnexion':
             _signOut();
         }
@@ -217,6 +220,17 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
           value: 'profil',
           child: Row(children: [Icon(Icons.person_outline, size: 20), SizedBox(width: 10), Text('Mon profil')]),
         ),
+        if (canAccessAdminPanel(user))
+          const PopupMenuItem(
+            value: 'espace-admin',
+            child: Row(
+              children: [
+                Icon(Icons.admin_panel_settings_outlined, size: 20),
+                SizedBox(width: 10),
+                Text('Espace admin'),
+              ],
+            ),
+          ),
         const PopupMenuDivider(),
         const PopupMenuItem(
           value: 'deconnexion',
@@ -232,6 +246,27 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         ),
       ),
     );
+  }
+
+  /// Ouvre la console d’administration du back-office (`/admin`) sur
+  /// l’hôte de l’API, dans un nouvel onglet du navigateur.
+  Future<void> _openAdminPanel() async {
+    final uri = Uri.parse('$apiBaseUrl/admin');
+    var opened = false;
+
+    try {
+      opened = await launchUrl(uri, mode: LaunchMode.platformDefault);
+    } catch (_) {
+      opened = false;
+    }
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible d’ouvrir l’espace admin : vérifiez l’URL de l’API.'),
+        ),
+      );
+    }
   }
 
   Future<void> _signOut() async {
@@ -390,7 +425,13 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               },
               child: const Text('Se connecter'),
             ),
-          ] else
+          ] else ...[
+            if (canAccessAdminPanel(user))
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: SoutraliColors.green),
+                onPressed: _openAdminPanel,
+                child: const Text('Espace admin'),
+              ),
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
@@ -398,6 +439,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               },
               child: const Text('Se déconnecter'),
             ),
+          ],
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Fermer'),

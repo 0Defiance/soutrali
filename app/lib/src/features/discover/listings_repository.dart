@@ -3,14 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'listing.dart';
 
-const _apiBaseUrl = String.fromEnvironment(
+/// Base URL de l’API, et donc du back-office (`<API_BASE_URL>/admin`) :
+/// `flutter run/build --dart-define=API_BASE_URL=https://api.soutrali.ci`.
+const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://127.0.0.1:8000',
 );
 
 final dioProvider = Provider<Dio>((ref) {
   return Dio(BaseOptions(
-    baseUrl: _apiBaseUrl,
+    baseUrl: apiBaseUrl,
     connectTimeout: const Duration(seconds: 8),
     receiveTimeout: const Duration(seconds: 12),
     headers: const {'Accept': 'application/json'},

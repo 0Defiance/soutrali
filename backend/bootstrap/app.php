@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\LogAccess;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+
+        // Journal d’accès : middleware global, pour être exécuté avant le
+        // routage (le routeur place `auth:sanctum` avant un middleware de
+        // groupe, ce qui court-circuiterait la journalisation des 401).
+        $middleware->append(LogAccess::class);
 
         // Aucune route web de connexion n'existe : la connexion vit dans
         // l'application Flutter. Les requêtes API non authentifiées doivent

@@ -54,7 +54,9 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
+            // `single` : journal complet ; `errors` : copie dédiée des
+            // erreurs (niveau error et au-dessus) dans error.log.
+            'channels' => explode(',', (string) env('LOG_STACK', 'single,errors')),
             'ignore_exceptions' => false,
         ],
 
@@ -70,6 +72,26 @@ return [
             'path' => storage_path('logs/laravel.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'max_files' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
+
+        // Journal d’accès : chaque requête API et back-office tracée par
+        // App\Http\Middleware\LogAccess (GET /api/v1/listings 200 user=3 …).
+        'access' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/access.log'),
+            'level' => 'info',
+            'max_files' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        // Journal d’erreurs dédié : exceptions et échecs signalés par le
+        // gestionnaire Laravel (canal dupliqué du stack ci-dessus).
+        'errors' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/error.log'),
+            'level' => 'error',
+            'max_files' => 30,
             'replace_placeholders' => true,
         ],
 

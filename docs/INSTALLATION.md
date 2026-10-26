@@ -144,6 +144,32 @@ Une base migrée mais vide renvoie une liste vide ; c’est un résultat **norma
 - **Compte local** : `DemoSeeder` (environnement `local` uniquement) crée `admin.demo@soutrali.test`, mot de passe `password`, rôle ADMINISTRATEUR. Hors local, créer un compte habilité avec `php artisan make:filament-user` — aucun compte privilégié n’est créé automatiquement en production.
 - L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` dont le statut est `ACTIF` ; un compte `UTILISATEUR` est refusé.
 - Les assets Filament sont déjà publiés et versionnés dans `public/css|js|fonts/filament` ; pour les régénérer après une mise à jour : `php artisan filament:assets`.
+- **Depuis l’application (26 oct. 2026)** : un compte connecté avec l’un de ces rôles voit une entrée **« Espace admin »** dans le menu du compte (initiales, en haut à droite de l’écran Découvrir) et un bouton du même nom dans la fenêtre **« Mon profil »** ; les deux ouvrent `http://127.0.0.1:8000/admin` dans un nouvel onglet. Un compte `UTILISATEUR` ou un invité ne voit rien.
+
+### Journaux : accès et erreurs
+
+Deux journaux sont produits automatiquement depuis le **26 octobre 2026**, dans `backend/storage/logs/` :
+
+| Fichier | Contenu | Exemple de ligne |
+|---|---|---|
+| `access.log` (fichiers quotidiens `access-AAAA-MM-JJ.log`, rétention 30 jours) | Chaque requête de l’API (`/api/*`) et du back-office (`/admin*`) ; pages publiques et assets exclus | `GET /api/v1/listings 200 user=3 ip=127.0.0.1 12ms` |
+| `error.log` (fichiers quotidiens `error-AAAA-MM-JJ.log`, rétention 30 jours) | Tout le niveau `error` et au-dessus (exceptions, échecs 500), en plus du `laravel.log` complet | `[2026-10-26 11:02:10] local.ERROR: …` |
+
+- Lire le journal des accès :
+
+```powershell
+Get-Content storage\logs\access-*.log -Tail 5
+```
+
+- `user=-` signifie une requête **non authentifiée** ; le statut affiché est celui réellement rendu (401, 403, 422, 500 compris).
+- Le middleware est enregistré **au niveau global** (`backend/bootstrap/app.php`) : c’est la seule position qui permet de tracer les réponses 401, le routeur plaçant sinon `auth:sanctum` avant un middleware de groupe.
+- **Les tests ne touchent pas ces fichiers** : la suite écrit dans `storage/logs/testing-*.log`.
+- Contrôle rapide pendant que l’API tourne :
+
+```powershell
+curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/listings
+Get-Content storage\logs\access-*.log -Tail 3
+```
 
 ---
 
@@ -188,6 +214,8 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [x] `flutter analyze` ne remonte aucune erreur
 - [x] `flutter test` passe
 - [x] Le site s’affiche sur `http://127.0.0.1:8082`
+- [x] `storage/logs/access.log` se remplit pendant que l’API reçoit des requêtes (26 oct. 2026 : 200 / 401 / 302 relus après trois `curl`)
+- [x] Un compte `MODERATEUR` ou `ADMINISTRATEUR` voit l’entrée et le bouton **« Espace admin »** dans l’application ; un `UTILISATEUR` ne les voit pas (26 oct. 2026)
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
 - [ ] `php artisan schedule:work` (local) ou le cron (production) tourne pour la publication programmée

@@ -40,6 +40,18 @@ class AuthUser {
   }
 }
 
+/// Rôles habilités à ouvrir la console d’administration (`/admin`) :
+/// même règle que `User::canAccessPanel()` côté back-office (modérateur ou
+/// administrateur). Le back-office revérifie de son côté, y compris le
+/// statut du compte.
+bool canAccessAdminPanel(AuthUser? user) {
+  if (user == null) {
+    return false;
+  }
+
+  return user.role == 'ADMINISTRATEUR' || user.role == 'MODERATEUR';
+}
+
 /// Récupère le jeton CSRF JSON (`GET /api/v1/csrf-token`) avant chaque
 /// mutation : le jeton change après une inscription ou une connexion.
 Future<void> prepareCsrf(Dio dio) async {
