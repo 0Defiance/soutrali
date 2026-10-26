@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Mail\NewMessageMail;
 use App\Models\Interaction;
 use App\Models\Listing;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\UserBlock;
+use App\Support\Mail\Outbox;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -42,6 +44,15 @@ class ConversationController
             'sender_id' => $user->id,
             'body' => $data['message'],
         ]);
+
+        // Notification de l’auteur de l’annonce (F-09) : le garde ci-dessus
+        // garantit qu’il n’est jamais l’émetteur lui-même.
+        $this->notifyParticipant(
+            $listing->author,
+            $user,
+            $interaction,
+            $data['message'],
+        );
 
         return response()->json($this->summary($interaction, $user), 201);
     }
@@ -129,7 +140,32 @@ class ConversationController
             'body' => $data['body'],
         ]);
 
+        // Notification de l’autre participant (F-09), jamais de soi-même.
+        $this->notifyParticipant(
+            $other !== null ? User::find($other) : null,
+            $user,
+            $interaction,
+            $data['body'],
+        );
+
         return response()->json($this->messagePayload($message, $user), 201);
+    }
+
+    /**
+     * E-mail « vous avez reçu un message » (F-09) : envoyé au seul autre
+     * participant, jamais à l’émetteur, jamais si le destinataire est
+     * introuvable. Panne SMTP journalisée dans error.log, requête préservée.
+     */
+    private function notifyParticipant(?User $recipient, User $sender, Interaction $interaction, string $body): void
+    {
+        if ($recipient === null || $recipient->id === $sender->id) {
+            return;
+        }
+
+        Outbox::send(
+            $recipient->email,
+            new NewMessageMail($recipient, $sender, $interaction, mb_strimwidth($body, 0, 300, '…')),
+        );
     }
 
     /**

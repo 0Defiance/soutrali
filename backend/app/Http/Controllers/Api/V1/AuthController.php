@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Mail\WelcomeMail;
 use App\Models\User;
+use App\Support\Mail\Outbox;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +36,10 @@ class AuthController
 
         Auth::login($user);
         $request->session()->migrate(true);
+
+        // E-mail de bienvenue (F-09) : envoyé après la création du compte,
+        // sans jamais faire échouer l’inscription si le transport tombe.
+        Outbox::send($user->email, new WelcomeMail($user));
 
         return response()->json(['user' => $this->payload($user)], 201);
     }

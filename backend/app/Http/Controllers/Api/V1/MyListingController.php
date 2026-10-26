@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Resources\MyListingResource;
+use App\Mail\ListingPublishedMail;
 use App\Models\Listing;
+use App\Support\Mail\Outbox;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -31,6 +33,10 @@ class MyListingController
             'status' => $publishAt->isFuture() ? 'BROUILLON' : 'PUBLIEE',
             'publish_at' => $publishAt,
         ]);
+
+        if ($listing->status === 'PUBLIEE') {
+            $this->notifyPublished($listing);
+        }
 
         return response()->json(
             new MyListingResource($listing->load(['category:id,name', 'commune:id,name'])),
@@ -104,6 +110,8 @@ class MyListingController
             'publish_at' => now(),
         ]);
 
+        $this->notifyPublished($listing);
+
         return response()->json(
             new MyListingResource($listing->load(['category:id,name', 'commune:id,name'])),
         );
@@ -132,6 +140,20 @@ class MyListingController
         return response()->json(
             new MyListingResource($listing->load(['category:id,name', 'commune:id,name'])),
         );
+    }
+
+    /**
+     * E-mail de confirmation « annonce en ligne » (F-09) : publication
+     * immédiate, mise en ligne manuelle et commande programmée partagent
+     * ce même envoi. Une panne SMTP est journalisée, pas remontée.
+     */
+    private function notifyPublished(Listing $listing): void
+    {
+        $listing->loadMissing('author:id,display_name,email');
+
+        if ($listing->author !== null) {
+            Outbox::send($listing->author->email, new ListingPublishedMail($listing));
+        }
     }
 
     /**

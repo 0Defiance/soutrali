@@ -263,6 +263,20 @@ Application Flutter :
 
 ---
 
+### 26 octobre 2026, suite 3 — phase 2 ouverte (`labo-soutrali-v2`) : e-mails transactionnels F-09
+
+- **Besoin du porteur** : phase 2 = application **desktop + Android tout-en-un, sans rien installer** sur les postes (d’abord en local, ensuite en ligne), et **e-mails réellement reçus en boîte mail** via des hébergements gratuits. Trois décisions prises avec lui avant de coder : (1) ordre **e-mails → desktop → mise en ligne → Android**, (2) fournisseur **Mailjet**, (3) hébergement **gratuit uniquement**.
+- **Comparatif des offres gratuites (recherche web du 26 oct. 2026)** : Mailjet 6 000/mois et 200/jour, SMTP, **expéditeur vérifiable par lien sans domaine acheté** → retenu ; Brevo 300/jour (activation transactionnelle par le support, domaine conseillé) ; Resend 3 000/mois et Mailgun 100/jour **exigent un domaine vérifié** ; SendGrid 100/jour seulement 60 jours (essai) ; AWS SES en sandbox (récipiendaires vérifiés) ; Cloudflare 3 000 sortants/mois mais payant au-delà. Détails et URL des sources : réponse de recherche de la séance.
+- **Branche** : `labo-soutrali-v2` créée depuis `main` (Git interdit les espaces dans un nom de branche).
+- **Implémentation F-09** : classe `App\Support\Mail\Outbox` — envoi synchrone, **toute panne de transport est capturée et journalisée en `Log::error` (→ `storage/logs/error.log`) sans faire échouer la requête** ; helper `frontendUrl()` lit `config('app.frontend_url')`. Trois Mailables avec enveloppe + contenu : `WelcomeMail`, `ListingPublishedMail`, `NewMessageMail`, et quatre gabarits Blade dans `resources/views/emails/` au gabarit **table** recommandé pour les clients mail, aux couleurs de charte (entête vert profond `#0B5A2A`, boutons orange `#FE7402` / vert `#037C30`, fond ivoire `#FFF9F2`, texte `#1F2A24`).
+- **Déclencheurs** : `AuthController::register` (bienvenue) ; `MyListingController::store` quand le statut est `PUBLIEE` + `publishNow` (mise en ligne manuelle) ; commande `soutrali:publish-due` (**passée d’un `update` en masse à une boucle** avec chargement de l’auteur, pour que chaque annonce publiée déclenche son e-mail) ; `ConversationController::start` (à l’auteur de l’annonce) et `sendMessage` (à l’autre participant, **jamais à soi-même**, extrait du corps tronqué à 300 caractères).
+- **Configuration** : `FRONTEND_URL` exposée comme `config('app.frontend_url')` (liens cliquables des e-mails) ; bloc `MAIL_*` complet ajouté à `.env.example` (mode local `log`, valeurs Mailjet commentées). `phpunit.xml` utilisait déjà `MAIL_MAILER=array` : les tests n’ouvrent aucun réseau.
+- **Tests** : nouveau `backend/tests/Feature/EmailNotificationTest.php` — 5 tests / 20 assertions : bienvenue à l’inscription (destinataire + sujet), publication immédiate envoyée, programmée **non** envoyée puis envoyée à la mise en ligne manuelle, commande programmée qui notifie l’auteur, messages dans les deux sens (auteur puis expéditeur), et **inscription maintenue quand le transport lève une exception** (`Mail::shouldReceive('to')->andThrow(...)`). Écueil rencontré et corrigé : sans en-tête `Origin`, Sanctum ne démarre pas la session d’un domaine « stateful » → `Session store not set on request` ; le test reproduit désormais l’en-tête d’origine comme `AuthTest`.
+- **Vérifications exécutées, PHP 8.3** : `php artisan test` → **71 tests passés, 708 assertions** ; `pint --test` → **PASS sur 123 fichiers** ; `phpstan analyse` → aucune erreur. Flutter inchangé (aucune modification côté app pour ce jalon).
+- **Reste pour ce jalon** : créer le compte Mailjet et renseigner les clés dans `backend/.env` **(action du porteur, ses identifiants)** pour vérifier un envoi réel en boîte — case à cocher dans `INSTALLATION.md` §6. Ensuite : jalon desktop tout-en-un (PHP portable + SQLite + zip), puis hébergement gratuit, puis APK Android.
+
+---
+
 ## 3. Ce qui est fait et vérifié
 
 ### Backend Laravel
@@ -277,6 +291,7 @@ Application Flutter :
 - Canaux de contact du profil (F-02/F-06, complétion de D-05 le 24 oct. 2026) : `GET/POST/DELETE /api/v1/me/channels` (types `EMAIL`, `TELEPHONE`, `WHATSAPP` — un seul canal par type, visibilité propre à chaque canal) et `GET /api/v1/listings/{id}/contact-channels` : membres connectés uniquement (visiteur 401), canaux visibles de l’auteur uniquement, jamais ses propres (403), 403 en cas de blocage.
 - Back-office Filament sur `/admin` (T-05) : 7 ressources (signalements, annonces, utilisateurs, catégories, communes, interactions, journal de modération), 8 policies enregistrées, panneau en **mode strict** (`strictAuthorization()`), accès réservé aux comptes `MODERATEUR` / `ADMINISTRATEUR` actifs. Toute décision de modération (prise en charge, masquage, republication, rejet, classement sans suite, **transmission à l’administrateur** — `TRANSMIS`, statut maintenu `EN_COURS`, 24 oct. —, suspension, réactivation) passe par le service `ReportModerator` et laisse une trace horodatée dans `moderation_actions` — le back-office ne crée ni ne supprime de signalement.
 - Journaux d’exploitation (26 oct. 2026, NF-10) : middleware global `LogAccess` → `storage/logs/access.log` (API et back-office, format `MÉTHODE /chemin statut user=… ip=… durée`) et canal `errors` → `storage/logs/error.log` (exceptions et échecs), rétention quotidienne de 30 jours ; les tests écrivent dans `storage/logs/testing-*.log` et ne touchent pas les journaux réels.
+- E-mails transactionnels (F-09, 26 oct. 2026, branche `labo-soutrali-v2`) : `App\Support\Mail\Outbox` envoie trois mailables — bienvenue à l’inscription, annonce mise en ligne (immédiate, manuelle ou programmée échue), message reçu dans la messagerie (à l’autre participant, jamais à soi-même). Gabarits Blade à la charte, liens cliquables sur `config('app.frontend_url')`, mode local `MAIL_MAILER=log` et SMTP Mailjet en réel. **Une panne SMTP est journalisée dans `error.log` sans jamais faire échouer la requête.**
 - Les réponses publiques n’exposent **aucune coordonnée privée** : la ressource ne renvoie que titre, description, type, nature, disponibilité, budget (nombre JSON), catégorie, commune, auteur (identifiant + nom affiché) et date. Les ressources `author` ne sont chargées que sur la route détail.
 - Migrations des onze tables du modèle conceptuel : `communes`, `users`, `categories`, `listings`, `sessions`, `personal_access_tokens`, `contact_channels`, `user_blocks`, `interactions`, `reports`, `moderation_actions`. Les tables `contact_channels` et `user_blocks` correspondent à la décision T-14 ; colonne `publish_at` ajoutée aux `listings` le 24 oct. 2026 (migration non destructrice).
 - Seeders : communes d’Abidjan (D-03) et catégories (D-07) validées le 22 oct. 2026, plus — **en local uniquement** — 3 comptes fictifs de démonstration (dont un administrateur du back-office) et 8 annonces.
@@ -314,6 +329,7 @@ Application Flutter :
 - Contrôle des règles Git d’ignore et scan de secrets : conformes (voir §2, 22 oct.).
 - Ces vérifications sont exécutées sur le poste de développement. Leur passage dans la CI GitHub est suivi au §2.
 - **Relevé du 26 octobre 2026** : `php artisan test` → **66 tests passés, 688 assertions** (dont `AccessLogTest`, 4 tests) ; `pint --test` → PASS sur **118 fichiers** ; `phpstan analyse` → aucune erreur ; `flutter analyze` → **No issues found** ; `flutter test` → **21 tests passés** (dont `admin_entry_test.dart`, 4 tests) ; `flutter build web --release` → succès. Vérifié en local : trois `curl` (liste publique 200, `/me` en 401, `/admin` en 302) relus dans `storage/logs/access.log` avec utilisateur, IP et durée.
+- **Relevé du 26 octobre 2026 (suite, phase 2)** : `php artisan test` → **71 tests passés, 708 assertions** (dont `EmailNotificationTest`, 5 tests / 20 assertions) ; `pint --test` → PASS sur **123 fichiers** ; `phpstan analyse` → aucune erreur. Aucune modification Flutter à ce jalon.
 
 ---
 
@@ -331,6 +347,8 @@ Application Flutter :
 ## 5. Ce qui reste à faire, dans l’ordre
 
 L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran avant la fin de T1b.**
+
+**Phase 2 (branche `labo-soutrali-v2`, ordre arrêté le 26 oct. 2026 avec le porteur)** : (1) e-mails réels F-09 ✅ fait et testé, à finaliser avec les clés Mailjet du porteur ; (2) application **desktop Windows tout-en-un** (PHP portable + base SQLite embarquée, zip à double-clic sur un poste sans rien d’installé) ; (3) mise en ligne du backend sur un hébergement **gratuit** ; (4) APK Android signé pointant vers cette API en ligne.
 
 1. **T0 — débloquer l’environnement : fait le 22 octobre 2026**
    - Compte SQL dédié créé, droits limités à `soutrali`. **Fait.**

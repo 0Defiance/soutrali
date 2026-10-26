@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\ListingPublishedMail;
 use App\Models\Listing;
+use App\Support\Mail\Outbox;
 use Illuminate\Console\Command;
 
 /**
@@ -19,14 +21,27 @@ class PublishDueListings extends Command
 
     public function handle(): int
     {
-        $count = Listing::query()
+        $due = Listing::query()
             ->where('status', 'BROUILLON')
             ->whereNotNull('publish_at')
             ->where('publish_at', '<=', now())
-            ->update([
+            ->with('author:id,display_name,email')
+            ->get();
+
+        foreach ($due as $listing) {
+            $listing->update([
                 'status' => 'PUBLIEE',
                 'updated_at' => now(),
             ]);
+
+            // Confirmation d’annonce publiée (F-09), identique aux deux
+            // autres chemins de publication. Le mail part dès la bascule.
+            if ($listing->author !== null) {
+                Outbox::send($listing->author->email, new ListingPublishedMail($listing));
+            }
+        }
+
+        $count = $due->count();
 
         $this->info("Annonces programmées publiées : {$count}.");
 

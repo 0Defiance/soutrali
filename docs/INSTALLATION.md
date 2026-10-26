@@ -171,6 +171,39 @@ curl -H "Accept: application/json" http://127.0.0.1:8000/api/v1/listings
 Get-Content storage\logs\access-*.log -Tail 3
 ```
 
+### E-mails (F-09) : de l’inscription à la boîte mail
+
+Depuis le **26 octobre 2026**, le backend envoie trois e-mails transactionnels : **bienvenue à l’inscription**, **confirmation d’annonce mise en ligne** (publication immédiate, mise en ligne manuelle ou publication programmée échue par `soutrali:publish-due`) et **notification « vous avez reçu un message »** dans la messagerie.
+
+**Mode local par défaut — aucun compte requis** : `.env` contient `MAIL_MAILER=log` : chaque e-mail est écrit dans `storage/logs/laravel.log` (en-têtes `To:` / `Subject:`, puis le HTML).
+
+```powershell
+Get-Content storage\logs\laravel.log -Tail 40
+```
+
+**En réel — Mailjet** (offert : 200 e-mails/jour et 6 000/mois, SMTP, **sans domaine à acheter** : l’expéditeur se valide par un lien reçu dans sa propre boîte) :
+
+1. Créer un compte sur `mailjet.com`, section *Email API* : récupérer la **clé API** et la **clé secrète** (jamais le mot de passe du compte).
+2. Vérifier un expéditeur : *Sender* → ajouter une adresse e-mail → cliquer le lien de confirmation reçu dans cette boîte.
+3. Renseigner `backend/.env` (fichier non versionné) :
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_HOST=in-v3.mailjet.com
+MAIL_PORT=587
+MAIL_SCHEME=tls
+MAIL_USERNAME=<clé API Mailjet>
+MAIL_PASSWORD=<clé secrète Mailjet>
+MAIL_FROM_ADDRESS=<adresse expéditrice vérifiée>
+MAIL_FROM_NAME="Soutrali"
+```
+
+4. **Redémarrer `php artisan serve`** (le `.env` ne se recharge pas à chaud), puis inscrire un compte : l’e-mail de bienvenue arrive dans la boîte du destinataire.
+
+- **Une panne SMTP ne fait jamais échouer la requête** : inscription, publication et message restent enregistrés ; l’échec est écrit dans `storage/logs/error.log`. Un envoi raté n’est pas rejoué automatiquement — corriger la cause puis refaire l’action.
+- Liens cliquables des e-mails : `FRONTEND_URL` (lu par `config/app.php` → `app.frontend_url`), `http://127.0.0.1:8082` en local.
+- Tests associés : `backend/tests/Feature/EmailNotificationTest.php` (5 tests : bienvenue, publication immédiate / programmée / manuelle, commande programmée, messages des deux côtés, panne transport).
+
 ---
 
 ## 5. Application Flutter Web
@@ -216,6 +249,8 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [x] Le site s’affiche sur `http://127.0.0.1:8082`
 - [x] `storage/logs/access.log` se remplit pendant que l’API reçoit des requêtes (26 oct. 2026 : 200 / 401 / 302 relus après trois `curl`)
 - [x] Un compte `MODERATEUR` ou `ADMINISTRATEUR` voit l’entrée et le bouton **« Espace admin »** dans l’application ; un `UTILISATEUR` ne les voit pas (26 oct. 2026)
+- [x] `EmailNotificationTest` passe : les trois e-mails partent aux bons destinataires, rien n’est envoyé avant la mise en ligne, une panne SMTP n’empêche pas l’inscription (26 oct. 2026)
+- [ ] Un e-mail de bienvenue réellement reçu dans une boîte Mailjet (nécessite les clés du compte Mailjet dans `backend/.env`)
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
 - [ ] `php artisan schedule:work` (local) ou le cron (production) tourne pour la publication programmée
