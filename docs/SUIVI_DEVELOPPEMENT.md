@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.3 · **Dernière mise à jour :** 26 octobre 2026
+> **Version :** 1.4 · **Dernière mise à jour :** 26 octobre 2026
 
 ---
 
@@ -238,6 +238,17 @@ Application Flutter :
 - **Modifications** : création de `AGENTS.md` ; `README.md` : ligne `AGENTS.md` ajoutée au tableau §0 « Où est le code et la documentation technique » et au tableau des livrables §23 ; entrée de journal ci-dessus.
 - **Vérifications exécutées** : aucun code applicatif modifié — les suites ne sont pas relancées pour cette seule documentation ; `git status` ne montre que ces fichiers, aucun changement tiers en attente, `origin/main` identique à `HEAD` avant commit.
 
+### 26 octobre 2026, suite — référentiel complet des services et icônes de charte
+
+- **Besoin du porteur** : proposer **tous les services possibles** (réparation, cours, aide à domicile, déménagement, …), avec des données de test réalistes et une icône réaliste par service.
+- **Référentiel porté de 8 à 32 catégories** (`CategorySeeder`) : les 8 catégories validées (D-07) sont conservées à l’identique — aucun test ni aucune annonce de démonstration existante n’est renommé — et 24 services ajoutés : plomberie, électricité, menuiserie, peinture, maçonnerie, jardinage, garde d’enfants, aide aux aînés, cuisine/traiteur, santé-bien-être, sport, photo-vidéo, événements, mécanique, livraison, comptabilité, droit et démarches, langues, sécurité, animaux, musique-arts, communication-marketing, vente, agriculture.
+- **Icône par service** : nouvelle colonne `categories.icon` (migration `2026_10_26_000001_add_icon_to_categories`, valeur par défaut `misc`), clés centralisées dans `Category::ICONS` (32 clés) et exposées par `GET /api/v1/categories` ainsi que par `category.icon` des annonces publiques et de « mes annonces ». Côté Flutter, `category_icons.dart` traduit chaque clé en icône Material (`Icons.plumbing`, `Icons.school`, `Icons.local_shipping`, …) avec repli sur l’icône générique.
+- **Affichage** : nouveau bloc **« Tous les services »** sur l’écran Découvrir (pastilles icône + nom, sélection colorée, survol relevé, motif de charte en fond) qui **filtre les annonces au toucher** ; icône ajoutée au menu de catégorie des filtres et des formulaires de publication et de modification, à la ligne de catégorie des cartes de résultats, à la puce de catégorie du détail d’annonce et à la ligne « catégorie · commune » de « mes annonces ». Back-office : liste déroulante d’icônes dans la fiche catégorie et badge d’icône dans le tableau.
+- **Données de test réalistes** : `DemoSeeder` passe de 8 à 32 annonces (un aperçu par service) — titres, descriptions, quartiers, disponibilités et budgets en FCFA plausibles pour Abidjan, réparties entre les deux comptes de démonstration ; contenu entièrement fictif, aucun nom ni numéro réel.
+- **Contrats de test alignés** : `PublicReferenceTest` (nombre de Yopougon 2 → 4, annonces `BENEVOLE` 3 → 6, structure `icon` vérifiée) et nouveau test « il sert une clé d’icône connue de l’application pour chaque service ». Côté Flutter, `services_test.dart` (bloc « Tous les services » : icônes présentes, un toucher sur un service devient le filtre des résultats), `references_test` et `listing_test` étendus à la clé `icon`.
+- **Vérifications exécutées, PHP 8.3 et Flutter 3.47.7** : `php artisan test` → **62 tests passés, 676 assertions** ; `pint --test` → **PASS sur 116 fichiers** ; `phpstan analyse` → **aucune erreur** ; `flutter analyze` → **No issues found** ; `flutter test` → **17 tests passés** ; `flutter build web --release` → **succès** (166,9 s).
+- **Accessibilité vérifiée sur l’installation locale** : migration appliquée à la base `soutrali` (32 catégories, 34 annonces, seule « Autres » en `misc`), seeder rejoué ; sur `127.0.0.1:8000`, `GET /api/v1/categories` répond **200** avec les 32 services et leur `icon` ; sur le build servi par `127.0.0.1:8082`, le bundle livré est celui du 26 oct. et la page appelle bien `/api/v1/categories` (200) — console propre, seul le 401 `/me` attendu en visiteur. **Ctrl+F5 sur l’onglet ouvert** pour voir le nouveau bundle.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -245,7 +256,7 @@ Application Flutter :
 ### Backend Laravel
 
 - API publique versionnée : `GET /api/v1/listings` (filtres `q`, `commune`, `category`, `type`, `nature`, pagination `page` / `per_page` plafonnée à 24) et `GET /api/v1/listings/{id}`, toutes deux limitées à 60 requêtes/minute.
-- Référentiels publics : `GET /api/v1/categories` et `GET /api/v1/communes` (éléments `active` uniquement, 60 requêtes/minute), qui alimentent les filtres de l’écran.
+- Référentiels publics : `GET /api/v1/categories` et `GET /api/v1/communes` (éléments `active` uniquement, 60 requêtes/minute), qui alimentent les filtres de l’écran. Les catégories — **32 services** depuis le 26 oct. 2026 — renvoient leur clé `icon`, que l’application traduit en icône de charte (bloc « Tous les services », menus de catégorie, cartes et détail).
 - Authentification par session web Sanctum (D-04 validée) : `POST /api/v1/register`, `/login` (message d’erreur identique si le compte est inconnu), `/logout`, `GET /api/v1/me`, `GET /api/v1/csrf-token` (jeton CSRF en JSON). Mutations exigées en session, cookie de session `soutrali-session` et origine contrôlée.
 - Annonces de l’utilisateur : publication immédiate `PUBLIEE` ou **programmée** (`publish_at` futur → statut `BROUILLON`, publication automatique par `soutrali:publish-due` planifiée chaque minute ; date non modifiable après mise en ligne ; publication immédiate `POST /listings/{id}/publish` renvoie 409 si déjà publiée), modification réservée au propriétaire (403 sinon), clôture avec `closure_outcome` (409 si déjà clôturée), liste `GET /api/v1/me/listings`.
 - Messagerie interne tracée (D-05 validée) : fils par couple auteur/initiateur autour d’une annonce publiée, premier message au démarrage, accusés de lecture, compteurs de non-lus. Aucune coordonnée privée n’est échangée.

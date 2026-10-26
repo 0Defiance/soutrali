@@ -8,6 +8,7 @@ class Listing {
     required this.commune,
     required this.category,
     required this.createdAt,
+    this.categoryIcon,
     this.authorId,
     this.authorName,
     this.availability,
@@ -21,6 +22,9 @@ class Listing {
   final String nature;
   final String commune;
   final String category;
+
+  /// Clé d’icône de la catégorie (absente si l’API ne l’envoie pas).
+  final String? categoryIcon;
   final DateTime? createdAt;
   final int? authorId;
   final String? authorName;
@@ -44,6 +48,7 @@ class Listing {
       category: category is Map<String, dynamic>
           ? category['name'] as String? ?? ''
           : json['category_name'] as String? ?? '',
+      categoryIcon: category is Map<String, dynamic> ? category['icon'] as String? : null,
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
       authorId: author is Map<String, dynamic> ? (author['id'] as num?)?.toInt() : null,
       authorName: author is Map<String, dynamic>

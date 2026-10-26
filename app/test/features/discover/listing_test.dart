@@ -19,13 +19,14 @@ void main() {
         'type': 'DEMANDE',
         'nature': 'REMUNEREE',
         'commune': {'name': 'Cocody'},
-        'category': {'name': 'Réparations'},
+        'category': {'name': 'Réparations', 'icon': 'repair'},
         'created_at': '2026-10-20T10:00:00Z',
       });
 
       expect(listing.id, 12);
       expect(listing.commune, 'Cocody');
       expect(listing.category, 'Réparations');
+      expect(listing.categoryIcon, 'repair');
       expect(listing.type, 'DEMANDE');
     });
   });

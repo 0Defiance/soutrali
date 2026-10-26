@@ -5,16 +5,21 @@ import 'listings_repository.dart';
 
 /// Élément d'un référentiel public : catégorie ou commune.
 class ReferenceItem {
-  const ReferenceItem({required this.id, required this.name, this.description});
+  const ReferenceItem({required this.id, required this.name, this.description, this.icon});
 
   final int id;
   final String name;
   final String? description;
 
+  /// Clé d’icône du service (catégories uniquement) : voir
+  /// `category_icons.dart` pour la traduction en icône.
+  final String? icon;
+
   factory ReferenceItem.fromJson(Map<String, dynamic> json) => ReferenceItem(
         id: (json['id'] as num).toInt(),
         name: json['name'] as String? ?? '',
         description: json['description'] as String?,
+        icon: json['icon'] as String?,
       );
 }
 

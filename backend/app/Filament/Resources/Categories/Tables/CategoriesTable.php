@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Categories\Tables;
 
+use App\Models\Category;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -17,6 +18,11 @@ class CategoriesTable
                 TextColumn::make('name')
                     ->label('Nom')
                     ->searchable(),
+                TextColumn::make('icon')
+                    ->label('Icône')
+                    ->badge()
+                    ->color('gray')
+                    ->formatStateUsing(fn (string $state): string => Category::ICONS[$state] ?? $state),
                 TextColumn::make('description')
                     ->label('Description')
                     ->limit(48)

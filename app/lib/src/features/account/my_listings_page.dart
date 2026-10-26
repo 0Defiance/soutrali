@@ -7,6 +7,7 @@ import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../auth/auth_repository.dart';
+import '../discover/category_icons.dart';
 import '../discover/listings_repository.dart';
 import '../discover/references_repository.dart';
 
@@ -254,10 +255,20 @@ class _MyListingCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(listing.title, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
-          Text(
-            '${listing.categoryName} · ${listing.communeName}'
-            '${listing.status == 'CLOTUREE' && listing.closureOutcome != null ? ' · Issue : ${_outcomeLabel(listing.closureOutcome!)}' : ''}',
-            style: const TextStyle(color: SoutraliColors.muted, fontSize: 13),
+          Row(
+            children: [
+              Icon(categoryIcon(listing.categoryIcon), size: 15, color: SoutraliColors.green),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  '${listing.categoryName} · ${listing.communeName}'
+                  '${listing.status == 'CLOTUREE' && listing.closureOutcome != null ? ' · Issue : ${_outcomeLabel(listing.closureOutcome!)}' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: SoutraliColors.muted, fontSize: 13),
+                ),
+              ),
+            ],
           ),
           if (isProgrammed && listing.publishAt != null) ...[
             const SizedBox(height: 4),
@@ -478,7 +489,17 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Catégorie'),
                 items: [
-                  for (final item in categories) DropdownMenuItem(value: item.id, child: Text(item.name)),
+                  for (final item in categories)
+                    DropdownMenuItem(
+                      value: item.id,
+                      child: Row(
+                        children: [
+                          Icon(categoryIcon(item.icon), size: 18, color: SoutraliColors.green),
+                          const SizedBox(width: 8),
+                          Flexible(child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
+                      ),
+                    ),
                 ],
                 onChanged: (value) => setState(() => _categoryId = value ?? _categoryId),
               ),

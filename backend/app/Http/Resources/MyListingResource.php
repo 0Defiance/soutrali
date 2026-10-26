@@ -29,7 +29,7 @@ class MyListingResource extends JsonResource
             'availability' => $this->availability,
             // Le cast decimal:2 renvoie une chaîne : on force un nombre JSON.
             'budget' => $this->budget !== null ? (float) $this->budget : null,
-            'category' => ['id' => $this->category?->id, 'name' => $this->category?->name],
+            'category' => ['id' => $this->category?->id, 'name' => $this->category?->name, 'icon' => $this->category?->icon],
             'commune' => ['id' => $this->commune?->id, 'name' => $this->commune?->name],
             'created_at' => $this->created_at?->toISOString(),
         ];

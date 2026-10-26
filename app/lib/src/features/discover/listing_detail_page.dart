@@ -8,6 +8,7 @@ import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../auth/auth_repository.dart';
 import '../messaging/messaging_repository.dart';
+import 'category_icons.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
 
@@ -96,7 +97,11 @@ class ListingDetailPage extends ConsumerWidget {
                           color: Colors.white,
                         ),
                         if (listing.category.isNotEmpty)
-                          _Chip(label: listing.category, color: Colors.white),
+                          _Chip(
+                            label: listing.category,
+                            color: Colors.white,
+                            icon: categoryIcon(listing.categoryIcon),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -615,10 +620,13 @@ class _ReportDialogState extends State<_ReportDialog> {
 }
 
 class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color});
+  const _Chip({required this.label, required this.color, this.icon});
 
   final String label;
   final Color color;
+
+  /// Icône de charte du service (facultative).
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -629,9 +637,18 @@ class _Chip extends StatelessWidget {
         border: Border.all(color: SoutraliColors.border),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(color: SoutraliColors.ink, fontSize: 13, fontWeight: FontWeight.w600),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 15, color: SoutraliColors.green),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: const TextStyle(color: SoutraliColors.ink, fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }

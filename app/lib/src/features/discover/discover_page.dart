@@ -11,6 +11,7 @@ import '../account/contact_channels_section.dart';
 import '../account/profile_safety_section.dart';
 import '../auth/auth_repository.dart';
 import '../messaging/messaging_repository.dart';
+import 'category_icons.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
 import 'references_repository.dart';
@@ -74,6 +75,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             SliverToBoxAdapter(child: _buildIntro(compact)),
             SliverToBoxAdapter(child: _buildMainActions(compact)),
             SliverToBoxAdapter(child: _buildSearch(compact)),
+            SliverToBoxAdapter(child: _buildServices(compact)),
             SliverToBoxAdapter(child: _buildSectionHeading()),
             results.when(
               loading: () => const SliverFillRemaining(
@@ -591,7 +593,18 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                       items: [
                         const DropdownMenuItem(value: '', child: Text('— Choisir —')),
                         for (final item in categories)
-                          DropdownMenuItem(value: item.id.toString(), child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                          DropdownMenuItem(
+                            value: item.id.toString(),
+                            child: Row(
+                              children: [
+                                Icon(categoryIcon(item.icon), size: 18, color: SoutraliColors.green),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(item.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                       onChanged: (value) => setDialogState(() => categoryId = value ?? ''),
                       validator: (value) => (value == null || value.isEmpty) ? 'Catégorie obligatoire.' : null,
@@ -1026,6 +1039,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         value: _categoryId,
                         values: categoryValues,
                         labels: categoryLabels,
+                        icons: {
+                          for (final item in categoryItems)
+                            item.id.toString(): categoryIcon(item.icon),
+                        },
                         onChanged: (value) => setState(() => _categoryId = value),
                       ),
                       _SegmentedFilter(
@@ -1081,6 +1098,89 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 ],
               ),
             ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tous les services du référentiel, en visu interactive : chaque
+  /// pastille filtre les annonces affichées juste en dessous (26 oct. 2026).
+  Widget _buildServices(bool compact) {
+    final categories = ref.watch(categoriesProvider);
+    final items = categories.when(
+      data: (rows) => rows,
+      loading: () => const <ReferenceItem>[],
+      error: (error, stack) => const <ReferenceItem>[],
+    );
+
+    if (items.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 16, compact ? 16 : 40, 4),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1120),
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(compact ? 18 : 26),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: SoutraliColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: SoutraliColors.ink.withValues(alpha: 0.05),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InteractiveMotif(
+              style: MotifStyle.light,
+              density: 56,
+              opacity: 0.7,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tous les services',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontSize: compact ? 18 : 20),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Choisissez un service : seules ses annonces s’affichent en dessous.',
+                    style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in items)
+                        _ServiceChip(
+                          key: ValueKey('service-${item.id}'),
+                          icon: categoryIcon(item.icon),
+                          label: item.name,
+                          selected: _categoryId == item.id.toString(),
+                          onTap: () {
+                            setState(() {
+                              _categoryId =
+                                  _categoryId == item.id.toString() ? '' : item.id.toString();
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -1399,12 +1499,16 @@ class _FilterDropdown extends StatelessWidget {
     required this.values,
     required this.onChanged,
     this.labels = const {},
+    this.icons = const {},
   });
 
   final String label;
   final String value;
   final List<String> values;
   final Map<String, String> labels;
+
+  /// Icônes éventuelles de chaque entrée (services : icône de charte).
+  final Map<String, IconData> icons;
   final ValueChanged<String> onChanged;
 
   @override
@@ -1416,18 +1520,112 @@ class _FilterDropdown extends StatelessWidget {
         isExpanded: true,
         decoration: InputDecoration(labelText: label),
         items: values
-            .map((item) => DropdownMenuItem(
-                  value: item,
-                  child: Text(
-                    labels[item] ?? (item.isEmpty ? 'Toutes' : item),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ))
+            .map((item) {
+              final icon = icons[item];
+              final text = Text(
+                labels[item] ?? (item.isEmpty ? 'Toutes' : item),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              );
+
+              return DropdownMenuItem(
+                value: item,
+                child: icon == null
+                    ? text
+                    : Row(
+                        children: [
+                          Icon(icon, size: 18, color: SoutraliColors.green),
+                          const SizedBox(width: 8),
+                          Flexible(child: text),
+                        ],
+                      ),
+              );
+            })
             .toList(growable: false),
         onChanged: (selected) {
           if (selected != null) onChanged(selected);
         },
+      ),
+    );
+  }
+}
+
+/// Pastille de service : icône de charte + nom, sélection colorée,
+/// survol relevé. Sert au bloc « Tous les services ».
+class _ServiceChip extends StatefulWidget {
+  const _ServiceChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  State<_ServiceChip> createState() => _ServiceChipState();
+}
+
+class _ServiceChipState extends State<_ServiceChip> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = widget.selected;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: selected
+                  ? SoutraliColors.deepGreen
+                  : _hovered
+                      ? SoutraliColors.paleGreen
+                      : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: selected
+                    ? SoutraliColors.deepGreen
+                    : _hovered
+                        ? SoutraliColors.green.withValues(alpha: 0.55)
+                        : SoutraliColors.border,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  widget.icon,
+                  size: 18,
+                  color: selected ? Colors.white : SoutraliColors.green,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: selected ? Colors.white : SoutraliColors.ink,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1511,7 +1709,25 @@ class _ListingCardState extends State<_ListingCard> {
           ),
           if (listing.category.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(listing.category, style: const TextStyle(color: SoutraliColors.orangeText, fontSize: 13, fontWeight: FontWeight.w600)),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(categoryIcon(listing.categoryIcon), size: 15, color: SoutraliColors.orange),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    listing.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SoutraliColors.orangeText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
         ),

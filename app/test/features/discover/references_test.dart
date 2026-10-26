@@ -25,6 +25,21 @@ void main() {
     expect(item.description, 'Cours particuliers et soutien scolaire.');
   });
 
+  test('ReferenceItem parses the service icon key', () {
+    final item = ReferenceItem.fromJson({
+      'id': 9,
+      'name': 'Plomberie et sanitaire',
+      'description': 'Fuites et sanitaires à domicile.',
+      'icon': 'plumbing',
+    });
+
+    expect(item.icon, 'plumbing');
+
+    final commune = ReferenceItem.fromJson({'id': 1, 'name': 'Abobo'});
+
+    expect(commune.icon, isNull);
+  });
+
   test('ListingFilters sends the category id and keeps equality', () {
     const withCategory = ListingFilters(query: 'cours', category: 3);
     const sameCategory = ListingFilters(query: 'cours', category: 3);

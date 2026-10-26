@@ -15,6 +15,7 @@ class MyListing {
     required this.status,
     required this.categoryId,
     required this.categoryName,
+    this.categoryIcon,
     required this.communeId,
     required this.communeName,
     this.closureOutcome,
@@ -42,6 +43,7 @@ class MyListing {
       budget: json['budget'] is num ? (json['budget'] as num).toDouble() : double.tryParse('${json['budget']}'),
       categoryId: category is Map<String, dynamic> ? (category['id'] as num?)?.toInt() ?? 0 : 0,
       categoryName: category is Map<String, dynamic> ? category['name'] as String? ?? '' : '',
+      categoryIcon: category is Map<String, dynamic> ? category['icon'] as String? : null,
       communeId: commune is Map<String, dynamic> ? (commune['id'] as num?)?.toInt() ?? 0 : 0,
       communeName: commune is Map<String, dynamic> ? commune['name'] as String? ?? '' : '',
       createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
@@ -61,6 +63,9 @@ class MyListing {
   final double? budget;
   final int categoryId;
   final String categoryName;
+
+  /// Clé d’icône de la catégorie, pour l’affichage dans « mes annonces ».
+  final String? categoryIcon;
   final int communeId;
   final String communeName;
   final DateTime? createdAt;
