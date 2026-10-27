@@ -28,3 +28,8 @@ backend/database/*.sqlite
 backend/database/*.sqlite-*
 
 !app/pubspec.lock
+
+# Phase 2 desktop : artefacts d assemblage (jamais committés)
+dist/
+desktop/runtime/php/
+desktop/runtime/*.zip

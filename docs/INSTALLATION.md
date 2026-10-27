@@ -228,6 +228,20 @@ python -m http.server 8082 --bind 127.0.0.1 --directory build\web
 
 - **Polices et icônes de marque** : Manrope et Source Sans 3 sont déclarées dans `pubspec.yaml` (fichiers et licences OFL dans `app/assets/fonts/`). Les icônes web et favicons sont générés depuis le logo source ; depuis la racine du dépôt, `php brand/generate-icons.php` les régénère si le logo est retravaillé (§15.7 du README).
 
+### Paquet desktop Windows tout-en-un (phase 2)
+
+Depuis la **racine** du dépôt, dans PowerShell :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File desktop\build-package.ps1
+```
+
+- Étapes : téléchargement de PHP 8.3.36 x64 portable (déjà présent dans `desktop/runtime/php/`), compilation release de l’application (`--dart-define=API_BASE_URL=http://127.0.0.1:8123`), assemblage de `dist/Soutrali-win64/` (backend Laravel + vendor, journaux purgés, runtime PHP), écriture du `.env` du paquet (SQLite, port 8123, `SANCTUM_STATEFUL_DOMAINS=127.0.0.1:8123`, `MAIL_MAILER=log`), `key:generate` + `migrate` + `db:seed`, puis archive `dist/Soutrali-win64.zip`.
+- **Prérequis de compilation** : Visual Studio 2022 avec le chargeur « Développement C++ avec les composants par défaut ». Constaté le 27 oct. 2026 : sans Visual Studio, `flutter build windows` répond « Unable to find suitable Visual Studio toolchain ». Sans Visual Studio, utilisez `-SkipFlutter` : le reste du paquet est assemblé avec un build de l’application existant (ou sans exécutable).
+- **Sur la poste cible** : dézipper puis double-cliquer sur l’exécutable — il réutilise le backend s’il répond déjà, sinon démarre `php artisan serve` sur `127.0.0.1:8123` avec le PHP embarqué, puis ouvre l’application. Aucune installation (PHP, MySQL, Flutter) n’est requise.
+- **Vérifié le 27 octobre 2026 avec le PHP embarqué seul** : `GET /api/v1/categories` → 200 (données du seeder), inscription → 201, connexion → 200, `GET /me` → 200 sur `127.0.0.1:8123` — parcours d’authentification complet sur la base SQLite du paquet.
+- Les cookies de session de l’application desktop sont persistants (`PersistCookieJar` dans `%APPDATA%/Soutrali/cookies`) ; l’en-tête `Origin` est envoyé sur chaque requête, indispensable à Sanctum hors navigateur.
+
 ---
 
 ## 6. Liste de vérification
@@ -257,6 +271,8 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 - [ ] À 390 px de large, aucun défilement horizontal
 - [ ] Sans backend, l’écran affiche l’état d’indisponibilité, pas un écran cassé
 - [ ] `php artisan schedule:work` (local) ou le cron (production) tourne pour la publication programmée
+- [x] Parcours du paquet desktop vérifié avec le PHP portable seul : catégories 200, inscription 201, connexion 200, `/me` 200 sur `127.0.0.1:8123` (27 oct. 2026)
+- [ ] Exécutable Windows du paquet compilé (nécessite Visual Studio, chargeur « Développement C++ », sur le poste de build)
 
 ---
 

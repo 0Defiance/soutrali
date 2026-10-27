@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../platform/app_runtime.dart';
 import 'listing.dart';
 
 /// Base URL de l’API, et donc du back-office (`<API_BASE_URL>/admin`) :
@@ -11,13 +12,17 @@ const apiBaseUrl = String.fromEnvironment(
 );
 
 final dioProvider = Provider<Dio>((ref) {
-  return Dio(BaseOptions(
+  final dio = Dio(BaseOptions(
     baseUrl: apiBaseUrl,
     connectTimeout: const Duration(seconds: 8),
     receiveTimeout: const Duration(seconds: 12),
     headers: const {'Accept': 'application/json'},
     extra: const {'withCredentials': true},
   ));
+
+  // Desktop / Android : cookies de session persistants + en-tête Origin
+  // (Sanctum). Web : conservé intact, le navigateur s'en charge.
+  return configurePlatformDio(dio, apiBaseUrl);
 });
 
 final listingsRepositoryProvider = Provider<ListingsRepository>((ref) {
