@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.4 · **Dernière mise à jour :** 26 octobre 2026
+> **Version :** 1.5 · **Dernière mise à jour :** 28 octobre 2026
 
 ---
 
@@ -310,6 +310,16 @@ Application Flutter :
 - **Premier administrateur de production** : `php artisan soutrali:create-admin inbox.pro.perso@gmail.com` a promu le compte de vérification en `ADMINISTRATEUR` / `ACTIF` (renommé « Administrateur Soutrali ») ; connexion API vérifiée avec ce compte — le blocage §4 « création du premier administrateur » est levé aussi en réel.
 - **E-mails F-09 en production — diagnostic d’un non-reçu** : le transport SMTP **acceptait** les messages (test réel capturé : `SMTP_ACCEPTED`) alors que le porteur **ne recevait rien**. Cause vérifiée : l’expéditeur `support@soutrali.com` porte sur un domaine `soutrali.com` **« En attente »** de vérification dans le compte Mailjet, seul `my.fat.inc@gmail.com` est **« Actif »** — Mailjet accepte en SMTP puis ne distribue pas. Correctif : `MAIL_FROM_ADDRESS` basculé sur l’expéditeur vérifié, test réenvoyé. **Reste** : confirmation de la réception en boîte (spams compris) par le porteur, puis vérification du domaine `soutrali.com` dans Mailjet (enregistrements DNS) pour retrouver un expéditeur de marque `support@soutrali.com`.
 
+### 28 octobre 2026, suite — chaîne Android installée et APK signé compilé
+
+- **Blocage levé — chemin du SDK avec espace** : le SDK Flutter se trouvait dans `C:\Users\Abd Al Fattah\flutter` ; le hook `objective_c` (déclenché par `path_provider_foundation`) fait échouer toute compilation sous Windows dès qu’un chemin de l’environnement contient une espace non échappée — cela cassait `flutter build` **et** `flutter test`. SDK déplacé vers `C:\soutrali-android\flutter`, PATH utilisateur mis à jour et junction conservée à l’ancien emplacement pour la compatibilité : `flutter doctor` redevient **entièrement vert**, y compris l’outil Android.
+- **Outils Android installés** sous `C:\soutrali-android\` : JDK 17.0.20.1, Android SDK — platform 35, build-tools 36.x, NDK r28c et CMake 3.22.1 téléchargés et licences acceptées lors du premier build (27 min).
+- **Hôte Android ajouté au dépôt** : `app/android/` (projet généré ; son `.gitignore` suit le template Flutter : `local.properties`, `gradlew`, keystores ignorés), `path_provider` ajouté à `pubspec.yaml` (stockage des cookies hors web), icônes de lancement générées dans les cinq densités `mipmap-*` par `brand/generate-icons.php` (script étendu aux cibles Android).
+- **Signature de release hors dépôt** : keystore `~/.android/soutrali-release.keystore` (certificat `CN=Soutrali`) et `~/.android/soutrali-keystore.properties` — le `.gitignore` racine ignore désormais `keystore.properties` et `*.jks`. Échec corrigé au second build : `storeFile` contenait un chemin MSYS (`/c/Users/…`) que Gradle résolvait relativement au projet (« Keystore file … not found for signing config release ») ; remplacé par `C:/Users/…`.
+- **APK construit et vérifié** : `flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net` → `app/build/app/outputs/flutter-apk/app-release.apk`, **56,3 Mo**, code de sortie 0. Vérifications : chaîne `https://soutrali.alwaysdata.net` (dont `/admin`) retrouvée dans `lib/arm64-v8a/libapp.so` — l’URL de l’API est bien gravée ; `apksigner verify --print-certs` → signature **v2/v3 valide, signataire `CN=Soutrali`**.
+- **Vérifications de code** : `flutter analyze` sans erreur, `flutter test` → **25 tests verts**, `php -l brand/generate-icons.php` → aucune erreur de syntaxe.
+- **Reste (Android)** : installer l’APK sur un téléphone et y parcourir inscription, recherche, publication, session conservée ; mesures T1b sur téléphone en réseau limité (seuils à fixer avec la MOA) ; suivre `versionCode`/`versionName` pour les mises à jour signées avec la même clé.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
@@ -385,7 +395,7 @@ Application Flutter :
 
 L’ordre suit le plan T0 → T8 de la stack v3. **Ne pas ajouter d’écran avant la fin de T1b.**
 
-**Phase 2 (branche `labo-soutrali-v2`, ordre arrêté le 26 oct. 2026 avec le porteur)** : (1) e-mails réels F-09 ✅ — SMTP Mailjet actif en production, reste la confirmation de réception et la vérification du domaine `soutrali.com` (voir §2, 28 oct.) ; (2) application **desktop Windows tout-en-un** ✅ — `soutrali.exe` compilé le 27 oct. et `dist/Soutrali-win64.zip` (112 Mo) testé par double-clic sur poste sans rien d’installé ; (3) mise en ligne du backend sur hébergement **gratuit** ✅ le 28 oct. 2026 (`https://soutrali.alwaysdata.net`, AlwaysData) ; (4) **reste** : APK Android signé pointant vers cette API en ligne.
+**Phase 2 (branche `labo-soutrali-v2`, ordre arrêté le 26 oct. 2026 avec le porteur)** : (1) e-mails réels F-09 ✅ — SMTP Mailjet actif en production, reste la confirmation de réception et la vérification du domaine `soutrali.com` (voir §2, 28 oct.) ; (2) application **desktop Windows tout-en-un** ✅ — `soutrali.exe` compilé le 27 oct. et `dist/Soutrali-win64.zip` (112 Mo) testé par double-clic sur poste sans rien d’installé ; (3) mise en ligne du backend sur hébergement **gratuit** ✅ le 28 oct. 2026 (`https://soutrali.alwaysdata.net`, AlwaysData) ; (4) APK Android signé pointant vers cette API en ligne ✅ le 28 oct. 2026 (`app-release.apk`, 56,3 Mo, `CN=Soutrali`, URL gravée — voir §2).
 
 1. **T0 — débloquer l’environnement : fait le 22 octobre 2026**
    - Compte SQL dédié créé, droits limités à `soutrali`. **Fait.**

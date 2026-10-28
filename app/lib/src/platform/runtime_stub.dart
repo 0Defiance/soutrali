@@ -1,5 +1,11 @@
 import 'package:dio/dio.dart';
 
+/// Déclarée dans les deux variantes (web et io) pour que les symboles
+/// partagés soient visibles quel que soit le choix de
+/// l’export conditionnel. **Toujours null sur le web** : le navigateur
+/// porte les cookies, il n’y a rien à stocker côté Dart.
+String? cookieStorageBase;
+
 /// Variante **web** : aucun backend embarqué (l'API est distante), et la
 /// session est portée par le navigateur (cookies automatiques + `Origin`
 /// ajouté par le navigateur lui-même avec `withCredentials`).

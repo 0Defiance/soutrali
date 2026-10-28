@@ -3,6 +3,15 @@ import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:path_provider/path_provider.dart';
+
+/// Base du stockage des cookies de session, résolue au démarrage par
+/// `prepareAppRuntime` : `%APPDATA%` sur Windows (comportement
+/// historique), répertoire de l’application sur Android via
+/// `path_provider` — `Directory.systemTemp` pointe vers
+/// `/data/local/tmp`, non inscriptible depuis une application mobile.
+/// Null sur le web (variante stub) et tant que `main()` ne l’a pas résolue.
+String? cookieStorageBase;
 
 /// Backend Laravel **embarqué** dans le paquet desktop (phase 2) :
 /// `<dossier de l'exécutable>/backend` + PHP portable dans
@@ -102,11 +111,29 @@ class EmbeddedBackend {
       File(Platform.resolvedExecutable).parent.path.replaceAll(r'\', '/');
 }
 
-/// Démarre le backend embarqué si le paquet en contient un.
+/// Démarre le backend embarqué si le paquet en contient un, et résout la
+/// base de stockage des cookies de session (nécessaire avant la création
+/// du premier client Dio).
 /// Vrai si l'API est joignable après l'appel (toujours le cas en mode web
 /// grâce à la variante stub, et en développement quand l'API externe tourne).
-Future<bool> prepareAppRuntime({required String apiBaseUrl}) {
+Future<bool> prepareAppRuntime({required String apiBaseUrl}) async {
+  cookieStorageBase ??= await _resolveCookieStorageBase();
+
   return EmbeddedBackend.instance.ensureRunning(apiBaseUrl);
+}
+
+/// Base de stockage : Android d'abord (répertoire de l'application),
+/// sinon la base historique Windows, sinon la temp du système.
+Future<String> _resolveCookieStorageBase() async {
+  if (Platform.isAndroid) {
+    try {
+      return (await getApplicationSupportDirectory()).path;
+    } catch (_) {
+      // Repli sur la base historique ci-dessous (NF-08 : jamais de crash).
+    }
+  }
+
+  return Platform.environment['APPDATA'] ?? Directory.systemTemp.path;
 }
 
 /// Arrêt demandé à la fermeture de l'application (meilleur effort).
@@ -131,16 +158,33 @@ Dio configurePlatformDio(Dio dio, String apiBaseUrl) {
   if (Platform.environment.containsKey('FLUTTER_TEST')) {
     jar = DefaultCookieJar();
   } else {
-    final base = Platform.environment['APPDATA'] ?? Directory.systemTemp.path;
-    final storage = '$base/Soutrali/cookies';
-    Directory(storage).createSync(recursive: true);
-    jar = PersistCookieJar(
-      storage: FileStorage(storage),
-      ignoreExpires: true,
-    );
+    jar = _sessionCookieJar();
   }
 
   dio.interceptors.add(CookieManager(jar));
 
   return dio;
+}
+
+/// Jar de cookies persistant du paquet de production : le stockage est
+/// créé au besoin ; s’il n’est pas inscriptible (NF-08), on retombe sur
+/// un jar mémoire — la session ne survivrait alors pas au redémarrage
+/// plutôt que l’application de planter au lancement.
+CookieJar _sessionCookieJar() {
+  final base =
+      cookieStorageBase ??
+      Platform.environment['APPDATA'] ??
+      Directory.systemTemp.path;
+  final storage = '$base/Soutrali/cookies';
+
+  try {
+    Directory(storage).createSync(recursive: true);
+
+    return PersistCookieJar(
+      storage: FileStorage(storage),
+      ignoreExpires: true,
+    );
+  } on FileSystemException {
+    return DefaultCookieJar();
+  }
 }

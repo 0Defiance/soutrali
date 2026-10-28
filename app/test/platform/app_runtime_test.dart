@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -34,5 +36,23 @@ void main() {
 
   test('shutdownAppRuntime est sans effet quand rien n’a été démarré', () async {
     await expectLater(shutdownAppRuntime(), completes);
+  });
+
+  test('la base de cookies résolue par prepareAppRuntime est inscriptible', () async {
+    // Sur Android, Directory.systemTemp pointe vers /data/local/tmp
+    // (non inscriptible) : la session tombait alors en mémoire à chaque
+    // lancement. La base résolue au démarrage doit être réellement
+    // inscriptible sur la plateforme d’exécution.
+    await prepareAppRuntime(apiBaseUrl: 'http://127.0.0.1:59999');
+
+    final base = cookieStorageBase;
+    expect(base, isNotNull);
+    expect(base, isNotEmpty);
+
+    final probe = File('$base/Soutrali/cookies/write-probe.txt')
+      ..createSync(recursive: true);
+    probe.writeAsStringSync('ok');
+    expect(probe.readAsStringSync(), 'ok');
+    probe.deleteSync();
   });
 }

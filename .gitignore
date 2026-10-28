@@ -33,3 +33,10 @@ backend/database/*.sqlite-*
 dist/
 desktop/runtime/php/
 desktop/runtime/*.zip
+
+# Propriétés de signature Android (chemins et mots de passe de keystore)
+keystore.properties
+*.jks
+
+# Captures d’aperçu de conception (locales, regénérables hors dépôt)
+apercu-*.png

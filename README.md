@@ -246,7 +246,8 @@ Ces besoins sont l’origine fonctionnelle du projet. Le tableau indique comment
 | F-14 | Aide aux personnes vulnérables | Vérification et sécurité renforcées nécessaires |
 | F-15 | Collectes d’argent, actions collectives | Règles spécifiques de vérification et de publication |
 | F-16 | Fiches enrichies (photos de réalisations, avis) | Après le MVP si le besoin est établi |
-| — | Application mobile native, vérification d’identité exhaustive, livraison ou logistique intégrée, système complexe de réputation ou de recommandation, fonctions de gestion d’entreprise, automatisations complexes, architecture surdimensionnée | Exclus par le cadrage ; évolution possible vers une application installable plus tard |
+| — | Vérification d’identité exhaustive, livraison ou logistique intégrée, système complexe de réputation ou de recommandation, fonctions de gestion d’entreprise, automatisations complexes, architecture surdimensionnée | Exclus par le cadrage ; évolution possible vers une application installable plus tard |
+| — | Application mobile native | Exclue du MVP par le cadrage (T-01 : web livré en premier) ; **autorisée en phase 2 par le porteur le 26 oct. 2026** — APK Android signé compilé le 28 oct. 2026 (détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2) |
 
 > **Règle :** ne rien ajouter à ce périmètre sans expliquer le besoin, les coûts et les conséquences, puis obtenir une décision explicite.
 

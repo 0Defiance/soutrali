@@ -7,6 +7,9 @@
  *
  * Usage : php brand/generate-icons.php
  *
+ * Couvre le web, le back-office et les icônes de lancement Android
+ * (app/android/.../mipmap-*).
+ *
  * Le symbole (le « S » entrelacé) est extrait automatiquement : c’est la
  * variante exigée par la charte §15.2 pour les petites zones (le mot-
  * symbole complet serait illisible sous 140 px). Le fond ivoire reprend
@@ -165,6 +168,15 @@ $targets = [
     [$root.'/app/web/icons/Icon-maskable-192.png', 192, 0.54],
     [$root.'/app/web/icons/Icon-maskable-512.png', 512, 0.54],
     [$root.'/backend/public/favicon.png', 64, 0.80],
+    // Lanceur Android (plateforme ajoutée le 28 oct. 2026) : les cinq
+    // densités mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi. Android arrondit l’icône
+    // lui-même (forme « ronde » par défaut) : pas de cadrage circulaire
+    // à prévoir ici.
+    [$root.'/app/android/app/src/main/res/mipmap-mdpi/ic_launcher.png', 48, 0.64],
+    [$root.'/app/android/app/src/main/res/mipmap-hdpi/ic_launcher.png', 72, 0.64],
+    [$root.'/app/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png', 96, 0.64],
+    [$root.'/app/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png', 144, 0.64],
+    [$root.'/app/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png', 192, 0.64],
 ];
 
 foreach ($targets as [$path, $size, $ratio]) {
