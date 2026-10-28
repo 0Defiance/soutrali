@@ -20,6 +20,7 @@
 6. [Liste de vérification](#6-liste-de-vérification)
 7. [Problèmes connus et solutions](#7-problèmes-connus-et-solutions)
 8. [Arrêter et relancer les serveurs](#8-arrêter-et-relancer-les-serveurs)
+9. [Mise en ligne en production (AlwaysData)](#9-mise-en-ligne-en-production-alwaysdata)
 
 ---
 
@@ -295,6 +296,7 @@ Cocher chaque ligne après exécution réelle. Ne cocher que ce qui a été obse
 | `argument_type_not_assignable` sur un override Riverpod | Sous Riverpod 3, `provider(arg).overrideWith(...)` attend une fonction à un seul paramètre ; la signature `(ref, arg)` n’existe qu’au niveau de la famille | Surcharger la famille entière : `monProvider.overrideWith((ref, arg) => …)` |
 | `UnsupportedSchemeException` « The "tls" scheme is not supported » à l’envoi d’un e-mail | `MAIL_SCHEME=tls` n’est pas un schéma SMTP valide (seuls `smtp` et `smtps` le sont) | Laisser `MAIL_SCHEME=` vide sur le port 587 (STARTTLS automatique), ou `MAIL_SCHEME=smtps` + port 465 (26 oct. 2026) |
 | `use_build_context_synchronously` après un `await` | Un `BuildContext` issu d’une `GlobalKey` était protégé par le `mounted` du `State`, sans rapport avec lui | Garder avec `leContexte.mounted` plutôt qu’avec le `mounted` du `State` |
+| `Access denied for user '…' (using password: YES)` alors que le mot de passe est juste | Hébergeur avec « Connexion SSL requise » (AlwaysData) : le client `mysql` chiffre automatiquement, **PDO non** | `MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt` dans le `.env` (PDO chiffre et vérifie le certificat — voir §9.2) |
 
 ---
 
@@ -326,3 +328,52 @@ C:\xampp\mysql\bin\mysqld.exe --defaults-file=C:\xampp\mysql\bin\my.ini
 ```
 
 Laisser cette fenêtre ouverte pendant la séance ; la fermer arrête la base. Vérifier ensuite que le port 3306 répond avant de lancer Laravel.
+
+---
+
+## 9. Mise en ligne en production (AlwaysData)
+
+> **Réalisé le 28 octobre 2026** — site : **https://soutrali.alwaysdata.net** (offre gratuite AlwaysData : 1 Go, MariaDB, HTTPS wildcard `*.alwaysdata.net`, SSH, cron). Faits, contrôles et diagnostic e-mails détaillés dans `SUIVI_DEVELOPPEMENT.md` §2 (28 oct.).
+
+### 9.1 Création dans le panneau (une fois)
+
+1. **Web ▸ Sites ▸ Add a site** : adresse `soutrali.alwaysdata.net`, type **PHP 8.3+**, chemin du site `www/soutrali`.
+2. **Databases ▸ MySQL** : base `soutrali_bd` + utilisateur (ici `soutrali`), « Connexion SSL requise » possible — voir 9.2.
+3. **Remote Access ▸ SSH/SFTP** : ajouter une clé SSH publique pour le déploiement.
+4. **Advanced ▸ Scheduled tasks** : `cd /home/soutrali/soutrali/backend && php artisan schedule:run` **toutes les minutes** (le `crontab` est refusé en SSH sur AlwaysData).
+
+### 9.2 Déploiement par SSH
+
+```bash
+git clone --depth 1 --branch labo-soutrali-v2 https://github.com/0Defiance/soutrali.git /home/soutrali/soutrali
+cd /home/soutrali/soutrali/backend
+composer install --no-dev --optimize-autoloader
+```
+
+`.env` de production (les clés et mots de passe ne transitent **jamais** par une conversation) :
+
+- `APP_ENV=production`, `APP_DEBUG=false`, `LOG_LEVEL=error` ;
+- `APP_URL` et `FRONTEND_URL=https://soutrali.alwaysdata.net` (CORS s’appuie sur `FRONTEND_URL`) ;
+- `SESSION_DOMAIN` et `SANCTUM_STATEFUL_DOMAINS=soutrali.alwaysdata.net` ;
+- `DB_HOST=mysql-soutrali.alwaysdata.net`, `DB_DATABASE=soutrali_bd`, utilisateur et mot de passe du panneau ;
+- **`MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt`** — obligatoire si le panneau impose le SSL : sans lui, PDO échoue avec « Access denied » alors que le client `mysql` se connecte (voir §7) ;
+- bloc `MAIL_*` Mailjet avec un **expéditeur vérifié** dans Mailjet : un domaine « En attente » est accepté en SMTP puis jamais distribué (constaté le 28 oct.).
+
+Ensuite, sur le serveur :
+
+```bash
+php artisan key:generate --force
+php artisan migrate --force && php artisan db:seed --force
+php artisan optimize
+ln -sfn /home/soutrali/soutrali/backend/public /home/soutrali/www/soutrali  # .env hors racine web
+php artisan soutrali:create-admin <email>   # mot de passe saisi en clair-masqué
+```
+
+### 9.3 Vérifications minimales
+
+```bash
+curl https://soutrali.alwaysdata.net/up                          # 200
+curl https://soutrali.alwaysdata.net/api/v1/categories           # 200, 32 services
+curl -I https://soutrali.alwaysdata.net/admin                    # 302 vers /admin/login
+```
+Puis inscription réelle (201), `GET /me` avec session (200), connexion `/admin` avec le compte créé, et contrôle de `storage/logs/access.log`.
