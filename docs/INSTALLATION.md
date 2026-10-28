@@ -141,7 +141,7 @@ Une base migrée mais vide renvoie une liste vide ; c’est un résultat **norma
 ### Accès au back-office `/admin`
 
 - Ouvrir `http://127.0.0.1:8000/admin` une fois l’API démarrée : le panneau répond (redirection vers `/admin/login`).
-- **Compte local** : `DemoSeeder` (environnement `local` uniquement) crée `admin.demo@soutrali.test`, mot de passe `password`, rôle ADMINISTRATEUR. Hors local, créer un compte habilité avec `php artisan make:filament-user` — aucun compte privilégié n’est créé automatiquement en production.
+- **Compte local** : `DemoSeeder` (environnement `local` uniquement) crée `admin.demo@soutrali.test`, mot de passe `password`, rôle ADMINISTRATEUR. **Hors local (production)** : créer le premier administrateur avec `php artisan soutrali:create-admin <email>` — le compte est créé (ou promu) en `ADMINISTRATEUR` actif ; si `--password` est omis, le mot de passe est saisi en clair-masqué, ce qui évite de le laisser dans l’historique de la session. Aucun compte privilégié n’est créé automatiquement en production.
 - L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` dont le statut est `ACTIF` ; un compte `UTILISATEUR` est refusé.
 - Les assets Filament sont déjà publiés et versionnés dans `public/css|js|fonts/filament` ; pour les régénérer après une mise à jour : `php artisan filament:assets`.
 - **Depuis l’application (26 oct. 2026)** : un compte connecté avec l’un de ces rôles voit une entrée **« Espace admin »** dans le menu du compte (initiales, en haut à droite de l’écran Découvrir) et un bouton du même nom dans la fenêtre **« Mon profil »** ; les deux ouvrent `http://127.0.0.1:8000/admin` dans un nouvel onglet. Un compte `UTILISATEUR` ou un invité ne voit rien.
