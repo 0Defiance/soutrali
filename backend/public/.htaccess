@@ -5,6 +5,19 @@
 
     RewriteEngine On
 
+    # Front Flutter en production : la racine doit servir l'application
+    # web (index.html) plutôt que la page d'accueil Laravel, et les liens
+    # profonds reviennent au shell Flutter. `/api` et `/admin` ne sont pas
+    # concernés : ils restent traités par le front controller Laravel
+    # ci-dessous. Hors Apache (artisan serve, tests), ce fichier est sans
+    # effet.
+    DirectoryIndex index.html index.php
+
+    RewriteCond %{REQUEST_URI} !^/(api|admin)(/|$)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.html [L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

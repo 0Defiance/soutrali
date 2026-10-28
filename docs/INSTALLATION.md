@@ -377,3 +377,27 @@ curl https://soutrali.alwaysdata.net/api/v1/categories           # 200, 32 servi
 curl -I https://soutrali.alwaysdata.net/admin                    # 302 vers /admin/login
 ```
 Puis inscription réelle (201), `GET /me` avec session (200), connexion `/admin` avec le compte créé, et contrôle de `storage/logs/access.log`.
+
+### 9.4 Front Flutter en ligne (la racine du site)
+
+**Depuis le 28 octobre 2026**, `/` sert l’application Flutter et non plus la page d’accueil Laravel. Le partage est assuré par `backend/public/.htaccess` : `DirectoryIndex index.html index.php` fait servir `index.html` à la racine, et un repli vers `index.html` couvre les liens profonds Flutter — **sauf** `/api` et `/admin`, restés au front controller Laravel. Le site reste un lien unique `www/soutrali → backend/public` ; `.env` demeure hors racine web.
+
+Déploiement du front (à refaire à chaque changement de l’application) :
+
+```bash
+cd app
+flutter build web --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net
+tar czf - -C build/web . | ssh -i <clé> soutrali@ssh-soutrali.alwaysdata.net \
+  'tar xzf - -C /home/soutrali/soutrali/backend/public'
+```
+
+Vérifications :
+
+```bash
+curl -s https://soutrali.alwaysdata.net/ | grep '<title>'   # Soutrali — L’entraide à porter de main
+curl -o /dev/null -w '%{http_code}\n' https://soutrali.alwaysdata.net/connexion   # 200 (lien profond Flutter)
+curl https://soutrali.alwaysdata.net/api/v1/listings         # JSON, toujours traité par Laravel
+curl -I https://soutrali.alwaysdata.net/admin                # 302 vers /admin/login
+```
+
+> Le serveur ne renvoie pas d’en-tête `Cache-Control` sur `index.html` : après un redéploiement, **Ctrl+F5** dans le navigateur, sinon l’ancien bundle reste en cache.

@@ -39,4 +39,4 @@ keystore.properties
 *.jks
 
 # Captures d’aperçu de conception (locales, regénérables hors dépôt)
-apercu-*.png
+/apercu-*.png
