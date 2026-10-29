@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.5 · **Dernière mise à jour :** 28 octobre 2026
+> **Version :** 1.6 · **Dernière mise à jour :** 29 octobre 2026
 
 ---
 
@@ -327,6 +327,14 @@ Application Flutter :
 - **Répertoire `livrables/` committé** pour que le porteur teste sans rien installer : les 3 zip du paquet desktop (`backend` 61,9 Mo · `runtime` 35,3 Mo · `programme + data` 13,4 Mo — découpés sous la limite de 100 Mo par fichier de GitHub) + `soutrali-android.apk` (59,0 Mo). Assemblés par `build-livrables.php` ; **test réel** : extraction des 3 zip dans un dossier vide → 18 577 fichiers comme `dist/Soutrali-win64/`, empreintes SHA-256 identiques sur `soutrali.exe`, `artisan`, `php.exe` et `data/app.so`. Notice de test dans `livrables/README.md`.
 - **E-mails F-09 — diagnostic de l’expéditeur affiché (`bnc3.mailjet.com`)** : le `.env` de production porte `MAIL_FROM_ADDRESS="my.fat.inc@gmail.com"` (constaté en SSH le 28 oct.) ; ni Gmail, ni `soutrali.com` (toujours « En attente » dans Mailjet) ne sont authentifiés, Mailjet envoie donc depuis sa propre infrastructure et les clients de messagerie affichent `bnc3.mailjet.com`. **État DNS relevé** : NS et MX IONOS (`mx00/01.ionos.fr`), SPF existant `v=spf1 include:_spf-eu.ionos.com ~all` (**à fusionner** avec `include:spf.mailjet.com` — un seul SPF autorisé par domaine), DMARC `v=DMARC1; p=none;` déjà présent, DKIM Mailjet absent.
 - **Reste (action du porteur, guide fourni)** : valider `soutrali.com` dans Mailjet (Account Settings ▸ Domains & DNS) et créer les 2 enregistrements chez IONOS ; ensuite je bascule `MAIL_FROM_ADDRESS` sur `support@soutrali.com`, je vide le cache de config et je refais un test réel de bout en bout (l’arrivée doit afficher « Soutrali <support@soutrali.com> » et le domaine `soutrali.com` comme expéditeur authentifié).
+
+### 29 octobre 2026 — correctif back-office en ligne : le repli SPA avalait les scripts Livewire
+
+- **Symptômes rapportés** sur `https://soutrali.alwaysdata.net/admin/login` : connexion impossible malgré des identifiants valides, œil « afficher le mot de passe » inerte, et formulaire qui **recharge la page** au lieu d’être soumis.
+- **Cause isolée par requêtes réelles** : le repli vers `index.html` ajouté le 28 oct. n’excluait que `/api` et `/admin` ; or Filament charge son JavaScript Livewire depuis **`/livewire-fc0c5cb6/livewire.min.js`** (préfixe versionné, sans `/` après « livewire »), qui renvoyait donc le shell Flutter en `text/html` (`/up` était avalé aussi). Sans ce script, `wire:submit` ne peut pas intercepter la soumission : le POST natif part sur une route POST inexistante (405) d’où le rechargement, et les composants interactifs (œil du mot de passe) restent morts. Tous les autres assets Filament (`/js`, `/css`, `/fonts`, fichiers réels) répondaient déjà 200.
+- **Correctif versionné** dans `backend/public/.htaccess` : exclusion élargie en `!^/(api|admin|livewire)` (préfixes, sans ancrage `/`) et repli limité aux méthodes `GET|HEAD` ; téléversé par SSH puis vérifié depuis l’extérieur.
+- **Vérifications après déploiement** : `livewire.min.js` → **200 `application/javascript`** ; `POST /livewire-fc0c5cb6/update` → **419 « CSRF token mismatch »** (route vivante, attendue sans jeton) ; `/admin/login` → 200 ; `/api/v1/categories` → 200 JSON ; `/connexion` → 200 (shell Flutter) ; `/` → titre Soutrali. **Parcours navigateur réel** : œil du mot de passe bascule `password` → `text` ; soumission d’identifiants faux → notification inline « Ces identifiants ne correspondent pas » **sans rechargement** (marqueur JS toujours présent) et **zéro erreur console** ; compte administrateur temporaire créé par `soutrali:create-admin`, connexion → **Tableau de bord** avec les 7 rubriques, `/admin/users` → 2 comptes, puis compte de probe **supprimé** (base redevenue à son état initial).
+- **Contrôles CI relancés** (29 oct.) : 74 tests Pest verts (722 assertions), pint PASS (125 fichiers), Larastan sans erreur.
 
 ---
 

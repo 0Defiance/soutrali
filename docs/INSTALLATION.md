@@ -380,7 +380,7 @@ Puis inscription réelle (201), `GET /me` avec session (200), connexion `/admin`
 
 ### 9.4 Front Flutter en ligne (la racine du site)
 
-**Depuis le 28 octobre 2026**, `/` sert l’application Flutter et non plus la page d’accueil Laravel. Le partage est assuré par `backend/public/.htaccess` : `DirectoryIndex index.html index.php` fait servir `index.html` à la racine, et un repli vers `index.html` couvre les liens profonds Flutter — **sauf** `/api` et `/admin`, restés au front controller Laravel. Le site reste un lien unique `www/soutrali → backend/public` ; `.env` demeure hors racine web.
+**Depuis le 28 octobre 2026**, `/` sert l’application Flutter et non plus la page d’accueil Laravel. Le partage est assuré par `backend/public/.htaccess` : `DirectoryIndex index.html index.php` fait servir `index.html` à la racine, et un repli vers `index.html` (requêtes `GET`/`HEAD` uniquement) couvre les liens profonds Flutter — **sauf** les préfixes `/api`, `/admin` et `/livewire`, restés au front controller Laravel. L’exclusion de `/livewire` est indispensable : c’est de là que Filament charge son JavaScript, et l’avaler casserait la connexion au back-office (œil du mot de passe et soumission du formulaire). Le site reste un lien unique `www/soutrali → backend/public` ; `.env` demeure hors racine web.
 
 Déploiement du front (à refaire à chaque changement de l’application) :
 

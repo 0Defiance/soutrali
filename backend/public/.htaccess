@@ -7,13 +7,16 @@
 
     # Front Flutter en production : la racine doit servir l'application
     # web (index.html) plutôt que la page d'accueil Laravel, et les liens
-    # profonds reviennent au shell Flutter. `/api` et `/admin` ne sont pas
-    # concernés : ils restent traités par le front controller Laravel
-    # ci-dessous. Hors Apache (artisan serve, tests), ce fichier est sans
-    # effet.
+    # profonds reviennent au shell Flutter. `/api`, `/admin` (Filament) et
+    # `/livewire` (les scripts Livewire que Filament charge depuis cette
+    # origine : les avaler casserait le login admin, œil du mot de passe et
+    # soumission du formulaire) restent traités par le front controller
+    # Laravel ci-dessous. Seules les requêtes GET/HEAD sont candidates au
+    # repli. Hors Apache (artisan serve, tests), ce fichier est sans effet.
     DirectoryIndex index.html index.php
 
-    RewriteCond %{REQUEST_URI} !^/(api|admin)(/|$)
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{REQUEST_URI} !^/(api|admin|livewire)
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.html [L]
