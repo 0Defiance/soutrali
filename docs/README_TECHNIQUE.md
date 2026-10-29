@@ -2,8 +2,8 @@
 
 > Document compagnon du [README de cadrage](README.md). Il précise une architecture de référence pour construire Soutrali en local, valider le MVP web, puis réutiliser le projet Flutter pour Android. Il ne modifie ni ne remplace le README de cadrage.
 
-**Version :** 1.0 · **Date :** 20 octobre 2026 · **Langue :** français  
-**Statut :** orientation Flutter web puis mobile validée par le porteur du projet ; les choix Laravel, Filament et les détails d’implémentation ci-dessous constituent la stack technique recommandée à confirmer avant le démarrage du développement.
+**Version :** 1.2 · **Date :** 29 octobre 2026 · **Langue :** français  
+**Statut :** stack v3.1 validée par le porteur le 20 octobre 2026 puis construite : Flutter/Dart (web + Android), Laravel 13, Sanctum 4, Filament 5, MariaDB. Le MVP tourne en production sur `https://soutrali.alwaysdata.net` depuis le 28 octobre 2026 ; les détails ci-dessous restent la référence, les écarts et le jour par jour sont journalisés dans `SUIVI_DEVELOPPEMENT.md`.
 
 ---
 
@@ -26,13 +26,13 @@ La stack de référence proposée est : **Flutter + Laravel + MySQL**, avec **Fi
 |---|---|---|
 | Code d’interface | Validé | Flutter/Dart partagé, web d’abord, Android ensuite |
 | Base locale | Validé | MySQL fourni par XAMPP ; phpMyAdmin pour l’administration locale de la base |
-| Backend | Recommandation | Laravel en application monolithique, exposant une API REST versionnée |
-| Interface d’administration | Recommandation | Filament, accessible aux administrateurs et modérateurs autorisés |
-| Authentification | Recommandation | Laravel Sanctum : session sécurisée pour le web, jetons révocables pour Android |
-| Hébergement | Ouvert | Choisir après vérification des exigences Laravel, MySQL, sauvegardes et coûts |
-| Versions exactes | À fixer au démarrage | Choisir des versions stables compatibles, les tester et les figer dans les fichiers de verrouillage |
+| Backend | **Validé** (20 oct. 2026) | Laravel 13 en application monolithique, exposant l’API REST versionnée `/api/v1` — en production depuis le 28 oct. 2026 |
+| Interface d’administration | **Validé** (23 oct. 2026) | Filament 5 sur `/admin` : 7 ressources, mode strict, accès réservé aux rôles MODERATEUR et ADMINISTRATEUR |
+| Authentification | **Validé** (22 oct. 2026) | Laravel Sanctum : session sécurisée pour le web (cookie + CSRF), jetons révocables pour Android |
+| Hébergement | **Validé** (28 oct. 2026) | AlwaysData, offre gratuite (PHP 8.3, MariaDB, HTTPS wildcard, SSH, cron) ; sauvegardes et domaine personnalisé restent à définir |
+| Versions exactes | **Fixées** | PHP 8.3, Laravel 13, Sanctum 4, Filament 5, Flutter 3.47.7 / Dart 3.13.5, Pest, Pint, Larastan — verrouillées dans `composer.lock` et `pubspec.lock` |
 
-Cette documentation ne transforme pas les recommandations en décisions déjà approuvées. Avant de coder, le porteur du projet confirme la stack de référence et les décisions produit qui conditionnent l’authentification et les contacts (notamment D-04 et D-05 du README).
+La stack ci-dessus est confirmée et en production. Les décisions produit qui conditionnaient l’authentification et les contacts ont été validées puis implémentées : D-04 (22 oct.), D-05 (22 oct., complétée le 24 oct.) et D-06 (22 oct., traitement le 23 oct.) — voir README §20. Les points volontairement marqués « recommandation » restent tels.
 
 ---
 
@@ -85,7 +85,7 @@ Le projet ne démarre pas avec Redis, Kubernetes, des microservices, une message
 | Base de données | MySQL ; MariaDB fourni par certaines versions de XAMPP peut être utilisé localement après vérification de compatibilité | Base relationnelle cohérente avec les entités du cahier des charges. Consigner le moteur et sa version dans le guide d’installation. |
 | Administration locale de la base | phpMyAdmin (XAMPP) | Interface d’administration SQL, distincte du moteur de base. Création de la base et diagnostic ponctuel par l’équipe technique ; ce n’est pas l’outil des modérateurs. |
 | Serveur local | XAMPP Apache/PHP/MySQL, Composer et outils Flutter/Dart | Permet le développement local. La version PHP réellement utilisée par Apache et la version CLI doivent toutes deux satisfaire la version Laravel choisie. |
-| Tests backend | PHPUnit ou Pest, selon le choix fait au lancement | Tests unitaires des règles métier et tests HTTP/API des permissions, validations et réponses. Un seul framework de test est retenu. |
+| Tests backend | **Pest** (framework unique retenu) | Tests unitaires des règles métier et tests HTTP/API des permissions, validations et réponses — 74 tests au 29 oct. 2026 |
 | Tests Flutter | `flutter_test` et tests d’intégration ciblés | Vérifier les widgets critiques et les parcours essentiels sur mobile et web. |
 | Versionnement | Git, dépôt privé ou public contrôlé | Historique, revues, branches courtes, tags de versions et partage du même code entre contributeurs. |
 | Vérification API | Bruno ou Postman | Collections de requêtes versionnées pour l’API, les erreurs et les rôles. Aucun secret réel dans les collections. |
@@ -233,7 +233,7 @@ Filament est l’outil métier des personnes qui administrent Soutrali, distinct
 - consultation limitée des comptes, suspension et réactivation selon une procédure traçable ;
 - journal des actions de modération, avec auteur et horodatage.
 
-**État au 24 octobre 2026 — implémenté et testé** (détail et vérifications dans `SUIVI_DEVELOPPEMENT.md`) : le panneau `/admin` existe avec 7 ressources — signalements (filtre par statut, recherche par motif et titre, tri sur la date de dépôt, vue détaillée avec l’annonce visée, le signalant et le journal des décisions), annonces (édition limitée, masquage / republication tracés), utilisateurs (aucune suspension à la place, rôle et statut réservés aux administrateurs), catégories et communes (désactivation ; suppression refusée par policy), interactions en lecture seule, et journal `moderation_actions` en lecture seule. Les décisions implémentées sont : prise en charge, masquage, republication, rejet motivé, classement sans suite, **transmission à l’administrateur** (action « transmettre », justification obligatoire, statut maintenu `EN_COURS`, ajoutée le 24 oct. 2026), suspension et réactivation de compte. L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` actifs, le panneau tourne en mode strict (`strictAuthorization()`), et la création du premier compte administrateur en production reste à définir (le compte de démonstration n’existe qu’en local).
+**État au 24 octobre 2026 — implémenté et testé** (détail et vérifications dans `SUIVI_DEVELOPPEMENT.md`) : le panneau `/admin` existe avec 7 ressources — signalements (filtre par statut, recherche par motif et titre, tri sur la date de dépôt, vue détaillée avec l’annonce visée, le signalant et le journal des décisions), annonces (édition limitée, masquage / republication tracés), utilisateurs (aucune suspension à la place, rôle et statut réservés aux administrateurs), catégories et communes (désactivation ; suppression refusée par policy), interactions en lecture seule, et journal `moderation_actions` en lecture seule. Les décisions implémentées sont : prise en charge, masquage, republication, rejet motivé, classement sans suite, **transmission à l’administrateur** (action « transmettre », justification obligatoire, statut maintenu `EN_COURS`, ajoutée le 24 oct. 2026), suspension et réactivation de compte. L’accès est réservé aux rôles `MODERATEUR` et `ADMINISTRATEUR` actifs, le panneau tourne en mode strict (`strictAuthorization()`), et la création du premier compte administrateur en production est automatisée par la commande `php artisan soutrali:create-admin <email>` (27 oct. 2026), utilisée pour ouvrir `/admin` en production le 28 oct. 2026 (le compte de démonstration n’existe qu’en local).
 
 Le rôle administrateur est accordé explicitement par un mécanisme de création initiale contrôlé. Ne jamais laisser une inscription publique choisir son propre rôle. En production, protéger `/admin` par HTTPS, limiter les comptes privilégiés, appliquer une politique de mots de passe et prévoir une procédure de récupération. L’authentification à deux facteurs peut être ajoutée après analyse du niveau de risque et des options réellement maintenues.
 
@@ -360,7 +360,7 @@ Le niveau de disponibilité, la rétention et les coûts ne sont pas fixés ici 
 
 ## 13. Passage du local à l’hébergement
 
-XAMPP est un environnement de développement, pas un serveur de production recommandé. Le passage en ligne consiste à déployer les mêmes composants applicatifs sur un hébergement compatible, avec une base distincte et des secrets distincts.
+XAMPP est un environnement de développement, pas un serveur de production recommandé. Le passage en ligne consiste à déployer les mêmes composants applicatifs sur un hébergement compatible, avec une base distincte et des secrets distincts. **Réalisé le 28 octobre 2026 sur AlwaysData (offre gratuite)** : procédure pas à pas, `.env` de production et vérifications dans `INSTALLATION.md` §9 — le partage d’une même origine entre `/` (Flutter), `/api`, `/admin` et `/livewire` est assuré par `backend/public/.htaccess`.
 
 ### Capacités à vérifier chez l’hébergeur
 
@@ -398,14 +398,14 @@ soutrali/
   app/                     # projet Flutter partagé web/Android
   backend/                 # Laravel, API et Filament
   docs/
-    README.md              # cadrage fonctionnel de référence
-    README_TECHNIQUE.md    # ce document, une fois placé dans docs/
-    INSTALLATION.md        # procédure locale à compléter après choix des versions
-    API.md                 # contrat API détaillé à maintenir avec les routes
+    SUIVI_DEVELOPPEMENT.md  # journal technique étape par étape
+    README_TECHNIQUE.md    # ce document
+    INSTALLATION.md        # démarrage local et mise en ligne AlwaysData (§9)
+    API.md                 # inexistant : le contrat API vit dans §5 de ce document
   .gitignore
 ```
 
-Le dépôt existant peut conserver une autre organisation ; cette structure est une proposition à adapter lors de la création du code. Les documents du dossier « Documentation v2 Soutrali » peuvent rester séparés du dépôt applicatif si le dépôt partagé est organisé autrement.
+Cette organisation correspond à celle réellement en place depuis le 22 octobre 2026 (auxquels s’ajoutent à la racine `.github/`, `brand/`, `desktop/` et `livrables/`, et `README.md` toujours à la racine). L’arborescence applicative réelle est décrite au §4.
 
 Règles de collaboration recommandées :
 
@@ -433,26 +433,26 @@ Règles de collaboration recommandées :
 | T7 — Pilote web | Mise en ligne limitée, suivi des incidents et retours utilisateurs | Décision du porteur après observation du pilote |
 | T8 — Android | Build Flutter Android, stockage sécurisé, essais appareils/réseaux | Parcours principaux validés sur appareils cibles |
 
-Les étapes peuvent être ajustées au backlog ; elles ne fixent ni délai ni budget non validé.
+**État au 29 octobre 2026 :** T0 à T5 réalisés et vérifiés ; T6 partiellement fait (mise en ligne gratuite du 28 oct., sauvegardes et restauration à définir) ; T7 non démarré (pilote) ; T8 : APK signé compilé le 28 oct. 2026, reste l’essai sur appareils réels. Les étapes peuvent ensuite être ajustées au backlog ; elles ne fixent ni délai ni budget non validé.
 
 ---
 
 ## 16. Points à confirmer avant développement
 
-1. Confirmer Laravel + Filament + Sanctum comme choix de référence, ainsi que les versions compatibles disponibles au démarrage.
-2. Choisir inscription et récupération de compte (D-04) : e-mail, téléphone, ou autre parcours validé ; identifier tout coût de SMS/courriel.
-3. Définir précisément le contact entre membres et sa trace (D-05). Ne pas développer une messagerie interne sans décision de périmètre.
-4. Décider la modération immédiate ou préalable (D-06), le rôle responsable et le délai opérationnel attendu.
-5. Confirmer les catégories, communes, champs de budget et politique de conservation des données.
-6. Choisir un hébergement compatible après un essai de préproduction ; déterminer domaine, région des données, sauvegardes et coûts.
-7. Décider si les notifications F-09 sont dans le premier incrément ; choisir alors un fournisseur de courriel et une file de tâches proportionnée.
-8. Clarifier si le rôle modérateur utilisera Filament sur ordinateur uniquement ou s’il faut aussi une interface Flutter adaptée au téléphone.
+1. ~~Confirmer Laravel + Filament + Sanctum~~ **Confirmé** : stack v3.1 validée le 20 oct. 2026, versions fixées (§3).
+2. ~~Choisir inscription et récupération de compte (D-04)~~ **Tranché le 22 oct. 2026** : e-mail + mot de passe, session web Sanctum, aucun SMS au MVP.
+3. ~~Définir le contact entre membres et sa trace (D-05)~~ **Tranché le 22 oct., complété le 24 oct. 2026** : messagerie interne tracée, plus les canaux du profil exposés sur demande et uniquement aux membres connectés.
+4. ~~Décider la modération immédiate ou préalable (D-06)~~ **Tranché le 22 oct., traitement le 23 oct. 2026** : publication immédiate + modération a posteriori via `/admin`, décisions tracées dans `moderation_actions`.
+5. ~~Confirmer les catégories et communes~~ **Confirmées** (D-03 : 14 communes ; D-07 : 32 services) ; **restent ouverts** le champ de budget et la politique de conservation des données.
+6. ~~Choisir un hébergement~~ **Choisi le 28 oct. 2026** : AlwaysData, offre gratuite, en production ; **restent ouverts** le domaine personnalisé, la région des données et les sauvegardes.
+7. ~~Décider si les notifications F-09 sont dans le premier incrément~~ **Implémentées le 26 oct. 2026** avec Mailjet (sans file de tâches : une panne SMTP est journalisée dans `error.log` sans bloquer la requête) ; reste à valider le domaine `soutrali.com` pour l’expéditeur de marque.
+8. **Reste ouvert** : interface des modérateurs — Filament sur navigateur pour l’instant (recommandation §17), interface Flutter seulement si un besoin opérationnel est confirmé.
 
 ---
 
 ## 17. FAQ — fonctionnement local, mobile et exploitation
 
-Cette FAQ complète le parcours technique prévu. Les choix d’hébergement, les versions logicielles et les décisions produit encore ouvertes restent à confirmer avant le lancement.
+Cette FAQ complète le parcours technique prévu. Les versions logicielles sont fixées et l’hébergement est choisi (AlwaysData, en production depuis le 28 octobre 2026) ; les décisions produit restées ouvertes sont listées en fin de section.
 
 ### Questions du porteur du projet
 
@@ -556,10 +556,10 @@ Pour le web, construire et publier le nouveau build Flutter, puis déployer la v
 
 ### Questions encore ouvertes qui influencent les réponses
 
-- Le mode d’inscription et de récupération de compte : e-mail ou téléphone (D-04).
-- Le canal de contact et les informations effectivement conservées (D-05).
-- L’hébergement, le domaine, les coûts, la région des données et les sauvegardes.
-- Les notifications et leur fournisseur éventuel.
+- ~~Le mode d’inscription et de récupération de compte~~ : tranché — e-mail + mot de passe (D-04, 22 oct. 2026).
+- ~~Le canal de contact~~ : tranché — messagerie interne tracée, plus les canaux du profil (D-05, complétée le 24 oct. 2026).
+- L’hébergement est choisi (AlwaysData, gratuit) ; restent ouverts : domaine personnalisé, coûts, région des données et sauvegardes.
+- ~~Les notifications~~ : implémentées avec Mailjet (F-09, 26 oct. 2026) ; reste la validation du domaine pour l’expéditeur de marque.
 - Le mode opératoire des modérateurs : navigateur d’ordinateur uniquement ou besoin mobile.
 - Les règles de conservation, suppression et conformité locale des données.
 
@@ -582,4 +582,4 @@ Pour le web, construire et publier le nouveau build Flutter, puis déployer la v
 
 ---
 
-*Document technique de référence proposé pour Soutrali. Les arbitrages métier et les choix marqués « recommandation » restent à confirmer avant leur mise en œuvre.*
+*Document technique de référence de Soutrali. La stack est validée et en production depuis le 28 octobre 2026 ; les arbitrages métier restants (budget, domaine, sauvegardes, conservation des données, D-02 à D-12) sont listés dans le README de cadrage §20.*

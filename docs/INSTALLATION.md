@@ -4,9 +4,9 @@
 >
 > **Compléments :** l’état réel de l’implémentation et les blocages connus sont dans [`SUIVI_DEVELOPPEMENT.md`](SUIVI_DEVELOPPEMENT.md). L’architecture et les choix de référence sont dans [`README_TECHNIQUE.md`](README_TECHNIQUE.md). Le cadrage fonctionnel est dans [`README.md`](../README.md).
 >
-> **Version :** 1.0 · **Dernière mise à jour :** 22 octobre 2026
+> **Version :** 1.2 · **Dernière mise à jour :** 29 octobre 2026
 >
-> Les versions ci-dessous sont celles **constatées par exécution** sur le poste de développement le 22 octobre 2026. Elles doivent être revérifiées sur toute autre machine, et figées conformément à T-08.
+> Les versions ci-dessous sont celles **constatées par exécution** sur le poste de développement le 22 octobre 2026 (outillage Android ajouté le 28 octobre 2026). Elles doivent être revérifiées sur toute autre machine, et figées conformément à T-08.
 
 ---
 
@@ -35,7 +35,7 @@
 | GitHub CLI | 2.102.1, non authentifiée | Accès compte et dépôts | `gh auth status` |
 | XAMPP / MariaDB | MariaDB 10.4.32 | Base locale + phpMyAdmin | Panneau XAMPP |
 | Navigateur récent | — | Recette du site | — |
-| Android SDK / Studio | à installer pour l’étape Android | Émulateur et builds mobiles | Non requis pour le web |
+| Android SDK + JDK 17 | installés le 28 oct. 2026 sous `C:\soutrali-android\` (platform 35, build-tools 36, NDK r28c) | Builds Android (`flutter build apk`) | `flutter doctor` (vert) |
 
 **Points d’attention relevés le 22 octobre 2026 :**
 

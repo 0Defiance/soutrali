@@ -10,7 +10,7 @@ Plateforme d’entraide et de services de proximité entre habitants d’une mê
 >
 > **Neutralité technologique :** ce document ne choisit aucun langage, framework, base de données ni hébergeur. Le choix technique (« stack v3 ») sera fait ensuite, en équipe.
 >
-> **Version :** 4.1 · **Dernière mise à jour :** 22 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage validé, socle technique en cours de construction.
+> **Version :** 4.3 · **Dernière mise à jour :** 29 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage validé ; phase 2 en cours — site en ligne, paquet desktop et APK Android livrés.
 >
 > **Ce README reste le document unique de contexte fonctionnel** (décisions D-15 et D-16). Il décrit *ce qu’est Soutrali et ce qui est décidé*. Il ne décrit pas le code.
 
@@ -22,8 +22,10 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 
 | Chemin | Contenu |
 |---|---|
-| `app/` | Application Flutter/Dart partagée — site web d’abord, Android ensuite (T-01) |
+| `app/` | Application Flutter/Dart partagée — site web et Android (`app/android/`, T-01) |
 | `backend/` | Laravel 13 : API REST `/api/v1`, migrations, panneau Filament sur `/admin` |
+| `desktop/` | Paquet desktop Windows tout-en-un : `soutrali.exe` + PHP portable + base SQLite pré-migrée (`build-package.ps1`) |
+| `livrables/` | Archives prêtes à tester **sans rien installer** (3 zip du paquet desktop + APK Android) + notice |
 | `docs/INSTALLATION.md` | **Commencer ici.** Prérequis, versions constatées, base de données, démarrage Web et API |
 | `docs/SUIVI_DEVELOPPEMENT.md` | Journal technique étape par étape : ce qui est fait, vérifié, bloqué et restant |
 | `docs/README_TECHNIQUE.md` | Architecture de référence détaillée (v1.0) |
@@ -36,7 +38,7 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 | `brand/logo/` | Logo de marque |
 | `.github/workflows/ci.yml` | Intégration continue : Pest, Pint, Larastan, `flutter analyze`, `flutter test`, build web (T-12) |
 
-**État en une phrase :** les référentiels T1 sont en base et exposés par l’API, le parcours complet (inscription → publication → contact → signalement → clôture) est validé de bout en bout, le back-office `/admin` traite et trace les signalements (23 oct. 2026), le reste du MVP (blocages T-14, canaux de contact, publication programmée, identité visuelle) est intégré et testé (24 oct. 2026), mais le tir d’essai T1b reste incomplet (mesures téléphone non faites) — lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
+**État en une phrase (29 octobre 2026) :** le MVP est implémenté, testé (74 tests Pest, 25 tests Flutter) et **en ligne** sur `https://soutrali.alwaysdata.net` — API, application web et back-office `/admin` partageant la même origine — ; les livrables de test (paquet desktop Windows tout-en-un et APK Android signé) sont versionnés dans `livrables/` ; les e-mails transactionnels partent en réel via Mailjet (reste à confirmer la réception en boîte et à valider le domaine `soutrali.com` pour l’expéditeur de marque). Lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
 
 ---
 
@@ -715,7 +717,7 @@ Le succès ne se mesure pas au nombre de fonctionnalités, mais à l’utilité 
 | 3 | Cahier des charges complet | En cours (v2 rédigé, à valider ; maquettes à produire) |
 | 4 | Stack technique | **Fait côté porteur** : v3.1 validée le 20 oct. 2026 (T-01 à T-14) ; validation MOA à venir |
 | 5 | Environnement de travail collaboratif (gestion de code, suivi des tâches, documentation) | En cours : dépôt GitHub et code source publiés le 22 oct. 2026, CI active ; backlog et suivi des tâches restants |
-| 6 | Test interne de validation | En cours : parcours et suites de tests vérifiés en local, mesures locales T1b relevées le 24 oct. 2026 ; reste la mesure sur téléphone (voir `docs/SUIVI_DEVELOPPEMENT.md`) |
+| 6 | Test interne de validation | En cours : parcours et suites de tests vérifiés en local, mesures locales T1b relevées le 24 oct. 2026, livrables recettés le 28 oct. 2026 (paquet desktop par double-clic, APK signé vérifié par `apksigner`) ; reste la mesure sur téléphone en réseau limité (voir `docs/SUIVI_DEVELOPPEMENT.md`) |
 | 7 | Documentation de prise en main | En cours : `docs/INSTALLATION.md` et `docs/SUIVI_DEVELOPPEMENT.md` rédigés le 22 oct. 2026 |
 | 8 | Présentation à la maîtrise d’ouvrage (problème, public, solution, périmètre MVP, parcours clés, risques, planning, décisions attendues) | À faire |
 
@@ -762,12 +764,12 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 | D-06 | Modération | **Validé** (22 oct. 2026) | Publication immédiate (statut PUBLIEE) + modération a posteriori : signalement motivé par un utilisateur connecté (statut NOUVEAU), refus de signaler sa propre annonce. Traitement du signalement implémenté le **23 oct. 2026** via le back-office `/admin` : chaque décision (prise en charge, masquage, republication, rejet motivé, classement sans suite) est tracée dans `moderation_actions` avec son auteur et son horodatage. **Ajout du 24 oct. 2026** : action « **transmettre à l’administrateur** » (réservée au modérateur, justification obligatoire, statut du signalement maintenu `EN_COURS`, trace `TRANSMIS` au journal) |
 | D-07 | Catégories initiales | **Validé** (22 oct. 2026) | Réparations et dépannage · Maison et domestique · Couture, beauté et coiffure · Éducation et cours · Informatique et numérique · Transport léger et déménagement · Petites missions et coups de main · Autres. Liste **validée par le porteur le 22 octobre 2026** et chargée en base par le seeder |
 | D-08 | Langues | Ouvert | Français au lancement ; langues locales plus tard |
-| D-09 | Budget, hébergement, nom de domaine | Ouvert | Aucun chiffre inventé |
+| D-09 | Budget, hébergement, nom de domaine | **Partiellement tranché** (28 oct. 2026) | Hébergement retenu : **AlwaysData, offre gratuite** (1 Go, MariaDB, HTTPS wildcard `*.alwaysdata.net`, SSH, cron) après comparatif des offres gratuites — en ligne depuis le 28 oct. 2026. Restent ouverts : budget, nom de domaine personnalisé, sauvegardes et procédure de restauration |
 | D-10 | Conservation des données, droits, conformité locale | Ouvert | Avis juridique nécessaire |
 | D-11 | Âge minimum d’inscription | Ouvert | Lié à RM-12 |
 | D-12 | Modèle économique | Ouvert | Gratuit au pilote proposé ; rien d’autre défini |
-| D-13 | Stack technique | Ouvert | Mise en attente : la **stack v3** sera construite ensemble ; compétences et budget écartés pour l’instant |
-| D-14 | README sans contenu technique | **Validé** | Tant que la stack v3 n’est pas arrêtée |
+| D-13 | Stack technique | **Validé** (20 oct. 2026) | Stack v3.1 : Flutter/Dart (web d’abord, Android ensuite) + Laravel 13, Sanctum, Filament 5, MariaDB/MySQL, Pest/Pint/Larastan — confirmé par le code depuis le 22 oct. 2026 et déployé en production le 28 oct. 2026 |
+| D-14 | README sans contenu technique | **Levée** (20 oct. 2026) | La stack étant arrêtée (D-13), le README reste le cadrage fonctionnel et le contenu technique vit dans `docs/README_TECHNIQUE.md` (D-17) |
 | D-15 | Document unique | **Validé** | `README.md` est le document unique de contexte ; il remplace `ContexteSoutrali.md` |
 | D-16 | README = outil principal de reprise | **Validé** | Description complète, principes inclus, utilisable par une autre équipe et avec une autre technologie |
 | D-17 | Structure du dépôt et documentation du code | **Validé** (22 oct. 2026) | Un seul dépôt `soutrali` : `app/`, `backend/`, `.github/`, `brand/` et `docs/`. Le README de cadrage reste à la racine (D-15, D-16 conservés) ; le suivi technique étape par étape vit dans `docs/SUIVI_DEVELOPPEMENT.md`, la procédure de démarrage dans `docs/INSTALLATION.md`. La Documentation v1 est archivée sous `docs/archive/` |
@@ -781,11 +783,11 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 3. ~~Modération préalable ou a posteriori ; délais et responsabilités.~~ **Tranché** : publication immédiate + signalement a posteriori ; traitement modérateur via Filament en T2 (D-06 validée le 22 oct. 2026).
 4. Qui administre au quotidien les catégories et les communes (listes validées le 22 oct. 2026 — D-03, D-07 ; l’outil de gestion, le back-office `/admin`, est en place depuis le 23 oct. 2026 ; la désignation des personnes reste ouverte).
 5. Le champ de budget : facultatif, obligatoire pour certaines catégories, ou absent du MVP ?
-6. Budget, hébergement, région des données, nom de domaine, sauvegardes. (D-09)
+6. ~~Hébergement.~~ **Tranché le 28 oct. 2026** : AlwaysData, offre gratuite (D-09 partiel). Restent ouverts : budget, domaine personnalisé, région des données, sauvegardes.
 7. Durées de conservation, suppression de compte, responsable de traitement, conformité locale. (D-10)
 8. Âge minimum d’inscription. (D-11)
 9. Modèle économique. (D-12)
-10. Stack technique v3 et environnement collaboratif. (D-13, Phase 5)
+10. ~~Stack technique v3.~~ **Tranchée le 20 oct. 2026** (D-13, v3.1 validée puis construite). Reste l’environnement collaboratif de suivi des tâches (Phase 5).
 11. Logo : confirmé tel quel ou retravaillé ? Polices : confirmées ? (D-02)
 12. Seuils de réussite du pilote et calendrier de déploiement.
 
@@ -814,20 +816,24 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 
 **Correction du 22 octobre 2026.** Ce paragraphe affirmait « aucun code, aucun test ». C’était exact au 20 octobre mais ne l’est plus : un socle technique a été construit. Voici l’état vérifié.
 
-**Existe désormais (état vérifié le 24 octobre 2026) :**
+**Existe désormais (état vérifié le 29 octobre 2026) :**
 
-- un dépôt Git public unique (`github.com/0Defiance/soutrali`) versionnant le cadrage, la documentation et le code ;
-- une application Flutter/Dart avec la découverte, le détail d’annonce, l’inscription et la connexion, la publication immédiate ou programmée, « mes annonces » (modification, clôture avec issue), la messagerie interne, les signalements, les blocages d’utilisateurs et les canaux de contact du profil, un thème aux couleurs de la charte v2 avec les polices Manrope / Source Sans 3, un client HTTP branché sur l’API, et 14 tests ;
-- un backend Laravel 13 avec l’API versionnée `/api/v1` (annonces, référentiels, comptes, messagerie, signalements, blocages, canaux de contact, publication programmée), les migrations des onze tables du modèle conceptuel, le back-office `/admin` (modération traitée et tracée) et une intégration continue (T-12) — 61 tests Pest ;
+- un dépôt Git public unique (`github.com/0Defiance/soutrali`, branche `labo-soutrali-v2` pour la phase 2) versionnant le cadrage, la documentation, le code et les livrables de test ;
+- une application Flutter/Dart — web **et** Android — avec la découverte, le détail d’annonce, l’inscription et la connexion, la publication immédiate ou programmée, « mes annonces » (modification, clôture avec issue), la messagerie interne, les signalements, les blocages d’utilisateurs et les canaux de contact du profil, un thème aux couleurs de la charte v2 (polices Manrope / Source Sans 3, motifs interactifs) et un client HTTP branché sur l’API — **25 tests Flutter** ;
+- un backend Laravel 13 avec l’API versionnée `/api/v1` (annonces, référentiels, comptes, messagerie, signalements, blocages, canaux de contact, publication programmée), les migrations du modèle conceptuel, le back-office `/admin` (modération traitée et tracée, 7 ressources), les journaux d’accès et d’erreurs (NF-10), les e-mails transactionnels (F-09) et l’intégration continue (T-12) — **74 tests Pest** ;
+- le **déploiement en production** : `https://soutrali.alwaysdata.net` (AlwaysData, offre gratuite) — API, application web et back-office sur une même origine, premier administrateur créé par `soutrali:create-admin`, publication programmée par tâche planifiée (28 oct. 2026) ;
+- les **livrables de test** : paquet desktop Windows tout-en-un (`soutrali.exe`, aucun logiciel à installer) et APK Android signé (`CN=Soutrali`, URL de l’API gravée), réunis dans `livrables/` avec notice (28 oct. 2026) ;
+- la règle de travail `AGENTS.md` : toute fonctionnalité doit être accessible, testée et committée ;
 - la stack technique v3.1 validée par le porteur (T-01 à T-14).
 
-**N’existe toujours pas (vérifié le 24 octobre 2026) :**
+**N’existe toujours pas (vérifié le 29 octobre 2026) :**
 
-- aucun déploiement, aucune préproduction, aucun hébergement choisi (D-09) ;
-- aucune maquette des écrans ;
+- aucune maquette des écrans (Phase 3) ;
 - aucune politique de confidentialité ni conditions d’utilisation rédigées (D-10) ;
-- mesure du tir d’essai T1b sur téléphone Android en réseau limité (parcours observés depuis le 23 oct., mesures locales faites le 24 oct.) ;
-- création du premier compte administrateur en production (procédure non arrêtée).
+- mesure du tir d’essai T1b sur téléphone Android en réseau limité (mesures locales faites le 24 oct., livrables recettés le 28 oct.) ;
+- sauvegardes et procédure de restauration en production, domaine personnalisé (D-09 restant) ;
+- expéditeur de marque `support@soutrali.com` : domaine `soutrali.com` à valider dans Mailjet et enregistrements DNS IONOS à créer (guide fourni le 28 oct. 2026), puis confirmation de la réception en boîte ;
+- validation du logo et de la palette par le porteur (D-02).
 
 La première réflexion technique « stack v0.1 » reste conservée sous `docs/` pour historique : elle est **remplacée** par la v3.1 et ne lie personne.
 
@@ -846,16 +852,17 @@ La première réflexion technique « stack v0.1 » reste conservée sous `docs/`
 
 | Livrable | Version | Contenu | État |
 |---|---|---|---|
-| `README.md` (ce fichier) | 4.2 | Contexte complet et outil de reprise | Vivant |
+| `README.md` (ce fichier) | 4.3 | Contexte complet et outil de reprise | Vivant |
 | `AGENTS.md` | 1.0 | Définition de « fait » : accessible, testé, vérifié, committé | Vivant |
-| `docs/SUIVI_DEVELOPPEMENT.md` | 1.2 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
-| `docs/INSTALLATION.md` | 1.1 | Prérequis, versions constatées, base de données, démarrage Web et API | Vivant |
-| `docs/README_TECHNIQUE.md` | 1.1 | Architecture de référence détaillée | Vivant |
+| `docs/SUIVI_DEVELOPPEMENT.md` | 1.6 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
+| `docs/INSTALLATION.md` | 1.2 | Prérequis, versions constatées, base de données, démarrage Web et API, mise en ligne AlwaysData | Vivant |
+| `docs/README_TECHNIQUE.md` | 1.2 | Architecture de référence détaillée | Vivant |
 | Cahier des charges UML (`docs/…_v2.docx`) | 2.0 | Spécification détaillée, 5 diagrammes UML, page de garde | À valider |
 | Charte graphique (`docs/…_v2.docx`) | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
 | Stack technique (`docs/…_v3.docx`) | 3.1 | Décisions T-01 à T-14, points d’attention P-01 à P-08, plan T0 à T8 | **Validée par le porteur** ; MOA à venir |
 | Stack technique (`docs/…_v0.1.docx`) | 0.1 | Première réflexion technique | **Remplacée** par la v3, conservée pour historique |
 | `brand/logo/` | 1 | Logo de marque source (PNG) | Icônes et favicons **produits le 24 oct. 2026** (`brand/generate-icons.php`) ; déclinaisons restantes, voir §15.7 |
+| `desktop/` + `livrables/` | — | Paquet desktop tout-en-un (`build-package.ps1`), archives de test et notice | **Produits le 28 oct. 2026** ; 3 zip desktop + APK Android, extraction vérifiée par SHA-256 |
 | `docs/archive/` | — | Cahier des charges v1, charte v1, contextualisation v1 | Remplacées, archivées |
 
 En cas d’écart entre ce README et un document Word, signaler l’écart et corriger par une entrée au journal.
@@ -907,6 +914,9 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 26 oct. 2026 (suite 4) | **Ouverture de la phase 2 sur la branche `labo-soutrali-v2` + e-mails transactionnels (F-09)** : plan validé avec le porteur (ordre e-mails → desktop tout-en-un → mise en ligne gratuit → Android) et comparatif des offres gratuites d’envoi (Mailjet 200/j et 6 000/mois sans domaine acheté retenu, Brevo 300/j, Resend et Mailgun avec domaine obligatoire, SendGrid en essai 60 jours, SES en sandbox). Implémentation : classe `Outbox` qui capture toute panne de transport et l’écrit dans `error.log` **sans jamais faire échouer la requête**, trois mailables (`WelcomeMail`, `ListingPublishedMail`, `NewMessageMail`) avec gabarits Blade à la charte (vert profond, boutons orange/vert, ivoire), déclencheurs sur l’inscription, les trois chemins de publication (immédiate, manuelle, commande programmée passée en boucle) et la messagerie (aux deux participants, jamais à soi-même) ; `FRONTEND_URL` exposée en `config('app.frontend_url')` pour les liens, bloc `MAIL_*` ajouté à `.env.example`. Nouveaux tests `EmailNotificationTest` (5 tests, y c. « la panne SMTP n’empêche pas l’inscription » ; leçon : sans en-tête `Origin`, Sanctum ne démarre pas la session des domaines stateful). Documentation : `INSTALLATION.md` § e-mails + cases de vérification, `SUIVI_DEVELOPPEMENT.md` §2. Vérifications : **71 tests Pest (708 assertions)**, pint PASS (123 fichiers), Larastan sans erreur. Soirée : clés Mailjet du porteur renseignées dans `backend/.env` (**non versionné**) — deux envois réels acceptés en SMTP (message de test, puis vraie inscription → e-mail de bienvenue) ; leçon `MAIL_SCHEME` (vide sur le port 587, STARTTLS automatique) corrigée dans `.env.example` et `INSTALLATION.md` §7 | Décisions phase 2 : ordre des jalons, Mailjet, hébergement gratuit |
 | 27 oct. 2026 | **Premier administrateur en production + paquet desktop** : nouvelle commande `php artisan soutrali:create-admin <email>` qui crée (ou promeut en `ADMINISTRATEUR` actif) le compte du back-office sur un déploiement vierge, avec validation de l’e-mail et du mot de passe (8 car. minimum) et saisie masquée si `--password` est omis — le blocage « `/admin` inaccessible hors local » est levé. Deux défauts trouvés par les tests puis corrigés : apostrophe française cassant la chaîne du `$signature` (commande invisible) et `password` passé en argument au lieu de l’option `--password`. En parallèle : paquet desktop `dist/Soutrali-win64` (backend Laravel + PHP 8.3.36 portable + SQLite migrée et seedée) vérifié par HTTP réel sans aucune installation (catégories 200, inscription 201, connexion 200, `/me` 200 sur `127.0.0.1:8123`), reste l’exécutable Windows (Visual Studio requis) — détails dans `docs/SUIVI_DEVELOPPEMENT.md` §2 | T2 : création du premier administrateur automatisée |
 | 28 oct. 2026 | **Mise en ligne du backend + paquet desktop finalisé (phase 2, jalons 2 et 3 terminés)** : `dist/Soutrali-win64.zip` (112 Mo, `soutrali.exe` + PHP portable + SQLite pré-migrée) vérifié par double-clic sans aucune installation. Backend déployé sur **AlwaysData (offre gratuite)** en `https://soutrali.alwaysdata.net` : site PHP 8.3, lien symbolique vers `backend/public` (code hors racine web), `composer install --no-dev`, `.env` de production (`APP_DEBUG=false`, HTTPS, domaine Sanctum), 6 migrations + seeder (14 communes, 32 services), `php artisan optimize`, publication programmée par tâche planifiée du panneau (le `crontab` SSH est interdit sur AlwaysData). **Piège résolu sans code** : l’utilisateur MySQL exige le SSL — `MYSQL_ATTR_SSL_CA=/etc/ssl/certs/ca-certificates.crt` (déjà lu par `config/database.php`), PDO chiffre alors que le client mysql le faisait déjà. **Vérifié par requêtes réelles** : `/up` 200, 32 services, 14 communes, inscription 201, `/me` 200, `/admin` 302 → 200, `login` 200 avec rôle ADMINISTRATEUR, journaux `access.log`/`error.log` actifs. Premier administrateur créé avec `soutrali:create-admin`. **E-mails** : SMTP acceptait tout mais le domaine `soutrali.com` est « En attente » dans Mailjet — `MAIL_FROM_ADDRESS` basculé sur l’expéditeur vérifié, test renvoyé (réception en boîte à confirmer ; reste à vérifier le domaine dans Mailjet pour `support@soutrali.com`) | Phase 2 : jalon hébergement terminé ; reste l’APK Android |
+| 28 oct. 2026 (suite) | **Android signé (phase 2, jalon 4)** : chaîne Android installée sous `C:\soutrali-android\` (JDK 17, SDK platform 35, NDK r28c) après déplacement du SDK Flutter hors d’un chemin contenant une espace — le hook `objective_c` faisait échouer tout build et tout test Windows ; keystore de release hors dépôt (`CN=Soutrali`), icônes de lancement générées dans les cinq densités. `flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net` → **APK 56,3 Mo**, URL de l’API gravée dans `libapp.so`, signature v2/v3 vérifiée par `apksigner` ; `flutter analyze` propre, **25 tests Flutter** verts | Phase 2 : jalon Android compilé (reste l’installation sur téléphone) |
+| 28 oct. 2026 (suite 2) | **Le site en ligne sert l’application, livrables de test, diagnostic e-mail** : `backend/public/.htaccess` (`DirectoryIndex index.html index.php` + repli vers `index.html` pour les liens profonds, sauf `/api` et `/admin`) fait servir le front Flutter à la racine de `https://soutrali.alwaysdata.net` ; front recompilé avec l’URL AlwaysData gravée et téléversé, vérifié par requêtes et par rendu navigateur. Répertoire **`livrables/`** : 3 zip du paquet desktop (GitHub refuse les fichiers > 100 Mo) + APK, extraction comparée par SHA-256 (18 577 fichiers). **E-mails** : transport SMTP acceptait tout mais `soutrali.com` est « En attente » dans Mailjet, d’où l’affichage `bnc3.mailjet.com` ; `MAIL_FROM_ADDRESS` basculé sur l’expéditeur vérifié, guide DNS Mailjet + IONOS fourni au porteur | Phase 2 : jalons 1 à 4 livrés ; reste la validation DNS et la réception en boîte |
+| 29 oct. 2026 | **Correctif du back-office en ligne** : le repli SPA du 28 oct. avalait `/livewire-fc0c5cb6/livewire.min.js` (renvoyait le HTML de Flutter en `text/javascript`) — l’œil du mot de passe était inerte et le formulaire rechargeait la page au lieu de soumettre. Exclusion élargie aux préfixes `api|admin|livewire` et repli limité à `GET|HEAD` dans `backend/public/.htaccess` (téléversé, SHA-256 identique local/serveur). Vérifié : `livewire.min.js` 200 JavaScript, endpoint Livewire 419 CSRF attendu, parcours de connexion réel jusqu’au tableau de bord avec un compte administrateur temporaire (créé puis supprimé), zéro erreur console. CI : **74 tests Pest** (722 assertions), pint PASS, Larastan sans erreur | Détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2 |
 
 ---
 
@@ -918,7 +928,7 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 4. Phase 5 : créer le backlog produit à partir du cahier des charges ; choisir l’outil de suivi des tâches.
 5. ~~Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.~~ **Icônes et favicons produits le 24 oct. 2026** (§15.7) ; reste : déclinaisons SVG/monochrome du logo, validation du rendu sur appareils réels.
 6. Phases 6 à 8 : test interne, documentation de prise en main, présentation à la MOA.
-7. **Phase 2 (branche `labo-soutrali-v2`, ouverte le 26 oct. 2026)** — ordre arrêté avec le porteur : (1) e-mails réels F-09 ✅ (clés Mailjet en place, test de réception en boîte à confirmer ; domaine `soutrali.com` à vérifier dans Mailjet pour l’expéditeur `support@soutrali.com`), (2) application **desktop Windows tout-en-un** ✅ (`dist/Soutrali-win64.zip`, 112 Mo, testé par double-clic sans installation), (3) mise en ligne du backend sur hébergement **gratuit** ✅ (`https://soutrali.alwaysdata.net`, AlwaysData, vérifiée par requêtes réelles le 28 oct. 2026), (4) **reste :** APK Android signé vers l’API en ligne.
+7. **Phase 2 (branche `labo-soutrali-v2`, ouverte le 26 oct. 2026)** — ordre arrêté avec le porteur : (1) e-mails réels F-09 ✅ (clés Mailjet en place, envoi accepté en SMTP), (2) application **desktop Windows tout-en-un** ✅ (`livrables/Soutrali-win64-*.zip`, testé par double-clic sans installation), (3) mise en ligne du backend sur hébergement **gratuit** ✅ (`https://soutrali.alwaysdata.net`, AlwaysData ; le site sert l’application à la racine depuis le 28 oct.), (4) **APK Android signé** ✅ (56,3 Mo, API en ligne gravée). **Reste :** valider `soutrali.com` dans Mailjet (DNS IONOS) pour l’expéditeur `support@soutrali.com` et confirmer la réception en boîte ; installer l’APK sur un téléphone et y parcourir le parcours complet ; mesures T1b en réseau limité ; sauvegardes et procédure de restauration en production (D-09).
 
 ---
 
