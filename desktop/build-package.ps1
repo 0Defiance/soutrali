@@ -95,10 +95,18 @@ Write-Host '   Backend copie (vendor inclus), journaux purges'
 # Le paquet livre ne doit embarquer aucun outil de developpement (Pest, PHPStan,
 # Pint, Faker). Si Composer est disponible, on reinstalle sans les dependances de
 # dev ; sinon on le signale, le paquet reste fonctionnel mais plus lourd.
-if (Get-Command composer -ErrorAction SilentlyContinue) {
+# Composer n'est pas toujours dans le PATH (installeur Windows = .phar) : on
+# accepte aussi l'emplacement standard de l'installeur.
+$composerPhar = Join-Path $env:LOCALAPPDATA 'Programs\Composer\composer.phar'
+$composerCmd = $null
+if (Get-Command composer -ErrorAction SilentlyContinue) { $composerCmd = 'composer' }
+elseif (Test-Path $composerPhar) { $composerCmd = "php `"$composerPhar`"" }
+
+if ($composerCmd) {
     Push-Location $be
     try {
-        & composer install --no-dev --optimize-autoloader --no-interaction
+        if ($composerCmd -eq 'composer') { & composer install --no-dev --optimize-autoloader --no-interaction }
+        else { & php $composerPhar install --no-dev --optimize-autoloader --no-interaction }
         if ($LASTEXITCODE -ne 0) { throw "composer install --no-dev a echoue ($LASTEXITCODE)" }
         Write-Host '   vendor reinstalle sans les dependances de developpement'
     }
@@ -170,9 +178,14 @@ $zip = Join-Path $root 'dist\Soutrali-win64.zip'
 if (Test-Path $zip) { Remove-Item $zip -Force }
 # tar.exe (bsdtar, natif Windows 10+) : bien plus rapide que Compress-Archive
 # sur les ~20 000 fichiers du vendor, et compatible ZIP via l'extension.
-tar -a -c -f $zip -C (Join-Path $root 'dist') 'Soutrali-win64'
+# Chemin absolu obligatoire : dans un shell Git, le `tar` de Git Bash est
+# prioritaire et interprete « C: » comme un hote distant.
+$tarExe = Join-Path $env:SystemRoot 'System32\tar.exe'
+if (-not (Test-Path $tarExe)) { $tarExe = 'tar' }
+& $tarExe -a -c -f $zip -C (Join-Path $root 'dist') 'Soutrali-win64'
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $zip)) {
-    Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $zip
+    Write-Warning 'Archive par tar impossible : repli sur Compress-Archive (plus lent)'
+    Compress-Archive -Path (Join-Path $dist '*') -DestinationPath $zip -CompressionLevel Optimal
 }
 $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
 

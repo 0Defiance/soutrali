@@ -31,8 +31,8 @@ démo affaiblit tout le reste. Classement par rapport bénéfice/risque.
 |---|---|---|---|---|---|
 | 1 | « à porter » → « à **portée** » | `app/lib/src/app.dart:43`, `app/lib/src/features/discover/discover_page.dart:1393`, `app/lib/src/features/auth/auth_shell.dart:127`, `app/web/index.html:33`, `app/web/manifest.json:2`, `backend/resources/views/emails/layout.blade.php:16`, `README.md`, `docs/INSTALLATION.md:397`, `docs/SUIVI_DEVELOPPEMENT.md:327` | 20 min + rebuild web | **P0** | **Fait le 6 nov. 2026** (13 occurrences, logo compris ; `docs/archive/` conservé). Bundle web reconstruit dans `app/build/web` : reste le **téléversement** |
 | 2 | Sortir les ~165 Mo de livrables du dépôt | `livrables/*.zip`, `livrables/*.apk` étaient versionnés | 30 min | **P0** | **Fait le 6 nov. 2026** (`git rm --cached` + `.gitignore`, notice pointée vers les Releases). Reste : créer la Release `v0.2.0` (voir §2.2) |
-| 3 | `vendor` sans outils de dev dans le paquet Windows | `desktop/build-package.ps1` | 20 min | P1 | **Fait le 6 nov. 2026** (étape conditionnelle `composer install --no-dev`) ; s'applique au prochain empaquetage |
-| 4 | Compte admin de démo avec mot de passe `password` | `DemoSeeder.php` **et** `desktop/build-package.ps1` (`db:seed` + `APP_ENV=local`) | 20 min | **P0** | **Fait le 6 nov. 2026** : le paquet ne sème plus que le référentiel, aucun compte fictif |
+| 3 | `vendor` sans outils de dev dans le paquet Windows | `desktop/build-package.ps1` | 20 min | P1 | **Fait et appliqué le 6 nov. 2026** : paquet reconstruit, 41 paquets de dev supprimés, backend 61,9 → 22,4 Mo |
+| 4 | Compte admin de démo avec mot de passe `password` | `DemoSeeder.php` **et** `desktop/build-package.ps1` (`db:seed` + `APP_ENV=local`) | 20 min | **P0** | **Fait et vérifié dans le livrable le 6 nov. 2026** : 0 utilisateur, 0 annonce dans la base embarquée |
 | 5 | `discover_page.dart` : 1 956 lignes | `app/lib/src/features/discover/discover_page.dart` | 1 h 30 | P2 (annoncer le plan) | À faire après la démo |
 
 ### 2.1 Coquille « à porter » (P0)
