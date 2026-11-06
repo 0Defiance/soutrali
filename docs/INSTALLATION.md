@@ -394,7 +394,7 @@ tar czf - -C build/web . | ssh -i <clé> soutrali@ssh-soutrali.alwaysdata.net \
 Vérifications :
 
 ```bash
-curl -s https://soutrali.alwaysdata.net/ | grep '<title>'   # Soutrali — L’entraide à porter de main
+curl -s https://soutrali.alwaysdata.net/ | grep '<title>'   # Soutrali — L’entraide à portée de main
 curl -o /dev/null -w '%{http_code}\n' https://soutrali.alwaysdata.net/connexion   # 200 (lien profond Flutter)
 curl https://soutrali.alwaysdata.net/api/v1/listings         # JSON, toujours traité par Laravel
 curl -I https://soutrali.alwaysdata.net/admin                # 302 vers /admin/login

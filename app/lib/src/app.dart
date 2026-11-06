@@ -40,7 +40,7 @@ class SoutraliApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Soutrali — L’entraide à porter de main',
+      title: 'Soutrali — L’entraide à portée de main',
       debugShowCheckedModeBanner: false,
       theme: SoutraliTheme.light,
       routerConfig: _router,

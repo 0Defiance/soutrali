@@ -92,6 +92,24 @@ foreach ($file in 'artisan', 'composer.json', 'composer.lock') {
 Get-ChildItem (Join-Path $be 'storage\logs') -File -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force
 Write-Host '   Backend copie (vendor inclus), journaux purges'
 
+# Le paquet livre ne doit embarquer aucun outil de developpement (Pest, PHPStan,
+# Pint, Faker). Si Composer est disponible, on reinstalle sans les dependances de
+# dev ; sinon on le signale, le paquet reste fonctionnel mais plus lourd.
+if (Get-Command composer -ErrorAction SilentlyContinue) {
+    Push-Location $be
+    try {
+        & composer install --no-dev --optimize-autoloader --no-interaction
+        if ($LASTEXITCODE -ne 0) { throw "composer install --no-dev a echoue ($LASTEXITCODE)" }
+        Write-Host '   vendor reinstalle sans les dependances de developpement'
+    }
+    finally {
+        Pop-Location
+    }
+}
+else {
+    Write-Warning "Composer introuvable : le vendor du paquet contient encore Pest, PHPStan, Pint et Faker. Installez Composer puis relancez, ou executez composer install --no-dev --working-dir=dist/Soutrali-win64/backend"
+}
+
 Copy-Item $phpDir (Join-Path $dist 'runtime\php') -Recurse -Force
 Write-Host '   Runtime PHP copie'
 
@@ -122,17 +140,23 @@ MAIL_FROM_NAME="Soutrali"
 "@ | Set-Content -Path $envPath -Encoding UTF8
 Write-Host "   .env ecrit (base : backend\database\database.sqlite, chemin absolu genere par Laravel)"
 
-# --- 5/6 — Base SQLite pré-migrée et pré-remplie --------------------------------
-Write-Host '== 5/6 - Migrations et jeu de demonstration'
+# --- 5/6 — Base SQLite pré-migrée (référentiel seulement) ----------------------
+Write-Host '== 5/6 - Migrations et referentiel (aucun compte de demonstration)'
 Push-Location $be
 try {
     & $phpExe artisan key:generate --force
     if ($LASTEXITCODE -ne 0) { throw "key:generate a echoue ($LASTEXITCODE)" }
     & $phpExe artisan migrate --force
     if ($LASTEXITCODE -ne 0) { throw "migrate a echoue ($LASTEXITCODE)" }
+    # Seul le referentiel (communes, categories) est seme : DemoSeeder cree des
+    # comptes fictifs dont un administrateur au mot de passe « password » et ne
+    # doit JAMAIS partir dans un livrable. L'administrateur se cree a la premiere
+    # utilisation : php artisan soutrali:create-admin <email> (saisie masquee).
     if (-not $SkipSeed) {
-        & $phpExe artisan db:seed --force
-        if ($LASTEXITCODE -ne 0) { throw "db:seed a echoue ($LASTEXITCODE)" }
+        & $phpExe artisan db:seed --class=CommuneSeeder --force
+        if ($LASTEXITCODE -ne 0) { throw "db:seed CommuneSeeder a echoue ($LASTEXITCODE)" }
+        & $phpExe artisan db:seed --class=CategorySeeder --force
+        if ($LASTEXITCODE -ne 0) { throw "db:seed CategorySeeder a echoue ($LASTEXITCODE)" }
     }
     & $phpExe artisan config:clear | Out-Null
 }

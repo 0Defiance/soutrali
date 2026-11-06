@@ -124,7 +124,7 @@ class _BrandPanel extends StatelessWidget {
                     const SizedBox(height: 22),
                     Text(
                       compact
-                          ? 'L’entraide à porter de main, près de chez vous.'
+                          ? 'L’entraide à portée de main, près de chez vous.'
                           : 'Un coup de main,\nprès de chez vous.',
                       style: headlineStyle,
                     ),

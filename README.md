@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="brand/logo/soutrali-logo-couleurs.png" alt="Soutrali – L’entraide à porter de main" width="260">
+  <img src="brand/logo/soutrali-logo-couleurs.png" alt="Soutrali – L’entraide à portée de main" width="260">
 </p>
 
-# Soutrali — L’entraide à porter de main
+# Soutrali — L’entraide à portée de main
 
 Plateforme d’entraide et de services de proximité entre habitants d’une même ville de Côte d’Ivoire. Projet pilote : **Abidjan**.
 
@@ -25,7 +25,7 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 | `app/` | Application Flutter/Dart partagée — site web et Android (`app/android/`, T-01) |
 | `backend/` | Laravel 13 : API REST `/api/v1`, migrations, panneau Filament sur `/admin` |
 | `desktop/` | Paquet desktop Windows tout-en-un : `soutrali.exe` + PHP portable + base SQLite pré-migrée (`build-package.ps1`) |
-| `livrables/` | Archives prêtes à tester **sans rien installer** (3 zip du paquet desktop + APK Android) + notice |
+| `livrables/` | Notice de test des archives prêtes à l’emploi (3 zip du paquet desktop + APK Android), **publiées en GitHub Releases** — jamais dans le dépôt |
 | `docs/INSTALLATION.md` | **Commencer ici.** Prérequis, versions constatées, base de données, démarrage Web et API |
 | `docs/SUIVI_DEVELOPPEMENT.md` | Journal technique étape par étape : ce qui est fait, vérifié, bloqué et restant |
 | `docs/README_TECHNIQUE.md` | Architecture de référence détaillée (v1.0) |
@@ -38,7 +38,7 @@ Depuis le 22 octobre 2026, ce dépôt contient le code source en plus du cadrage
 | `brand/logo/` | Logo de marque |
 | `.github/workflows/ci.yml` | Intégration continue : Pest, Pint, Larastan, `flutter analyze`, `flutter test`, build web (T-12) |
 
-**État en une phrase (29 octobre 2026) :** le MVP est implémenté, testé (74 tests Pest, 25 tests Flutter) et **en ligne** sur `https://soutrali.alwaysdata.net` — API, application web et back-office `/admin` partageant la même origine — ; les livrables de test (paquet desktop Windows tout-en-un et APK Android signé) sont versionnés dans `livrables/` ; les e-mails transactionnels partent en réel via Mailjet (reste à confirmer la réception en boîte et à valider le domaine `soutrali.com` pour l’expéditeur de marque). Lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
+**État en une phrase (6 novembre 2026) :** le MVP est implémenté, testé (74 tests Pest, 25 tests Flutter) et **en ligne** sur `https://soutrali.alwaysdata.net` — API, application web et back-office `/admin` partageant la même origine — ; les livrables de test (paquet desktop Windows tout-en-un et APK Android signé) sont publiés dans les **Releases GitHub** (`livrables/README.md` porte la notice, le dépôt ne contient plus les archives) ; les e-mails transactionnels partent en réel via Mailjet (reste à confirmer la réception en boîte et à valider le domaine `soutrali.com` pour l’expéditeur de marque). Lire `docs/SUIVI_DEVELOPPEMENT.md` avant toute intervention.
 
 ---
 
@@ -572,7 +572,7 @@ Toute proposition concernant Soutrali doit les respecter.
 
 ### 15.1 Marque
 
-- **Nom :** Soutrali. **Signature :** « L’entraide à porter de main ».
+- **Nom :** Soutrali. **Signature :** « L’entraide à portée de main ».
 - **Sens à transmettre :** solidarité, proximité, accessibilité, confiance, action concrète. Chaleureux sans être enfantin ; moderne sans ressembler à un kit d’interface générique.
 - **Logo :** deux mains entrelacées formant un « S », l’une orange et l’autre verte. Mot-symbole : « S » orange, « outrali » vert, accent orange en forme de feuille sur le « i ».
 - **Statut (D-02) :** le logo reçu est un **modèle de départ** ; il reste à confirmer comme logo de lancement ou à retravailler.
@@ -644,8 +644,8 @@ Français clair, chaleureux, direct, compréhensible par un public large. Pas de
 
 | Fichier | État réel |
 |---|---|
-| `brand/logo/soutrali-logo-couleurs.png` | Logo de marque reçu, source unique (1 149 220 octets) |
-| `app/assets/brand/soutrali-logo.png` | Copie redimensionnée utilisée par l’application Flutter (248 267 octets) |
+| `brand/logo/soutrali-logo-couleurs.png` | Logo de marque, source unique (806 231 octets) — **slogan retouché le 6 nov. 2026** (« à portée de main », la version reçue disait « à porter » ; l’original reste dans l’historique Git) |
+| `app/assets/brand/soutrali-logo.png` | Copie redimensionnée utilisée par l’application Flutter (188 358 octets), retouchée au même moment |
 | `app/web/favicon.png`, `app/web/icons/Icon-192.png`, `Icon-512.png`, `Icon-maskable-192.png`, `Icon-maskable-512.png` | **Icônes de marque générées** depuis le logo source (variante « symbole seul » sur fond ivoire, §15.2) par `brand/generate-icons.php` — 24 oct. 2026 |
 | `backend/public/favicon.ico` | **Généré le 24 oct. 2026** : ICO multi-tailles (32 + 16 px, conteneur PNG) + `favicon.png` aux couleurs de la marque |
 
@@ -740,7 +740,7 @@ Une phase n’est « validée » qu’après un retour explicite du porteur du p
 
 ### 19.3 Instruction de départ pour une IA
 
-> Aide-moi à faire avancer **Soutrali**, une plateforme ivoirienne d’entraide à l’échelle d’une ville (pilote : Abidjan). Respecte la signature « L’entraide à porter de main », l’identité orange / vert sur fond ivoire et l’objectif d’un MVP simple, mobile et utile dans la vie quotidienne. Appuie-toi sur ce README et sur les documents de référence. Ne transforme pas le projet en outil de gestion d’entreprise et n’ajoute pas de fonctionnalités hors périmètre. Distingue toujours décisions validées, hypothèses et points à confirmer. Propose des livrables concrets, cohérents et directement exploitables.
+> Aide-moi à faire avancer **Soutrali**, une plateforme ivoirienne d’entraide à l’échelle d’une ville (pilote : Abidjan). Respecte la signature « L’entraide à portée de main », l’identité orange / vert sur fond ivoire et l’objectif d’un MVP simple, mobile et utile dans la vie quotidienne. Appuie-toi sur ce README et sur les documents de référence. Ne transforme pas le projet en outil de gestion d’entreprise et n’ajoute pas de fonctionnalités hors périmètre. Distingue toujours décisions validées, hypothèses et points à confirmer. Propose des livrables concrets, cohérents et directement exploitables.
 
 ### 19.4 Formats de livrables attendus
 
@@ -822,7 +822,7 @@ Cahier des charges (Markdown, Word ou PDF) · documentation de prise en main (pa
 - une application Flutter/Dart — web **et** Android — avec la découverte, le détail d’annonce, l’inscription et la connexion, la publication immédiate ou programmée, « mes annonces » (modification, clôture avec issue), la messagerie interne, les signalements, les blocages d’utilisateurs et les canaux de contact du profil, un thème aux couleurs de la charte v2 (polices Manrope / Source Sans 3, motifs interactifs) et un client HTTP branché sur l’API — **25 tests Flutter** ;
 - un backend Laravel 13 avec l’API versionnée `/api/v1` (annonces, référentiels, comptes, messagerie, signalements, blocages, canaux de contact, publication programmée), les migrations du modèle conceptuel, le back-office `/admin` (modération traitée et tracée, 7 ressources), les journaux d’accès et d’erreurs (NF-10), les e-mails transactionnels (F-09) et l’intégration continue (T-12) — **74 tests Pest** ;
 - le **déploiement en production** : `https://soutrali.alwaysdata.net` (AlwaysData, offre gratuite) — API, application web et back-office sur une même origine, premier administrateur créé par `soutrali:create-admin`, publication programmée par tâche planifiée (28 oct. 2026) ;
-- les **livrables de test** : paquet desktop Windows tout-en-un (`soutrali.exe`, aucun logiciel à installer) et APK Android signé (`CN=Soutrali`, URL de l’API gravée), réunis dans `livrables/` avec notice (28 oct. 2026) ;
+- les **livrables de test** : paquet desktop Windows tout-en-un (`soutrali.exe`, aucun logiciel à installer) et APK Android signé (`CN=Soutrali`, URL de l’API gravée), publiés en Release GitHub avec notice dans `livrables/README.md` (28 oct. 2026, sortis du dépôt le 6 nov. 2026) ;
 - la règle de travail `AGENTS.md` : toute fonctionnalité doit être accessible, testée et committée ;
 - la stack technique v3.1 validée par le porteur (T-01 à T-14).
 
@@ -854,9 +854,10 @@ La première réflexion technique « stack v0.1 » reste conservée sous `docs/`
 |---|---|---|---|
 | `README.md` (ce fichier) | 4.3 | Contexte complet et outil de reprise | Vivant |
 | `AGENTS.md` | 1.0 | Définition de « fait » : accessible, testé, vérifié, committé | Vivant |
-| `docs/SUIVI_DEVELOPPEMENT.md` | 1.6 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
+| `docs/SUIVI_DEVELOPPEMENT.md` | 1.7 | Journal technique étape par étape : fait, vérifié, bloqué, restant | Vivant |
 | `docs/INSTALLATION.md` | 1.2 | Prérequis, versions constatées, base de données, démarrage Web et API, mise en ligne AlwaysData | Vivant |
 | `docs/README_TECHNIQUE.md` | 1.2 | Architecture de référence détaillée | Vivant |
+| `docs/BRIEFING_DEMONSTRATION.md` | 1.0 | Briefing de la démonstration en direct : corrections préalables, parcours minuté, script de la modification live | Vivant |
 | Cahier des charges UML (`docs/…_v2.docx`) | 2.0 | Spécification détaillée, 5 diagrammes UML, page de garde | À valider |
 | Charte graphique (`docs/…_v2.docx`) | 2.0 | Logo, palette, typographie, composants, page de garde | À valider |
 | Stack technique (`docs/…_v3.docx`) | 3.1 | Décisions T-01 à T-14, points d’attention P-01 à P-08, plan T0 à T8 | **Validée par le porteur** ; MOA à venir |
@@ -928,8 +929,8 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 4. Phase 5 : créer le backlog produit à partir du cahier des charges ; choisir l’outil de suivi des tâches.
 5. ~~Produire les icônes et déclinaisons du logo aux couleurs de la marque (§15.7), remplacer les icônes Flutter par défaut et le favicon vide du backend.~~ **Icônes et favicons produits le 24 oct. 2026** (§15.7) ; reste : déclinaisons SVG/monochrome du logo, validation du rendu sur appareils réels.
 6. Phases 6 à 8 : test interne, documentation de prise en main, présentation à la MOA.
-7. **Phase 2 (branche `labo-soutrali-v2`, ouverte le 26 oct. 2026)** — ordre arrêté avec le porteur : (1) e-mails réels F-09 ✅ (clés Mailjet en place, envoi accepté en SMTP), (2) application **desktop Windows tout-en-un** ✅ (`livrables/Soutrali-win64-*.zip`, testé par double-clic sans installation), (3) mise en ligne du backend sur hébergement **gratuit** ✅ (`https://soutrali.alwaysdata.net`, AlwaysData ; le site sert l’application à la racine depuis le 28 oct.), (4) **APK Android signé** ✅ (56,3 Mo, API en ligne gravée). **Reste :** valider `soutrali.com` dans Mailjet (DNS IONOS) pour l’expéditeur `support@soutrali.com` et confirmer la réception en boîte ; installer l’APK sur un téléphone et y parcourir le parcours complet ; mesures T1b en réseau limité ; sauvegardes et procédure de restauration en production (D-09).
+7. **Phase 2 (branche `labo-soutrali-v2`, ouverte le 26 oct. 2026)** — ordre arrêté avec le porteur : (1) e-mails réels F-09 ✅ (clés Mailjet en place, envoi accepté en SMTP), (2) application **desktop Windows tout-en-un** ✅ (Release GitHub `Soutrali-win64-*.zip`, testé par double-clic sans installation), (3) mise en ligne du backend sur hébergement **gratuit** ✅ (`https://soutrali.alwaysdata.net`, AlwaysData ; le site sert l’application à la racine depuis le 28 oct.), (4) **APK Android signé** ✅ (56,3 Mo, API en ligne gravée). **Reste :** valider `soutrali.com` dans Mailjet (DNS IONOS) pour l’expéditeur `support@soutrali.com` et confirmer la réception en boîte ; installer l’APK sur un téléphone et y parcourir le parcours complet ; mesures T1b en réseau limité ; sauvegardes et procédure de restauration en production (D-09).
 
 ---
 
-*Soutrali : l’entraide à porter de main.*
+*Soutrali : l’entraide à portée de main.*

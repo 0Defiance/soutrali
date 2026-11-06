@@ -13,7 +13,7 @@
                 <tr>
                     <td style="background-color:#0B5A2A;padding:20px 28px;">
                         <span style="font-family:'Segoe UI',Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;letter-spacing:0.5px;">Soutrali</span>
-                        <span style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#FE7402;">&nbsp;·&nbsp;L’entraide à porter de main</span>
+                        <span style="font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#FE7402;">&nbsp;·&nbsp;L’entraide à portée de main</span>
                     </td>
                 </tr>
                 <tr>

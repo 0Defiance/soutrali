@@ -1390,7 +1390,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         density: 26,
         child: const Center(
           child: Text(
-            'Soutrali · L’entraide à porter de main · Abidjan',
+            'Soutrali · L’entraide à portée de main · Abidjan',
             style: TextStyle(color: Colors.white, fontSize: 14),
           ),
         ),

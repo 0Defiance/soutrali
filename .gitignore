@@ -40,3 +40,7 @@ keystore.properties
 
 # Captures d’aperçu de conception (locales, regénérables hors dépôt)
 /apercu-*.png
+
+# Livrables de test (archives lourdes : GitHub Releases, jamais le dépôt)
+livrables/*.zip
+livrables/*.apk

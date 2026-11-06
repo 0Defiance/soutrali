@@ -4,14 +4,21 @@ Prêts à l'emploi, **sans rien installer**. Le paquet desktop fonctionne en
 local ; l'APK Android pointe vers l'API en ligne
 `https://soutrali.alwaysdata.net`.
 
+> **Téléchargement :** les archives ne sont **plus versionnées dans le dépôt**
+> (165 Mo, corrigé le 6 nov. 2026). Elles sont publiées dans les
+> **Releases GitHub** du projet :
+> <https://github.com/0Defiance/soutrali/releases/latest>.
+> Ne pas committer d'archive ici : `livrables/*.zip` et `livrables/*.apk`
+> sont ignorés par Git.
+
 | Fichier | Taille | Contenu |
 |---|---|---|
-| `Soutrali-win64-1-backend.zip` | 61,9 Mo | Backend Laravel complet (`backend/` : API + back-office `/admin`, vendor compris) |
-| `Soutrali-win64-2-runtime.zip` | 35,3 Mo | PHP portable (`runtime/php/`) : aucun PHP à installer |
-| `Soutrali-win64-3-programme.zip` | 13,4 Mo | `soutrali.exe`, ses DLL et `data/` (interface Flutter) |
-| `soutrali-android.apk` | 59,0 Mo | Application Android signée (`CN=Soutrali`), compilée avec l'API en ligne gravée |
+| [`Soutrali-win64-1-backend.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-1-backend.zip) | 61,9 Mo | Backend Laravel complet (`backend/` : API + back-office `/admin`, vendor compris) |
+| [`Soutrali-win64-2-runtime.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-2-runtime.zip) | 35,3 Mo | PHP portable (`runtime/php/`) : aucun PHP à installer |
+| [`Soutrali-win64-3-programme.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-3-programme.zip) | 13,4 Mo | `soutrali.exe`, ses DLL et `data/` (interface Flutter) |
+| [`soutrali-android.apk`](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) | 59,0 Mo | Application Android signée (`CN=Soutrali`), compilée avec l'API en ligne gravée |
 
-> Le paquet desktop est découpé en 3 zip pour respecter la limite de
+> Le paquet desktop est découpé en 3 zip pour rester sous la limite de
 > 100 Mo par fichier de GitHub. Les 3 parties se complètent : extraites
 > dans le même dossier, elles reconstituent exactement le paquet d'origine
 > (vérifié le 28 oct. 2026 : 18 577 fichiers, empreintes SHA-256
@@ -30,6 +37,10 @@ local ; l'APK Android pointe vers l'API en ligne
 
 Première exécution : Windows SmartScreen peut afficher un avertissement
 (exécutable non signé) → **Plus d'informations → Exécuter quand même**.
+
+Le paquet ne contient **aucun compte de démonstration** : l'administrateur du
+back-office se crée à la première utilisation avec
+`php artisan soutrali:create-admin <email>` (mot de passe saisi masqué).
 
 ## Tester l'APK Android
 
@@ -51,5 +62,7 @@ php build-livrables.php
 cd app && flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net
 ```
 
-`build-livrables.php` recrée les 3 zip et recopie l'APK ; chaque partie
-restant sous 100 Mo, elle est committée telle quelle.
+`build-livrables.php` recrée les 3 zip et recopie l'APK dans `livrables/` ;
+ces fichiers sont ignorés par Git et se joignent à une **Release** :
+`gh release create v0.2.0 livrables/*.zip livrables/*.apk` (ou
+**Releases → Draft a new release** sur GitHub).
