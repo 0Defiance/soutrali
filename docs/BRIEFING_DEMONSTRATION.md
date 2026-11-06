@@ -17,7 +17,8 @@ suite de tests verte (voir §2).
 | Faire devant lui une petite modification (un texte **et** la règle qui va avec), écrire le test, relancer les tests | Test écrit d'abord (rouge), modification, test vert, suite relancée | §7 |
 
 **Piège à éviter :** improviser la modification. Le temps de frappe + un test rouge
-inattendu peuvent faire dérailler les 30 minutes. Le texte exact à taper est en §7.
+inattendu peuvent faire dérailler les 30 minutes. Le texte exact à taper est en §7 — la
+séquence y a été **répétée pour de vrai** le 6 nov. 2026 (rouge, vert, fichier complet).
 
 ---
 
@@ -52,6 +53,23 @@ cd app && flutter build web --release --dart-define=API_BASE_URL=https://soutral
 Sans l'étape 2–3, l'examinateur ouvrira le site et lira encore « à porter » : c'est le
 pire scénario possible. **Le texte affiché en ligne doit être le texte corrigé.**
 
+Le bundle est **déjà reconstruit** (`app/build/web`). Il ne reste que le téléversement, dans
+`backend/public/` (le site est un lien `www/soutrali → backend/public`) :
+
+```bash
+cd app/build/web && scp -r index.html flutter.js flutter_bootstrap.js flutter_service_worker.js \
+  main.dart.js manifest.json version.json assets canvaskit icons \
+  soutrali@ssh-soutrali.alwaysdata.net:/home/soutrali/soutrali/backend/public/
+```
+
+`favicon.png` est volontairement exclu : celui du backend est le favicon du back-office.
+Contrôle depuis l'extérieur — la réponse doit porter le nouveau titre, et **Ctrl+F5** dans le
+navigateur (le serveur statique n'envoie pas de `Cache-Control`) :
+
+```bash
+curl -s https://soutrali.alwaysdata.net/ | grep -o "<title>[^<]*</title>"
+```
+
 Les lignes de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` qui citent l'ancien
 titre sont des **relevés de vérification** : mettez-les à jour en même temps que la
 re-vérification (elles doivent décrire ce que renvoie réellement le site).
@@ -63,6 +81,11 @@ l'index Git et la notice changent) :
 `git rm --cached` sur les 4 archives, entrées `livrables/*.zip` et `livrables/*.apk` dans
 `.gitignore`, et `livrables/README.md` pointe désormais vers
 `https://github.com/0Defiance/soutrali/releases/latest`.
+
+L'APK a été **recompilé le 6 nov. 2026** avec le logo et la signature corrigés
+(`livrables/soutrali-android.apk`, 56,2 Mo, certificat `CN=Soutrali` **identique** à la version
+précédente — donc mise à jour possible sans désinstallation —, SHA-256
+`995723cb9736a0b63d82b16dee1e8b3a52a3c0f3693ad8fdeb86901a284490b9`).
 
 Reste à créer la Release — `gh` est installé mais **non authentifié**, donc c'est le geste
 du porteur (une fois : `gh auth login`, puis) :
@@ -378,6 +401,12 @@ php vendor/bin/phpstan analyse        # aucune erreur
 
 Le test existant `rejects an invalid listing with comprehensible errors` continue de passer :
 aucun titre de test n'est plus court que 10 caractères (le plus court fait 14).
+
+**Répétition faite le 6 nov. 2026, chronomètre en main (puis code remis à l'état d'origine) :**
+rouge en **2 s** (`Expected response status code [422] but received 201`), vert en **1,4 s**,
+fichier `MyListingTest.php` complet **6 tests / 35 assertions en 1,9 s**, `pint --test` et
+PHPStan propres sur les deux fichiers. La séquence tient donc en moins de 4 minutes, frappe
+comprise — c'est jouable, mais gardez la suite complète pour la fin.
 
 ### Variante courte (si le temps manque)
 

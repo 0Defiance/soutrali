@@ -16,7 +16,7 @@ local ; l'APK Android pointe vers l'API en ligne
 | [`Soutrali-win64-1-backend.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-1-backend.zip) | 61,9 Mo | Backend Laravel complet (`backend/` : API + back-office `/admin`, vendor compris) |
 | [`Soutrali-win64-2-runtime.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-2-runtime.zip) | 35,3 Mo | PHP portable (`runtime/php/`) : aucun PHP à installer |
 | [`Soutrali-win64-3-programme.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-3-programme.zip) | 13,4 Mo | `soutrali.exe`, ses DLL et `data/` (interface Flutter) |
-| [`soutrali-android.apk`](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) | 59,0 Mo | Application Android signée (`CN=Soutrali`), compilée avec l'API en ligne gravée |
+| [`soutrali-android.apk`](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) | 56,2 Mo | Application Android signée (`CN=Soutrali`), API en ligne gravée — **recompilée le 6 nov. 2026** avec la signature de marque corrigée (même certificat que la version précédente, SHA-256 `995723cb…`) |
 
 > Le paquet desktop est découpé en 3 zip pour rester sous la limite de
 > 100 Mo par fichier de GitHub. Les 3 parties se complètent : extraites
