@@ -5,18 +5,23 @@ local ; l'APK Android pointe vers l'API en ligne
 `https://soutrali.alwaysdata.net`.
 
 > **Téléchargement :** les archives ne sont **plus versionnées dans le dépôt**
-> (165 Mo, corrigé le 6 nov. 2026). Elles sont publiées dans les
+> (170 Mo, corrigé le 6 nov. 2026). Elles sont publiées dans les
 > **Releases GitHub** du projet :
 > <https://github.com/0Defiance/soutrali/releases/latest>.
 > Ne pas committer d'archive ici : `livrables/*.zip` et `livrables/*.apk`
 > sont ignorés par Git.
+>
+> **Release [`v0.2.0`](https://github.com/0Defiance/soutrali/releases/tag/v0.2.0)
+> publiée le 7 nov. 2026** : les 4 fichiers ci-dessous y sont attachés, aux
+> tailles annoncées ; les liens `releases/latest/download/…` répondent bien
+> (vérifié).
 
 | Fichier | Taille | Contenu |
 |---|---|---|
 | [`Soutrali-win64-1-backend.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-1-backend.zip) | 22,4 Mo | Backend Laravel complet (`backend/` : API + back-office `/admin`, vendor **de production seul**, 18 314 fichiers) |
 | [`Soutrali-win64-2-runtime.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-2-runtime.zip) | 35,3 Mo | PHP portable (`runtime/php/`) : aucun PHP à installer |
 | [`Soutrali-win64-3-programme.zip`](https://github.com/0Defiance/soutrali/releases/latest/download/Soutrali-win64-3-programme.zip) | 13,4 Mo | `soutrali.exe`, ses DLL et `data/` (interface Flutter) |
-| [`soutrali-android.apk`](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) | 56,2 Mo | Application Android signée (`CN=Soutrali`), API en ligne gravée — **recompilée le 6 nov. 2026** avec la signature de marque corrigée (même certificat que la version précédente, SHA-256 `995723cb…`) |
+| [`soutrali-android.apk`](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) | 59,0 Mo | Application Android signée (`CN=Soutrali`), API en ligne gravée — **recompilée le 6 nov. 2026** avec la signature de marque corrigée (même certificat que la version précédente, SHA-256 `995723cb…`) |
 
 > Le paquet desktop est découpé en 3 zip pour rester sous la limite de
 > 100 Mo par fichier de GitHub. Les 3 parties se complètent : extraites
@@ -71,6 +76,13 @@ cd app && flutter build apk --release --dart-define=API_BASE_URL=https://soutral
 ```
 
 `build-livrables.php` recrée les 3 zip (22,4 + 35,3 + 13,4 Mo) et recopie l'APK dans `livrables/` ;
-ces fichiers sont ignorés par Git et se joignent à une **Release** :
-`gh release create v0.2.0 livrables/*.zip livrables/*.apk` (ou
-**Releases → Draft a new release** sur GitHub).
+ces fichiers sont ignorés par Git. Pour **remplacer** les fichiers de la Release
+existante, après régénération :
+
+```bash
+gh release upload v0.2.0 livrables/*.zip livrables/*.apk --clobber
+```
+
+Pour une nouvelle version, créer une release :
+`gh release create vX.Y.Z livrables/*.zip livrables/*.apk --target labo-soutrali-v2`
+(ou **Releases → Draft a new release** sur GitHub).

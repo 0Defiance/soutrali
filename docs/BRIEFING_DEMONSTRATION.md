@@ -30,7 +30,7 @@ démo affaiblit tout le reste. Classement par rapport bénéfice/risque.
 | # | Point | Où exactement | Effort | Priorité | Statut |
 |---|---|---|---|---|---|
 | 1 | « à porter » → « à **portée** » | `app/lib/src/app.dart:43`, `app/lib/src/features/discover/discover_page.dart:1393`, `app/lib/src/features/auth/auth_shell.dart:127`, `app/web/index.html:33`, `app/web/manifest.json:2`, `backend/resources/views/emails/layout.blade.php:16`, `README.md`, `docs/INSTALLATION.md:397`, `docs/SUIVI_DEVELOPPEMENT.md:327` | 20 min + rebuild web | **P0** | **Fait et vérifié en ligne le 7 nov. 2026** (13 occurrences, logo compris ; `docs/archive/` conservé). Bundle téléversé : le site renvoie `<title>Soutrali — L’entraide à portée de main</title>` et le nouveau logo |
-| 2 | Sortir les ~165 Mo de livrables du dépôt | `livrables/*.zip`, `livrables/*.apk` étaient versionnés | 30 min | **P0** | **Fait le 6 nov. 2026** (`git rm --cached` + `.gitignore`, notice pointée vers les Releases). Reste : créer la Release `v0.2.0` (voir §2.2) |
+| 2 | Sortir les ~165 Mo de livrables du dépôt | `livrables/*.zip`, `livrables/*.apk` étaient versionnés | 30 min | **P0** | **Fait le 6 nov. 2026** (`git rm --cached` + `.gitignore`, notice pointée vers les Releases), **Release `v0.2.0` publiée le 7 nov. 2026** avec les 4 fichiers (voir §2.2) |
 | 3 | `vendor` sans outils de dev dans le paquet Windows | `desktop/build-package.ps1` | 20 min | P1 | **Fait et appliqué le 6 nov. 2026** : paquet reconstruit, 41 paquets de dev supprimés, backend 61,9 → 22,4 Mo |
 | 4 | Compte admin de démo avec mot de passe `password` | `DemoSeeder.php` **et** `desktop/build-package.ps1` (`db:seed` + `APP_ENV=local`) | 20 min | **P0** | **Fait et vérifié dans le livrable le 6 nov. 2026** : 0 utilisateur, 0 annonce dans la base embarquée |
 | 5 | `discover_page.dart` : 1 956 lignes | `app/lib/src/features/discover/discover_page.dart` | 1 h 30 | P2 (annoncer le plan) | À faire après la démo |
@@ -109,8 +109,10 @@ L'APK a été **recompilé le 6 nov. 2026** avec le logo et la signature corrig�
 précédente — donc mise à jour possible sans désinstallation —, SHA-256
 `995723cb9736a0b63d82b16dee1e8b3a52a3c0f3693ad8fdeb86901a284490b9`).
 
-Reste à créer la Release — `gh` est installé mais **non authentifié**, donc c'est le geste
-du porteur (une fois : `gh auth login`, puis) :
+**Release `v0.2.0` créée le 7 nov. 2026** (`--target labo-soutrali-v2`, non brouillon) : les 4
+fichiers y sont attachés aux tailles attendues, la page répond 200, `releases/latest`
+redirige bien vers `v0.2.0` et les 4 liens `…/latest/download/…` renvoient les fichiers.
+La commande utilisée, pour une prochaine version :
 
 ```bash
 gh release create v0.2.0 livrables/Soutrali-win64-1-backend.zip livrables/Soutrali-win64-2-runtime.zip \
