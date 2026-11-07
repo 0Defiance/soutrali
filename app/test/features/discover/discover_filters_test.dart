@@ -35,16 +35,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // La page s’ouvre sur le hero : comme un visiteur, on fait défiler
+    // jusqu’aux filtres avant de les manipuler.
+    await tester.ensureVisible(find.text('Toutes les communes'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Toutes les communes'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Cocody').last);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Toutes les catégories'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Toutes les catégories'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Éducation et cours').last);
     await tester.pumpAndSettle();
 
+    await tester.ensureVisible(find.text('Rechercher'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Rechercher'));
     await tester.pumpAndSettle();
 

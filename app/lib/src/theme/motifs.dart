@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'soutrali_theme.dart';
 
@@ -335,6 +336,77 @@ class _HoverLiftState extends State<HoverLift> with SingleTickerProviderStateMix
             ),
             child: widget.child,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compteur qui monte jusqu’à sa valeur en une fois : même règle que le
+/// reste des motifs, aucune boucle, donc `pumpAndSettle` se pose.
+class CountUp extends StatelessWidget {
+  const CountUp({
+    super.key,
+    required this.value,
+    this.style,
+    this.suffix = '',
+    this.duration = const Duration(milliseconds: 900),
+  });
+
+  final int value;
+  final TextStyle? style;
+  final String suffix;
+  final Duration duration;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: value.toDouble()),
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      builder: (context, amount, _) => Text(
+        '${NumberFormat.decimalPattern('fr').format(amount.round())}$suffix',
+        style: style,
+      ),
+    );
+  }
+}
+
+/// Carte qui se redresse au survol : les éléments décoratifs du hero sont
+/// légèrement inclinés au repos et reviennent à plat sous le pointeur.
+class StraightenOnHover extends StatefulWidget {
+  const StraightenOnHover({
+    super.key,
+    required this.child,
+    this.turns = -0.018,
+    this.lift = 4,
+  });
+
+  final Widget child;
+  final double turns;
+  final double lift;
+
+  @override
+  State<StraightenOnHover> createState() => _StraightenOnHoverState();
+}
+
+class _StraightenOnHoverState extends State<StraightenOnHover> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedRotation(
+        turns: _hovered ? 0 : widget.turns,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+        child: AnimatedSlide(
+          offset: _hovered ? Offset(0, -widget.lift / 100) : Offset.zero,
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          child: widget.child,
         ),
       ),
     );

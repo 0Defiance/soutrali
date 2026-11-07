@@ -28,12 +28,14 @@ class ListingDetailPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: SoutraliColors.ivory,
+      // Bandeau discret : le dégradé du service juste en dessous est le
+      // vrai en-tête de la page, l’AppBar ne fait que porter le retour.
       appBar: AppBar(
-        backgroundColor: SoutraliColors.deepGreen,
-        foregroundColor: Colors.white,
+        backgroundColor: SoutraliColors.ivory,
+        foregroundColor: SoutraliColors.ink,
         title: const Text('Annonce'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: SoutraliColors.deepGreen),
           tooltip: 'Retour',
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
@@ -60,6 +62,9 @@ class ListingDetailPage extends ConsumerWidget {
           }
 
           final isMine = user != null && listing.authorId == user.id;
+          // Demande : bandeau orange chaud, texte encre ; offre : vert, texte blanc.
+          final isRequest = listing.type == 'DEMANDE';
+          final onHeader = isRequest ? SoutraliColors.ink : Colors.white;
           final blockedIds = ref.watch(blockedUsersProvider).value ?? const <BlockedUser>[];
           final isBlocked = listing.authorId != null && blockedIds.any((account) => account.id == listing.authorId);
           final channels = ref.watch(listingChannelsProvider(listingId)).value ?? const <ContactChannel>[];
@@ -72,53 +77,125 @@ class ListingDetailPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        _Chip(
-                          label: listing.type == 'DEMANDE' ? 'Demande' : 'Offre',
-                          color: listing.type == 'DEMANDE' ? SoutraliColors.paleOrange : SoutraliColors.paleGreen,
+                    // Bandeau de marque : le service, le titre et les repères.
+                    Container(
+                      width: double.infinity,
+                      clipBehavior: Clip.antiAlias,
+                      decoration: BoxDecoration(
+                        gradient: isRequest ? SoutraliGradients.warm : SoutraliGradients.forest,
+                        borderRadius: BorderRadius.circular(26),
+                        boxShadow: SoutraliShadows.brand(
+                          isRequest ? SoutraliColors.orange : SoutraliColors.green,
                         ),
-                        _Chip(
-                          label: listing.nature == 'BENEVOLE' ? 'Bénévole' : 'Rémunérée',
-                          color: Colors.white,
-                        ),
-                        if (listing.category.isNotEmpty)
-                          _Chip(
-                            label: listing.category,
-                            color: Colors.white,
-                            icon: categoryIcon(listing.categoryIcon),
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: -18,
+                            bottom: -34,
+                            child: Icon(
+                              categoryIcon(listing.categoryIcon),
+                              size: 190,
+                              color: Colors.white.withValues(alpha: 0.14),
+                            ),
                           ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(listing.title, style: Theme.of(context).textTheme.headlineMedium),
-                    const SizedBox(height: 10),
-                    const AnimatedAccent(),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 16,
-                      runSpacing: 6,
-                      children: [
-                        _Meta(icon: Icons.location_on_outlined, text: listing.commune),
-                        if (listing.authorName != null)
-                          _Meta(icon: Icons.person_outline, text: 'Publié par ${listing.authorName}'),
-                        if (listing.createdAt != null)
-                          _Meta(
-                            icon: Icons.calendar_today_outlined,
-                            text: DateFormat('d MMMM yyyy', 'fr').format(listing.createdAt!),
+                          Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 54,
+                                      height: 54,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(17),
+                                      ),
+                                      child: Icon(
+                                        categoryIcon(listing.categoryIcon),
+                                        size: 27,
+                                        color: onHeader,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: [
+                                          _HeaderTag(
+                                            label: isRequest ? 'Demande' : 'Offre',
+                                            foreground: onHeader,
+                                            strong: true,
+                                          ),
+                                          _HeaderTag(
+                                            label: listing.nature == 'BENEVOLE' ? 'Bénévole' : 'Rémunérée',
+                                            foreground: onHeader,
+                                          ),
+                                          if (listing.category.isNotEmpty)
+                                            _HeaderTag(
+                                              label: listing.category,
+                                              foreground: onHeader,
+                                              icon: categoryIcon(listing.categoryIcon),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 18),
+                                Text(
+                                  listing.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(color: onHeader, fontSize: 30, height: 1.16),
+                                ),
+                                const SizedBox(height: 10),
+                                AnimatedAccent(
+                                  color: isRequest ? SoutraliColors.ink : SoutraliColors.sun,
+                                ),
+                                const SizedBox(height: 12),
+                                Wrap(
+                                  spacing: 16,
+                                  runSpacing: 6,
+                                  children: [
+                                    _Meta(
+                                      icon: Icons.location_on_outlined,
+                                      text: listing.commune,
+                                      color: onHeader,
+                                    ),
+                                    if (listing.authorName != null)
+                                      _Meta(
+                                        icon: Icons.person_outline,
+                                        text: 'Publié par ${listing.authorName}',
+                                        color: onHeader,
+                                      ),
+                                    if (listing.createdAt != null)
+                                      _Meta(
+                                        icon: Icons.calendar_today_outlined,
+                                        text: DateFormat('d MMMM yyyy', 'fr').format(listing.createdAt!),
+                                        color: onHeader,
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         border: Border.all(color: SoutraliColors.border),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(22),
+                        boxShadow: SoutraliShadows.soft(alpha: 0.05, blur: 22, y: 10),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,34 +684,44 @@ class _ReportDialogState extends State<_ReportDialog> {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, required this.color, this.icon});
+/// Étiquette posée sur le bandeau de marque : contraste garanti par
+/// `foreground`, jamais par une couleur fixe.
+class _HeaderTag extends StatelessWidget {
+  const _HeaderTag({
+    required this.label,
+    required this.foreground,
+    this.icon,
+    this.strong = false,
+  });
 
   final String label;
-  final Color color;
-
-  /// Icône de charte du service (facultative).
+  final Color foreground;
   final IconData? icon;
+  final bool strong;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color,
-        border: Border.all(color: SoutraliColors.border),
-        borderRadius: BorderRadius.circular(4),
+        color: Colors.white.withValues(alpha: strong ? 0.94 : 0.16),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: strong ? 0 : 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: 15, color: SoutraliColors.green),
-            const SizedBox(width: 6),
+            Icon(icon, size: 14, color: foreground),
+            const SizedBox(width: 5),
           ],
           Text(
             label,
-            style: const TextStyle(color: SoutraliColors.ink, fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: strong ? SoutraliColors.ink : foreground,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -643,19 +730,20 @@ class _Chip extends StatelessWidget {
 }
 
 class _Meta extends StatelessWidget {
-  const _Meta({required this.icon, required this.text});
+  const _Meta({required this.icon, required this.text, this.color = SoutraliColors.muted});
 
   final IconData icon;
   final String text;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: SoutraliColors.green),
+        Icon(icon, size: 16, color: color),
         const SizedBox(width: 4),
-        Text(text, style: const TextStyle(color: SoutraliColors.muted)),
+        Text(text, style: TextStyle(color: color, fontSize: 13.5)),
       ],
     );
   }

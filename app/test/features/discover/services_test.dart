@@ -48,7 +48,10 @@ void main() {
     expect(find.byIcon(Icons.school), findsWidgets);
     expect(find.byIcon(Icons.plumbing), findsWidgets);
 
-    // Un service choisi devient le filtre de catégorie des résultats.
+    // Un service choisi devient le filtre de catégorie des résultats ; le
+    // visiteur fait défiler jusqu’au bloc des services avant de cliquer.
+    await tester.ensureVisible(find.text('Plomberie et sanitaire'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Plomberie et sanitaire'));
     await tester.pumpAndSettle();
 

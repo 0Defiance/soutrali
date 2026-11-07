@@ -140,7 +140,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             SliverToBoxAdapter(child: _buildMainActions(compact)),
             SliverToBoxAdapter(child: _buildSearch(compact)),
             SliverToBoxAdapter(child: _buildServices(compact)),
-            SliverToBoxAdapter(child: _buildSectionHeading(location)),
+            SliverToBoxAdapter(
+              child: _buildSectionHeading(location, resultCount: results.value?.length),
+            ),
             results.when(
               // Squelettes animés : l’écran montre la forme des annonces qui
               // arrivent au lieu d’un rond de chargement sur fond vide.
@@ -173,7 +175,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           crossAxisCount: columns,
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
-                          mainAxisExtent: 246,
+                          mainAxisExtent: 272,
                         ),
                         itemBuilder: (context, index) => _ListingCard(listing: listings[index]),
                       ),
@@ -187,24 +189,48 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Widget _buildHeader(bool compact) {
+    final location = ref.watch(locationChoiceProvider);
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: SoutraliColors.border)),
+        border: Border(bottom: BorderSide(color: SoutraliColors.border.withValues(alpha: 0.9))),
+        boxShadow: SoutraliShadows.soft(alpha: 0.04, blur: 18, y: 6),
       ),
-      padding: EdgeInsets.symmetric(horizontal: compact ? 16 : 40, vertical: 12),
-      child: Row(
-        children: [
-          Image.asset('assets/brand/soutrali-logo.png', width: compact ? 132 : 158, height: 52, fit: BoxFit.contain),
-          const Spacer(),
-          if (!compact) ...[
-            const Icon(Icons.location_on_outlined, color: SoutraliColors.green, size: 18),
-            const SizedBox(width: 4),
-            const Text('Abidjan', style: TextStyle(color: SoutraliColors.muted)),
-            const SizedBox(width: 12),
-          ],
-          _buildAccountActions(context, compact: compact),
-        ],
+      padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 40, vertical: 10),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1120),
+          child: Row(
+            children: [
+              Image.asset(
+                'assets/brand/soutrali-logo.png',
+                width: compact ? 118 : 146,
+                height: 46,
+                fit: BoxFit.contain,
+              ),
+              if (!compact) ...[
+                const SizedBox(width: 22),
+                _LocationPill(
+                  label: 'Abidjan · Côte d’Ivoire',
+                  confirmed: location.isConfirmed,
+                  onTap: () => _askForLocation(force: true),
+                ),
+              ],
+              const Spacer(),
+              if (!compact) ...[
+                TextButton.icon(
+                  onPressed: () => _showPublicationChoices(isRequest: false),
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
+                  label: const Text('Publier'),
+                  style: TextButton.styleFrom(foregroundColor: SoutraliColors.deepGreen),
+                ),
+                const SizedBox(width: 4),
+              ],
+              _buildAccountActions(context, compact: compact),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -922,95 +948,247 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   }
 
   Widget _buildIntro(bool compact) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        color: SoutraliColors.paleGreen,
-        border: Border(bottom: BorderSide(color: SoutraliColors.border)),
-      ),
-      // Fond réactif : la grille de points s’éclaire sous le pointeur.
-      child: InteractiveMotif(
-        style: MotifStyle.light,
-        density: 42,
-        opacity: 0.9,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(24, compact ? 34 : 52, 24, compact ? 32 : 48),
-          child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1120),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+    // Les cartes d’exemple ont besoin de place : en dessous de 1 020 px, le
+    // hero reste au texte et aux chiffres, sans collage à l’étroit.
+    final wide = MediaQuery.sizeOf(context).width >= 1020;
+    final categories = ref.watch(categoriesProvider).value ?? const <ReferenceItem>[];
+    final communes = ref.watch(communesProvider).value ?? const <ReferenceItem>[];
+    final listingsCount = categories.fold<int>(0, (total, item) => total + (item.listingsCount ?? 0));
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(gradient: SoutraliGradients.hero),
+        // Fond réactif : la grille de points s’éclaire sous le pointeur.
+        child: InteractiveMotif(
+          style: MotifStyle.brand,
+          density: 44,
+          opacity: 0.95,
+          child: Stack(
             children: [
-              Expanded(
-                flex: 3,
-                child: Reveal(
-                  delay: 40,
-                  child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _Eyebrow(label: 'ABIDJAN · ENTRAIDE DE PROXIMITÉ'),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Un coup de main\nprès de chez vous.',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(fontSize: compact ? 34 : 48),
-                    ),
-                    const SizedBox(height: 14),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 510),
-                      child: Text(
-                        'Trouvez une aide, proposez vos compétences et faites vivre l’entraide dans votre commune.',
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    FilledButton.icon(
-                      onPressed: _searchFocusNode.requestFocus,
-                      icon: const Icon(Icons.search),
-                      label: const Text('Explorer les annonces'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: SoutraliColors.orange,
-                        foregroundColor: SoutraliColors.ink,
-                        minimumSize: const Size(44, 48),
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                      ),
-                    ),
-                  ],
-                ),
-                ),
+              Positioned(
+                top: -110,
+                right: -70,
+                child: _Halo(color: SoutraliColors.sun, size: 330, opacity: 0.26),
               ),
-              if (!compact) ...[
-                const SizedBox(width: 32),
-                Expanded(
-                  flex: 2,
-                  child: Reveal(
-                    delay: 160,
-                    child: Container(
-                    constraints: const BoxConstraints(maxHeight: 270),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.72),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.all(24),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 20 : 40,
+                  compact ? 26 : 36,
+                  compact ? 20 : 40,
+                  compact ? 22 : 24,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1120),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        _ValueLine(icon: Icons.handshake_outlined, title: 'Un réseau de proximité', detail: 'Des demandes et des offres à l’échelle de la ville.'),
-                        SizedBox(height: 20),
-                        _ValueLine(icon: Icons.volunteer_activism_outlined, title: 'Bénévole ou rémunéré', detail: 'Une distinction claire pour chaque annonce.'),
-                        SizedBox(height: 20),
-                        _ValueLine(icon: Icons.shield_outlined, title: 'Contact maîtrisé', detail: 'Vos coordonnées restent protégées.'),
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Reveal(
+                                delay: 40,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _HeroEyebrow(),
+                                    const SizedBox(height: 14),
+                                    Text.rich(
+                                      TextSpan(
+                                        children: [
+                                          const TextSpan(text: 'Un coup de main\n'),
+                                          TextSpan(
+                                            text: 'près de chez vous.',
+                                            style: const TextStyle(color: SoutraliColors.sun),
+                                          ),
+                                        ],
+                                      ),
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                            color: Colors.white,
+                                            fontSize: compact ? 32 : 44,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(maxWidth: 520),
+                                      child: Text(
+                                        'Trouvez une aide, proposez vos compétences et faites vivre l’entraide dans votre commune.',
+                                        style: TextStyle(
+                                          color: Colors.white.withValues(alpha: 0.84),
+                                          fontSize: 16,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                    // Mobile : deux actions pleine largeur, bien
+                                    // alignées ; desktop : côte à côte.
+                                    if (compact)
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                                        children: [
+                                          _GradientButton(
+                                            label: 'Explorer les annonces',
+                                            icon: Icons.search_rounded,
+                                            gradient: SoutraliGradients.warm,
+                                            foreground: SoutraliColors.ink,
+                                            height: 48,
+                                            onPressed: _searchFocusNode.requestFocus,
+                                          ),
+                                          const SizedBox(height: 10),
+                                          _GhostButton(
+                                            label: 'Proposer un service',
+                                            icon: Icons.handyman_outlined,
+                                            onPressed: () => _showPublicationChoices(isRequest: false),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        children: [
+                                          _GradientButton(
+                                            label: 'Explorer les annonces',
+                                            icon: Icons.search_rounded,
+                                            gradient: SoutraliGradients.warm,
+                                            foreground: SoutraliColors.ink,
+                                            height: 50,
+                                            onPressed: _searchFocusNode.requestFocus,
+                                          ),
+                                          _GhostButton(
+                                            label: 'Proposer un service',
+                                            icon: Icons.handyman_outlined,
+                                            onPressed: () => _showPublicationChoices(isRequest: false),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (wide) ...[
+                              const SizedBox(width: 24),
+                              Expanded(
+                                flex: 2,
+                                child: Reveal(delay: 180, child: _heroShowcase()),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _heroStats(
+                          services: categories.length,
+                          listings: listingsCount,
+                          communes: communes.length,
+                          compact: compact,
+                        ),
                       ],
                     ),
                   ),
-                  ),
                 ),
-              ],
+              ),
             ],
           ),
         ),
       ),
-        ),
+    );
+  }
+
+  /// Bandeau de chiffres : ils montent depuis zéro à l’arrivée sur la page.
+  Widget _heroStats({
+    required int services,
+    required int listings,
+    required int communes,
+    required bool compact,
+  }) {
+    Widget stat(int value, String label) => Expanded(
+          child: Column(
+            key: ValueKey('hero-stat-$label'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CountUp(
+                value: value,
+                style: TextStyle(
+                  fontFamily: 'Manrope',
+                  color: Colors.white,
+                  fontSize: compact ? 22 : 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 2,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.68), fontSize: 12.5, height: 1.25),
+              ),
+            ],
+          ),
+        );
+
+    return Container(
+      padding: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.16))),
+      ),
+      child: Row(
+        children: [
+          stat(services, 'services couverts'),
+          _HeroDivider(),
+          stat(listings, 'annonces en ligne'),
+          _HeroDivider(),
+          stat(communes, 'communes d’Abidjan'),
+        ],
+      ),
+    );
+  }
+
+  /// Deux cartes d’exemple inclinées : elles se redressent sous le pointeur.
+  Widget _heroShowcase() {
+    return SizedBox(
+      height: 228,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 0,
+            top: 6,
+            child: StraightenOnHover(
+              turns: -0.028,
+              child: const _HeroPreviewCard(
+                icon: Icons.handyman_outlined,
+                title: 'Réparation de ventilateurs',
+                commune: 'Yopougon',
+                distance: 'à 2,4 km',
+                tag: 'Offre',
+                gradient: SoutraliGradients.warm,
+                foreground: SoutraliColors.ink,
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: StraightenOnHover(
+              turns: 0.024,
+              child: const _HeroPreviewCard(
+                icon: Icons.school,
+                title: 'Cours de maths à domicile',
+                commune: 'Cocody',
+                distance: 'à 800 m',
+                tag: 'Demande',
+                gradient: SoutraliGradients.warm,
+                foreground: SoutraliColors.ink,
+                accent: SoutraliColors.green,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1065,18 +1243,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             ),
             child: Container(
               width: double.infinity,
-              padding: EdgeInsets.all(compact ? 18 : 26),
+              padding: EdgeInsets.all(compact ? 18 : 22),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(26),
                 border: Border.all(color: SoutraliColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: SoutraliColors.ink.withValues(alpha: 0.06),
-                    blurRadius: 28,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+                boxShadow: SoutraliShadows.soft(alpha: 0.09, blur: 38, y: 18),
               ),
               clipBehavior: Clip.antiAlias,
               child: InteractiveMotif(
@@ -1086,16 +1258,38 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Qu’est-ce qu’il vous faut ?',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 25),
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          gradient: SoutraliGradients.warm,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: SoutraliShadows.brand(SoutraliColors.orange),
+                        ),
+                        child: const Icon(Icons.tune_rounded, size: 19, color: SoutraliColors.ink),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Qu’est-ce qu’il vous faut ?',
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 25),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Décrivez votre besoin, choisissez votre commune : le reste se joue d’un geste.',
+                              style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Décrivez votre besoin, choisissez votre commune : le reste se joue d’un geste.',
-                    style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final field = TextField(
@@ -1108,13 +1302,18 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           hintText: 'Ex. réparation, cours, déménagement',
                           prefixIcon: Icon(Icons.search),
                           labelText: 'Mot-clé',
+                          filled: true,
+                          fillColor: SoutraliColors.ivory,
                         ),
                       );
-                      final button = FilledButton.icon(
+                      final button = _GradientButton(
+                        label: 'Rechercher',
+                        icon: Icons.search_rounded,
+                        gradient: SoutraliGradients.forest,
+                        foreground: Colors.white,
+                        height: 56,
+                        minWidth: 138,
                         onPressed: _refresh,
-                        icon: const Icon(Icons.search_rounded, size: 19),
-                        label: const Text('Rechercher'),
-                        style: FilledButton.styleFrom(minimumSize: const Size(132, 56)),
                       );
 
                       // Barre de recherche d’un seul tenant dès que la place
@@ -1234,8 +1433,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       return const SizedBox.shrink();
     }
 
+    final available = items.fold<int>(0, (total, item) => total + (item.listingsCount ?? 0));
+
     return Padding(
-      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 16, compact ? 16 : 40, 4),
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 14, compact ? 16 : 40, 4),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
@@ -1244,15 +1445,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             padding: EdgeInsets.all(compact ? 18 : 26),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(26),
               border: Border.all(color: SoutraliColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: SoutraliColors.ink.withValues(alpha: 0.05),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              boxShadow: SoutraliShadows.soft(alpha: 0.05, blur: 26, y: 12),
             ),
             clipBehavior: Clip.antiAlias,
             child: InteractiveMotif(
@@ -1262,17 +1457,45 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Tous les services',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontSize: compact ? 18 : 20),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Choisissez un service : seules ses annonces s’affichent en dessous.',
-                    style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Tous les services',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(fontSize: compact ? 18 : 21),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Choisissez un service : seules ses annonces s’affichent en dessous.',
+                              style: TextStyle(color: SoutraliColors.muted, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!compact)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: SoutraliColors.paleGreen,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${items.length} services · $available annonces',
+                            style: const TextStyle(
+                              color: SoutraliColors.deepGreen,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Wrap(
@@ -1335,7 +1558,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 20, compact ? 16 : 40, 4),
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 16, compact ? 16 : 40, 4),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
@@ -1359,12 +1582,12 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
   }
 
-  Widget _buildSectionHeading(LocationChoice location) {
+  Widget _buildSectionHeading(LocationChoice location, {int? resultCount}) {
     final compact = MediaQuery.sizeOf(context).width < 500;
 
     return Padding(
       key: _resultsHeadingKey,
-      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 24, compact ? 16 : 40, 4),
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 26, compact ? 16 : 40, 4),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1120),
@@ -1374,11 +1597,38 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Annonces près de vous',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 26),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          'Annonces près de vous',
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontSize: compact ? 21 : 28),
+                        ),
+                        if (resultCount != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: SoutraliColors.ivoryDeep,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: SoutraliColors.peach),
+                            ),
+                            child: Text(
+                              // L’API pagine : on annonce ce qui est affiché,
+                              // sans laisser croire que la page est complète.
+                              resultCount == 0
+                                  ? 'aucun résultat'
+                                  : '$resultCount résultat${resultCount > 1 ? 's' : ''}',
+                              key: const ValueKey('results-count'),
+                              style: const TextStyle(
+                                color: SoutraliColors.orangeText,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     const AnimatedAccent(),
@@ -1386,32 +1636,11 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                 ),
               ),
               if (!compact)
-                InkWell(
+                _LocationPill(
+                  label: location.isConfirmed ? location.place!.shortLabel : 'Abidjan',
+                  confirmed: location.isConfirmed,
                   onTap: () => _askForLocation(force: true),
-                  borderRadius: BorderRadius.circular(999),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.location_on_outlined, color: SoutraliColors.green, size: 18),
-                        const SizedBox(width: 4),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 220),
-                          child: Text(
-                            location.isConfirmed ? location.place!.shortLabel : 'Abidjan',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: SoutraliColors.muted),
-                          ),
-                        ),
-                        if (location.isConfirmed) ...[
-                          const SizedBox(width: 6),
-                          const Icon(Icons.edit_location_alt_outlined, size: 16, color: SoutraliColors.muted),
-                        ],
-                      ],
-                    ),
-                  ),
+                  trailing: location.isConfirmed ? Icons.edit_location_alt_outlined : Icons.my_location,
                 ),
             ],
           ),
@@ -1441,18 +1670,69 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   Widget _buildFooter(bool compact) {
     return Container(
-      decoration: const BoxDecoration(
-        color: SoutraliColors.deepGreen,
-        border: Border(top: BorderSide(color: SoutraliColors.border)),
-      ),
-      padding: EdgeInsets.symmetric(horizontal: compact ? 18 : 40, vertical: 24),
+      width: double.infinity,
+      decoration: const BoxDecoration(gradient: SoutraliGradients.hero),
+      padding: EdgeInsets.fromLTRB(compact ? 18 : 40, 30, compact ? 18 : 40, 26),
       child: InteractiveMotif(
         style: MotifStyle.dark,
-        density: 26,
-        child: const Center(
-          child: Text(
-            'Soutrali · L’entraide à portée de main · Abidjan',
-            style: TextStyle(color: Colors.white, fontSize: 14),
+        density: 28,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1120),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        gradient: SoutraliGradients.warm,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(Icons.handshake_outlined, size: 18, color: SoutraliColors.ink),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Soutrali',
+                      style: TextStyle(
+                        fontFamily: 'Manrope',
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'L’entraide à portée de main',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13.5),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Container(height: 1, color: Colors.white.withValues(alpha: 0.14)),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 20,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'Abidjan · Côte d’Ivoire',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 13),
+                    ),
+                    Text(
+                      'Contact maîtrisé · annonces vérifiées',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.72), fontSize: 13),
+                    ),
+                    Text(
+                      '© 2026 Soutrali',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1683,74 +1963,95 @@ class _ServiceChipState extends State<_ServiceChip> {
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
+    final foreground = selected ? Colors.white : SoutraliColors.ink;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 190),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+        decoration: BoxDecoration(
+          gradient: selected ? SoutraliGradients.forest : null,
+          color: selected ? null : (_hovered ? SoutraliColors.mint : Colors.white),
           borderRadius: BorderRadius.circular(14),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOut,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: selected
-                  ? SoutraliColors.deepGreen
-                  : _hovered
-                      ? SoutraliColors.paleGreen
-                      : Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: selected
-                    ? SoutraliColors.deepGreen
-                    : _hovered
-                        ? SoutraliColors.green.withValues(alpha: 0.55)
-                        : SoutraliColors.border,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  widget.icon,
-                  size: 18,
-                  color: selected ? Colors.white : SoutraliColors.green,
-                ),
-                const SizedBox(width: 7),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: selected ? Colors.white : SoutraliColors.ink,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (widget.count != null) ...[
-                  const SizedBox(width: 7),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? SoutraliColors.orange
-                          : SoutraliColors.paleGreen,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      '${widget.count}',
-                      key: ValueKey('service-count-${widget.label}'),
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: selected ? SoutraliColors.ink : SoutraliColors.deepGreen,
+          border: Border.all(
+            color: selected
+                ? SoutraliColors.green
+                : _hovered
+                    ? SoutraliColors.green.withValues(alpha: 0.55)
+                    : SoutraliColors.border,
+          ),
+          boxShadow: selected
+              ? SoutraliShadows.brand(SoutraliColors.green)
+              : _hovered
+                  ? SoutraliShadows.soft(alpha: 0.07, blur: 16, y: 8)
+                  : null,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 11, 6),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedScale(
+                    scale: _hovered ? 1.08 : 1,
+                    duration: const Duration(milliseconds: 190),
+                    curve: Curves.easeOutCubic,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? Colors.white.withValues(alpha: 0.18)
+                            : SoutraliColors.paleGreen,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(
+                        widget.icon,
+                        size: 16,
+                        color: selected ? Colors.white : SoutraliColors.green,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.label,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (widget.count != null) ...[
+                    const SizedBox(width: 7),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? Colors.white.withValues(alpha: 0.2)
+                            : SoutraliColors.paleGreen,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${widget.count}',
+                        key: ValueKey('service-count-${widget.label}'),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: selected ? Colors.white : SoutraliColors.deepGreen,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -1777,99 +2078,183 @@ class _ListingCardState extends State<_ListingCard> {
     final isRequest = listing.type == 'DEMANDE';
     final isVolunteer = listing.nature == 'BENEVOLE';
     final date = listing.createdAt == null ? '' : DateFormat('d MMM', 'fr').format(listing.createdAt!);
+    final gradient = isRequest ? SoutraliGradients.warm : SoutraliGradients.forest;
+    final onGradient = isRequest ? SoutraliColors.ink : Colors.white;
 
-    // Carte vivante : le survol la relève et fait apparaître liseré et
-    // ombre de marque en 200 ms.
+    // Carte vivante : bandeau de service coloré, médaillon d’icône en filigrane,
+    // puis le survol relève la carte et allume son liseré en 200 ms.
     return HoverLift(
-      rise: 6,
+      rise: 8,
       onHoverChanged: (hovered) => setState(() => _hovered = hovered),
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => context.push('/listing/${listing.id}'),
-          borderRadius: BorderRadius.circular(16),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(
-          color: _hovered ? SoutraliColors.green : SoutraliColors.border,
-          width: _hovered ? 1.6 : 1,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          if (_hovered)
-            BoxShadow(
-              color: SoutraliColors.green.withValues(alpha: 0.18),
-              blurRadius: 26,
-              offset: const Offset(0, 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: _hovered ? SoutraliColors.green : SoutraliColors.border,
+                width: _hovered ? 1.6 : 1,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: _hovered
+                  ? SoutraliShadows.brand(SoutraliColors.green)
+                  : SoutraliShadows.soft(alpha: 0.05, blur: 18, y: 8),
             ),
-        ],
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 7,
-            runSpacing: 6,
-            children: [
-              _Tag(label: isRequest ? 'Demande' : 'Offre', color: isRequest ? SoutraliColors.paleOrange : SoutraliColors.paleGreen),
-              _Tag(label: isVolunteer ? 'Bénévole' : 'Rémunérée', color: Colors.white, border: SoutraliColors.border),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(listing.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 7),
-          Expanded(
-            child: Text(listing.description, maxLines: 3, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-          const Divider(height: 20),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, size: 16, color: SoutraliColors.green),
-              const SizedBox(width: 4),
-              Expanded(child: Text(listing.commune, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium)),
-              if (listing.distanceKm != null) ...[
-                const SizedBox(width: 6),
-                Text(
-                  listingDistanceLabel(listing.distanceKm!),
-                  key: const ValueKey('listing-distance'),
-                  style: const TextStyle(fontSize: 12.5, color: SoutraliColors.orangeText, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(width: 8),
-              ],
-              Text(date, style: Theme.of(context).textTheme.bodyMedium),
-            ],
-          ),
-          if (listing.category.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(categoryIcon(listing.categoryIcon), size: 15, color: SoutraliColors.orange),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    listing.category,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: SoutraliColors.orangeText,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+                Container(
+                  height: 82,
+                  decoration: BoxDecoration(gradient: gradient),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -16,
+                        bottom: -26,
+                        child: Icon(
+                          categoryIcon(listing.categoryIcon),
+                          size: 116,
+                          color: Colors.white.withValues(alpha: 0.16),
+                        ),
+                      ),
+                      Positioned(
+                        left: 14,
+                        right: 14,
+                        top: 14,
+                        child: Row(
+                          children: [
+                            _Tag(
+                              label: isRequest ? 'Demande' : 'Offre',
+                              color: Colors.white.withValues(alpha: 0.94),
+                              foreground: SoutraliColors.ink,
+                            ),
+                            const SizedBox(width: 7),
+                            _Tag(
+                              label: isVolunteer ? 'Bénévole' : 'Rémunérée',
+                              color: Colors.white.withValues(alpha: 0.16),
+                              foreground: onGradient,
+                              border: Colors.white.withValues(alpha: 0.34),
+                            ),
+                            const Spacer(),
+                            if (listing.distanceKm != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.94),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.near_me_outlined, size: 12, color: SoutraliColors.orangeText),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      listingDistanceLabel(listing.distanceKm!),
+                                      key: const ValueKey('listing-distance'),
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: SoutraliColors.orangeText,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          listing.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16.5),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          listing.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const Spacer(),
+                        if (listing.category.isNotEmpty) ...[
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(categoryIcon(listing.categoryIcon), size: 15, color: SoutraliColors.orange),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  listing.category,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: SoutraliColors.orangeText,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_outlined, size: 15, color: SoutraliColors.green),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                listing.commune,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: SoutraliColors.muted, fontSize: 13),
+                              ),
+                            ),
+                            Text(date, style: const TextStyle(color: SoutraliColors.muted, fontSize: 13)),
+                            const SizedBox(width: 6),
+                            AnimatedOpacity(
+                              opacity: _hovered ? 1 : 0,
+                              duration: const Duration(milliseconds: 180),
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  color: SoutraliColors.paleGreen,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  size: 14,
+                                  color: SoutraliColors.deepGreen,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
-          ],
-        ],
+          ),
         ),
-      ),
-      ),
       ),
     );
   }
@@ -1939,7 +2324,7 @@ class _ChoiceTile extends StatelessWidget {
   }
 }
 
-class _MainActionButton extends StatelessWidget {
+class _MainActionButton extends StatefulWidget {
   const _MainActionButton({
     required this.title,
     required this.subtitle,
@@ -1957,35 +2342,128 @@ class _MainActionButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  State<_MainActionButton> createState() => _MainActionButtonState();
+}
+
+class _MainActionButtonState extends State<_MainActionButton> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: foreground,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          minimumSize: const Size(44, 82),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    final gradient = widget.color == SoutraliColors.orange
+        ? SoutraliGradients.warm
+        : SoutraliGradients.forest;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        decoration: BoxDecoration(
+          gradient: gradient,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: _hovered
+              ? SoutraliShadows.brand(widget.color)
+              : SoutraliShadows.soft(alpha: 0.08, blur: 24, y: 12),
         ),
-        child: Row(
-          children: [
-            Icon(icon, size: 27),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, maxLines: 2, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 3),
-                  Text(subtitle, maxLines: 2, style: const TextStyle(fontSize: 13)),
-                ],
-              ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(22),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: widget.onPressed,
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -34,
+                  top: -46,
+                  child: Container(
+                    width: 148,
+                    height: 148,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.09),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: -26,
+                  bottom: -64,
+                  child: Container(
+                    width: 132,
+                    height: 132,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withValues(alpha: 0.05),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+                        ),
+                        child: Icon(widget.icon, size: 25, color: widget.foreground),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.title,
+                              maxLines: 2,
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: widget.foreground,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              widget.subtitle,
+                              maxLines: 2,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                height: 1.35,
+                                color: widget.foreground.withValues(alpha: 0.82),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      AnimatedSlide(
+                        offset: _hovered ? const Offset(0.28, 0) : Offset.zero,
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeOutCubic,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.arrow_forward_rounded, size: 17, color: widget.foreground),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const Icon(Icons.arrow_forward, size: 19),
-          ],
+          ),
         ),
       ),
     );
@@ -1993,60 +2471,419 @@ class _MainActionButton extends StatelessWidget {
 }
 
 class _Tag extends StatelessWidget {
-  const _Tag({required this.label, required this.color, this.border});
+  const _Tag({
+    required this.label,
+    required this.color,
+    this.border,
+    this.foreground = SoutraliColors.ink,
+  });
 
   final String label;
   final Color color;
   final Color? border;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(999),
         border: border == null ? null : Border.all(color: border!),
       ),
-      child: Text(label, style: const TextStyle(color: SoutraliColors.ink, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(color: foreground, fontSize: 11.5, fontWeight: FontWeight.w700),
+      ),
     );
   }
 }
 
-class _Eyebrow extends StatelessWidget {
-  const _Eyebrow({required this.label});
+/// Bouton principal en dégradé : ombre de marque et léger grossissement au
+/// survol, appui réel via `InkWell`.
+class _GradientButton extends StatefulWidget {
+  const _GradientButton({
+    required this.label,
+    required this.icon,
+    required this.gradient,
+    required this.foreground,
+    required this.onPressed,
+    this.height = 46,
+    this.minWidth = 0,
+  });
 
   final String label;
+  final IconData icon;
+  final LinearGradient gradient;
+  final Color foreground;
+  final VoidCallback onPressed;
+  final double height;
+  final double minWidth;
 
   @override
-  Widget build(BuildContext context) => Text(
-        label,
-        style: const TextStyle(color: SoutraliColors.deepGreen, fontSize: 12, fontWeight: FontWeight.w700),
-      );
+  State<_GradientButton> createState() => _GradientButtonState();
 }
 
-class _ValueLine extends StatelessWidget {
-  const _ValueLine({required this.icon, required this.title, required this.detail});
-
-  final IconData icon;
-  final String title;
-  final String detail;
+class _GradientButtonState extends State<_GradientButton> {
+  bool _hovered = false;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icon, color: SoutraliColors.green, size: 26),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedScale(
+        scale: _hovered ? 1.02 : 1,
+        duration: const Duration(milliseconds: 170),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: widget.height,
+          constraints: BoxConstraints(minWidth: widget.minWidth),
+          decoration: BoxDecoration(
+            gradient: widget.gradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: _hovered
+                ? SoutraliShadows.brand(SoutraliColors.orange)
+                : SoutraliShadows.soft(alpha: 0.10, blur: 18, y: 8),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            child: InkWell(
+              onTap: widget.onPressed,
+              borderRadius: BorderRadius.circular(14),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(widget.icon, size: 18, color: widget.foreground),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.label,
+                      style: TextStyle(
+                        color: widget.foreground,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Action secondaire sur fond de marque : contour translucide, texte blanc.
+class _GhostButton extends StatelessWidget {
+  const _GhostButton({required this.label, required this.icon, required this.onPressed});
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 50,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.white.withValues(alpha: 0.06),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.34)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+        ),
+      ),
+    );
+  }
+}
+
+/// Pastille de lieu : le point vert indique une position confirmée.
+class _LocationPill extends StatefulWidget {
+  const _LocationPill({
+    required this.label,
+    required this.confirmed,
+    required this.onTap,
+    this.trailing,
+  });
+
+  final String label;
+  final bool confirmed;
+  final VoidCallback onTap;
+  final IconData? trailing;
+
+  @override
+  State<_LocationPill> createState() => _LocationPillState();
+}
+
+class _LocationPillState extends State<_LocationPill> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: _hovered ? SoutraliColors.paleGreen : SoutraliColors.ivory,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: _hovered
+                    ? SoutraliColors.green.withValues(alpha: 0.45)
+                    : SoutraliColors.border,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: const TextStyle(color: SoutraliColors.ink, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 2),
-                Text(detail, style: const TextStyle(color: SoutraliColors.muted, fontSize: 13)),
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: widget.confirmed ? SoutraliColors.green : SoutraliColors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 230),
+                  child: Text(
+                    widget.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: SoutraliColors.ink,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Icon(
+                  widget.trailing ?? Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: SoutraliColors.muted,
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Halo circulaire décoratif des fonds de marque.
+class _Halo extends StatelessWidget {
+  const _Halo({required this.color, required this.size, required this.opacity});
+
+  final Color color;
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color.withValues(alpha: opacity), color.withValues(alpha: 0)],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroDivider extends StatelessWidget {
+  const _HeroDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      height: 36,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      color: Colors.white.withValues(alpha: 0.16),
+    );
+  }
+}
+
+/// Étiquette du hero : petite pilule posée sur le dégradé vert.
+class _HeroEyebrow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 7,
+            height: 7,
+            decoration: const BoxDecoration(color: SoutraliColors.sun, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'ENTRAIDE DE PROXIMITÉ · ABIDJAN',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.88),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
         ],
-      );
+      ),
+    );
+  }
+}
+
+/// Carte d’exemple du hero : illustration de ce qu’on trouve sur Soutrali.
+class _HeroPreviewCard extends StatelessWidget {
+  const _HeroPreviewCard({
+    required this.icon,
+    required this.title,
+    required this.commune,
+    required this.distance,
+    required this.tag,
+    required this.gradient,
+    required this.foreground,
+    this.accent = SoutraliColors.orange,
+  });
+
+  final IconData icon;
+  final String title;
+  final String commune;
+  final String distance;
+  final String tag;
+  final LinearGradient gradient;
+  final Color foreground;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 288,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: SoutraliColors.ink.withValues(alpha: 0.16),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(14)),
+                child: Icon(icon, size: 22, color: foreground),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'Manrope',
+                        color: SoutraliColors.ink,
+                        fontSize: 13.5,
+                        height: 1.25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      commune,
+                      style: const TextStyle(color: SoutraliColors.muted, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  tag,
+                  style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.near_me_outlined, size: 12, color: SoutraliColors.orangeText),
+              const SizedBox(width: 3),
+              Text(
+                distance,
+                style: const TextStyle(
+                  color: SoutraliColors.orangeText,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              // Exemple assumé : ces deux cartes illustrent la page, elles ne
+              // prétendent pas être de vraies annonces vérifiées.
+              Text(
+                'Exemple',
+                style: TextStyle(
+                  color: SoutraliColors.muted.withValues(alpha: 0.8),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

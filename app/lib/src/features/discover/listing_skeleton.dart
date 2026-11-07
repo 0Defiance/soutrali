@@ -30,7 +30,7 @@ class ListingSkeletonGrid extends StatelessWidget {
           crossAxisCount: columns,
           mainAxisSpacing: 14,
           crossAxisSpacing: 14,
-          mainAxisExtent: 246,
+          mainAxisExtent: 272,
         ),
         itemBuilder: (context, index) => ListingSkeletonCard(
           key: ValueKey('listing-skeleton-$index'),
@@ -93,44 +93,56 @@ class _ListingSkeletonCardState extends State<ListingSkeletonCard>
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(color: SoutraliColors.border),
       ),
-      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              _shimmer(height: 22, width: 74, radius: 999),
-              const SizedBox(width: 7),
-              _shimmer(height: 22, width: 84, radius: 999),
-            ],
+          // Bandeau supérieur : la place du futur dégradé de service.
+          Container(
+            height: 82,
+            width: double.infinity,
+            color: const Color(0xFFF1F4EE),
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                _shimmer(height: 22, width: 74, radius: 999),
+                const SizedBox(width: 7),
+                _shimmer(height: 22, width: 84, radius: 999),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          _shimmer(height: 16),
-          const SizedBox(height: 8),
-          _shimmer(height: 16, width: 210),
-          const SizedBox(height: 14),
-          _shimmer(height: 11),
-          const SizedBox(height: 7),
-          _shimmer(height: 11),
-          const SizedBox(height: 7),
-          _shimmer(height: 11, width: 160),
-          const Spacer(),
-          Container(height: 1, color: SoutraliColors.border),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _shimmer(height: 12)),
-              const SizedBox(width: 24),
-              _shimmer(height: 12, width: 46),
-            ],
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _shimmer(height: 16),
+                  const SizedBox(height: 8),
+                  _shimmer(height: 16, width: 210),
+                  const SizedBox(height: 14),
+                  _shimmer(height: 11),
+                  const SizedBox(height: 7),
+                  _shimmer(height: 11, width: 160),
+                  const Spacer(),
+                  _shimmer(height: 12, width: 120),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(child: _shimmer(height: 12)),
+                      const SizedBox(width: 24),
+                      _shimmer(height: 12, width: 46),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 10),
-          _shimmer(height: 12, width: 120),
         ],
       ),
     );
