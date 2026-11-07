@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,9 +10,15 @@ import '../account/account_repository.dart';
 import '../account/contact_channels_section.dart';
 import '../account/profile_safety_section.dart';
 import '../auth/auth_repository.dart';
+import '../errors/app_error.dart';
+import '../errors/error_page.dart';
+import '../location/geolocation.dart';
+import '../location/location_prompt.dart';
+import '../location/location_repository.dart';
 import '../messaging/messaging_repository.dart';
 import 'category_icons.dart';
 import 'listing.dart';
+import 'listing_skeleton.dart';
 import 'listings_repository.dart';
 import 'references_repository.dart';
 
@@ -33,13 +38,70 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   String _nature = '';
   String _categoryId = '';
 
-  ListingFilters get _filters => ListingFilters(
-        query: _searchController.text,
-        commune: _commune,
-        type: _type,
-        nature: _nature,
-        category: int.tryParse(_categoryId),
-      );
+  ListingFilters get _filters {
+    final location = ref.read(locationChoiceProvider);
+
+    return ListingFilters(
+      query: _searchController.text,
+      commune: _commune,
+      type: _type,
+      nature: _nature,
+      category: int.tryParse(_categoryId),
+      // Position confirmée seulement : les annonces sont alors classées de
+      // la plus proche à la plus lointaine.
+      latitude: location.latitude,
+      longitude: location.longitude,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // La proposition de localisation arrive après le premier rendu : la page
+    // s’affiche immédiatement, la popup ne retarde jamais le contenu.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _askForLocation());
+  }
+
+  /// Demande la position au navigateur, la fait reconnaître par l’API, puis
+  /// propose une confirmation. Un refus, une position indisponible ou une
+  /// panne de l’API laissent la page fonctionner normalement.
+  Future<void> _askForLocation({bool force = false}) async {
+    if (!force && ref.read(locationChoiceProvider).decision != LocationDecision.pending) {
+      return;
+    }
+
+    final service = ref.read(geolocationServiceProvider);
+    if (!service.isSupported) {
+      return;
+    }
+
+    final position = await service.current();
+    if (position == null || !mounted) {
+      return;
+    }
+
+    final LocatedPlace place;
+    try {
+      place = await ref.read(locationRepositoryProvider).resolve(position);
+    } catch (_) {
+      return; // La localisation est un confort : jamais un écran d’erreur.
+    }
+
+    if (!mounted || !place.inServiceArea) {
+      return;
+    }
+
+    final decision = await LocationPromptDialog.show(context, place);
+    if (!mounted) {
+      return;
+    }
+
+    if (decision == LocationDecision.confirmed) {
+      ref.read(locationChoiceProvider.notifier).confirm(place);
+    } else {
+      ref.read(locationChoiceProvider.notifier).refuse();
+    }
+  }
 
   @override
   void dispose() {
@@ -67,6 +129,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final compact = width < 760;
     final columns = width >= 1180 ? 3 : width >= 760 ? 2 : 1;
     final results = ref.watch(listingsProvider(_filters));
+    final location = ref.watch(locationChoiceProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -77,15 +140,25 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
             SliverToBoxAdapter(child: _buildMainActions(compact)),
             SliverToBoxAdapter(child: _buildSearch(compact)),
             SliverToBoxAdapter(child: _buildServices(compact)),
-            SliverToBoxAdapter(child: _buildSectionHeading()),
+            SliverToBoxAdapter(child: _buildSectionHeading(location)),
             results.when(
-              loading: () => const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
+              // Squelettes animés : l’écran montre la forme des annonces qui
+              // arrivent au lieu d’un rond de chargement sur fond vide.
+              loading: () => ListingSkeletonGrid(
+                columns: columns,
+                cardCount: columns * 2,
+                padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 8, compact ? 16 : 40, 48),
               ),
               error: (error, stack) => SliverFillRemaining(
                 hasScrollBody: false,
-                child: _buildError(error),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                  child: ErrorPage(
+                    compact: true,
+                    error: AppError.fromException(error),
+                    onRetry: () => ref.invalidate(listingsProvider(_filters)),
+                  ),
+                ),
               ),
               data: (listings) => listings.isEmpty
                   ? SliverFillRemaining(
@@ -1211,6 +1284,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                           key: ValueKey('service-${item.id}'),
                           icon: categoryIcon(item.icon),
                           label: item.name,
+                          count: item.listingsCount,
                           selected: _categoryId == item.id.toString(),
                           onTap: () {
                             setState(() {
@@ -1285,7 +1359,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
   }
 
-  Widget _buildSectionHeading() {
+  Widget _buildSectionHeading(LocationChoice location) {
     final compact = MediaQuery.sizeOf(context).width < 500;
 
     return Padding(
@@ -1311,47 +1385,34 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                   ],
                 ),
               ),
-              if (!compact) ...[
-                const Icon(Icons.location_on_outlined, color: SoutraliColors.green, size: 18),
-                const SizedBox(width: 4),
-                const Text('Abidjan', style: TextStyle(color: SoutraliColors.muted)),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildError(Object error) {
-    final networkError = error is DioException;
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_off_outlined, size: 38, color: SoutraliColors.muted),
-              const SizedBox(height: 12),
-              Text(
-                networkError ? 'Le service est momentanément indisponible.' : 'Impossible de lire les annonces.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Vérifiez que l’API locale est démarrée, puis réessayez.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => ref.invalidate(listingsProvider(_filters)),
-                icon: const Icon(Icons.refresh),
-                label: const Text('Réessayer'),
-              ),
+              if (!compact)
+                InkWell(
+                  onTap: () => _askForLocation(force: true),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: SoutraliColors.green, size: 18),
+                        const SizedBox(width: 4),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 220),
+                          child: Text(
+                            location.isConfirmed ? location.place!.shortLabel : 'Abidjan',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: SoutraliColors.muted),
+                          ),
+                        ),
+                        if (location.isConfirmed) ...[
+                          const SizedBox(width: 6),
+                          const Icon(Icons.edit_location_alt_outlined, size: 16, color: SoutraliColors.muted),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -1601,12 +1662,16 @@ class _ServiceChip extends StatefulWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.count,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Nombre d’annonces disponibles pour ce service (badge discret).
+  final int? count;
 
   @override
   State<_ServiceChip> createState() => _ServiceChipState();
@@ -1664,6 +1729,27 @@ class _ServiceChipState extends State<_ServiceChip> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (widget.count != null) ...[
+                  const SizedBox(width: 7),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? SoutraliColors.orange
+                          : SoutraliColors.paleGreen,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${widget.count}',
+                      key: ValueKey('service-count-${widget.label}'),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: selected ? SoutraliColors.ink : SoutraliColors.deepGreen,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1746,6 +1832,15 @@ class _ListingCardState extends State<_ListingCard> {
               const Icon(Icons.location_on_outlined, size: 16, color: SoutraliColors.green),
               const SizedBox(width: 4),
               Expanded(child: Text(listing.commune, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.bodyMedium)),
+              if (listing.distanceKm != null) ...[
+                const SizedBox(width: 6),
+                Text(
+                  'à ${formatDistanceKm(listing.distanceKm!)}',
+                  key: const ValueKey('listing-distance'),
+                  style: const TextStyle(fontSize: 12.5, color: SoutraliColors.orangeText, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 8),
+              ],
               Text(date, style: Theme.of(context).textTheme.bodyMedium),
             ],
           ),

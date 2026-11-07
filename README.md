@@ -237,6 +237,9 @@ Ces besoins sont l’origine fonctionnelle du projet. Le tableau indique comment
 | F-08 | Modération | File de signalements, masquer / restaurer, suspendre un compte, historique | Essentiel |
 | F-13 | Référentiels | Gestion par l’administrateur des catégories (32 services dotés d’une icône de charte depuis le 26 oct. 2026) et des communes / zones d’Abidjan | Essentiel |
 | F-09 | Notifications | **E-mails transactionnels** : bienvenue à l’inscription, annonce mise en ligne (immédiate, manuelle ou programmée), nouveau message reçu en messagerie — SMTP Mailjet en réel, `MAIL_MAILER=log` en local, implémenté le 26 oct. 2026 | Souhaitable |
+| F-17 | Annonces près de vous (7 nov. 2026, demandé par le porteur) | Position ponctuelle lue par le navigateur, résolue par `GET /api/v1/geolocation` (référentiel local, aucun service tiers) puis **proposée en confirmation au démarrage** (pays, ville, commune, quartier, zone, coordonnées, précision). Après accord seulement : tri des annonces par distance réelle et affichage « à 480 m / 1,2 km ». Refus, position indisponible ou hors zone : aucune gêne, aucune donnée utilisée | Souhaitable |
+| F-18 | Pages d’erreur dédiées (7 nov. 2026) | Un écran par nature d’erreur — 404 (adresse inconnue ou annonce retirée), 403, 429, 500, 502/504, 503, coupure réseau — avec l’adresse demandée, le retour à l’accueil et un réessai quand il a un sens | Essentiel |
+| F-19 | Une annonce par service (7 nov. 2026) | Vitrine de démarrage (`ShowcaseSeeder`) garantissant au moins une annonce publiée par service, badge du nombre d’annonces sur chaque pastille de « Tous les services », chargement animé (squelettes) en attendant les résultats | Essentiel |
 
 ### 6.2 Hors MVP
 
@@ -244,7 +247,7 @@ Ces besoins sont l’origine fonctionnelle du projet. Le tableau indique comment
 |---|---|---|
 | F-10 | Évaluations réciproques après échange | Exige un dispositif de contrôle contre les abus |
 | F-11 | Paiement en ligne, portefeuille, séquestre | Complexité financière et réglementaire ; inutile pour tester l’utilité |
-| F-12 | Géolocalisation en temps réel | Données sensibles et coûteuses ; la commune suffit |
+| F-12 | **Suivi continu** de la géolocalisation (temps réel) | Données sensibles et coûteuses ; **remplacé le 7 nov. 2026** par F-17 : position ponctuelle, sur accord explicite, sans suivi ni service tiers — le suivi continu reste hors périmètre |
 | F-14 | Aide aux personnes vulnérables | Vérification et sécurité renforcées nécessaires |
 | F-15 | Collectes d’argent, actions collectives | Règles spécifiques de vérification et de publication |
 | F-16 | Fiches enrichies (photos de réalisations, avis) | Après le MVP si le besoin est établi |

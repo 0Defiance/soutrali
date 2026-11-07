@@ -13,6 +13,7 @@ class Listing {
     this.authorName,
     this.availability,
     this.budget,
+    this.distanceKm,
   });
 
   final int id;
@@ -30,6 +31,10 @@ class Listing {
   final String? authorName;
   final String? availability;
   final num? budget;
+
+  /// Distance au centre de la commune, uniquement quand l’API a reçu la
+  /// position confirmée de l’utilisateur. `null` sinon.
+  final double? distanceKm;
 
   factory Listing.fromJson(Map<String, dynamic> json) {
     final category = json['category'];
@@ -57,8 +62,19 @@ class Listing {
       availability: json['availability'] as String?,
       // Tolère un budget renvoyé en chaîne ("5000.00") par l'API.
       budget: json['budget'] is num ? json['budget'] as num : num.tryParse('${json['budget']}'),
+      distanceKm: (json['distance_km'] as num?)?.toDouble(),
     );
   }
+}
+
+/// Distance lisible : mètres en dessous du kilomètre, puis kilomètres à
+/// une décimale (« 480 m », « 1,2 km »), avec la virgule française.
+String formatDistanceKm(double kilometers) {
+  if (kilometers < 1) {
+    return '${(kilometers * 1000).round()} m';
+  }
+
+  return '${kilometers.toStringAsFixed(1).replaceAll('.', ',')} km';
 }
 
 class ListingFilters {
@@ -68,6 +84,8 @@ class ListingFilters {
     this.type = '',
     this.nature = '',
     this.category,
+    this.latitude,
+    this.longitude,
   });
 
   final String query;
@@ -78,12 +96,19 @@ class ListingFilters {
   /// Identifiant de catégorie, ou `null` pour « toutes ».
   final int? category;
 
+  /// Position confirmée de l’utilisateur : les annonces sont alors triées
+  /// de la plus proche à la plus lointaine (7 nov. 2026).
+  final double? latitude;
+  final double? longitude;
+
   Map<String, dynamic> toQueryParameters() => {
         if (query.trim().isNotEmpty) 'q': query.trim(),
         if (commune.isNotEmpty) 'commune': commune,
         if (category != null) 'category': category,
         if (type.isNotEmpty) 'type': type,
         if (nature.isNotEmpty) 'nature': nature,
+        if (latitude != null && longitude != null) 'latitude': latitude,
+        if (latitude != null && longitude != null) 'longitude': longitude,
       };
 
   @override
@@ -94,8 +119,10 @@ class ListingFilters {
           commune == other.commune &&
           type == other.type &&
           nature == other.nature &&
-          category == other.category;
+          category == other.category &&
+          latitude == other.latitude &&
+          longitude == other.longitude;
 
   @override
-  int get hashCode => Object.hash(query, commune, type, nature, category);
+  int get hashCode => Object.hash(query, commune, type, nature, category, latitude, longitude);
 }

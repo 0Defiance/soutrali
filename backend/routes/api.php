@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BlockController;
 use App\Http\Controllers\Api\V1\ContactChannelController;
 use App\Http\Controllers\Api\V1\ConversationController;
+use App\Http\Controllers\Api\V1\GeolocationController;
 use App\Http\Controllers\Api\V1\MyListingController;
 use App\Http\Controllers\Api\V1\PublicListingController;
 use App\Http\Controllers\Api\V1\PublicReferenceController;
@@ -24,6 +25,11 @@ Route::get('/v1/categories', [PublicReferenceController::class, 'categories'])
     ->middleware('throttle:60,1');
 
 Route::get('/v1/communes', [PublicReferenceController::class, 'communes'])
+    ->middleware('throttle:60,1');
+
+// Situation d'une position GPS sur le référentiel d'Abidjan (7 nov. 2026) :
+// appelée seulement après l'accord de l'utilisateur dans l'application.
+Route::get('/v1/geolocation', [GeolocationController::class, 'show'])
     ->middleware('throttle:60,1');
 
 Route::post('/v1/register', [AuthController::class, 'register'])

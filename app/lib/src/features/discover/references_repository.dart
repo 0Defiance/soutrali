@@ -5,7 +5,13 @@ import 'listings_repository.dart';
 
 /// Élément d'un référentiel public : catégorie ou commune.
 class ReferenceItem {
-  const ReferenceItem({required this.id, required this.name, this.description, this.icon});
+  const ReferenceItem({
+    required this.id,
+    required this.name,
+    this.description,
+    this.icon,
+    this.listingsCount,
+  });
 
   final int id;
   final String name;
@@ -15,11 +21,16 @@ class ReferenceItem {
   /// `category_icons.dart` pour la traduction en icône.
   final String? icon;
 
+  /// Annonces publiées pour ce service (catégories uniquement, 7 nov.
+  /// 2026) : le bloc « Tous les services » affiche ce nombre.
+  final int? listingsCount;
+
   factory ReferenceItem.fromJson(Map<String, dynamic> json) => ReferenceItem(
         id: (json['id'] as num).toInt(),
         name: json['name'] as String? ?? '',
         description: json['description'] as String?,
         icon: json['icon'] as String?,
+        listingsCount: (json['listings_count'] as num?)?.toInt(),
       );
 }
 

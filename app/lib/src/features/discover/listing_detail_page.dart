@@ -7,6 +7,8 @@ import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
 import '../auth/auth_repository.dart';
+import '../errors/app_error.dart';
+import '../errors/error_page.dart';
 import '../messaging/messaging_repository.dart';
 import 'category_icons.dart';
 import 'listing.dart';
@@ -42,32 +44,18 @@ class ListingDetailPage extends ConsumerWidget {
         opacity: 0.6,
         child: listingAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.cloud_off_outlined, size: 38, color: SoutraliColors.muted),
-                const SizedBox(height: 12),
-                const Text('Impossible de charger cette annonce.'),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: () => ref.invalidate(listingProvider(listingId)),
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Réessayer'),
-                ),
-              ],
-            ),
-          ),
+        // Panne, coupure réseau ou erreur serveur : chaque cas a son écran.
+        error: (error, stack) => ErrorPage(
+          error: AppError.fromException(error),
+          onRetry: () => ref.invalidate(listingProvider(listingId)),
         ),
         data: (listing) {
+          // L’API renvoie 404 pour une annonce retirée : page dédiée.
           if (listing == null) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Cette annonce n’existe pas ou n’est plus disponible.'),
-              ),
+            return ErrorPage(
+              error: AppError.fromStatus(404)!,
+              titleOverride: 'Annonce introuvable',
+              location: '/listing/$listingId',
             );
           }
 

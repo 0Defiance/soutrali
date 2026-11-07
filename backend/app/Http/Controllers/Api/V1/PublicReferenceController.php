@@ -10,28 +10,38 @@ class PublicReferenceController
 {
     /**
      * Catégories actives, telles qu'administrées par la MOA (D-07), avec
-     * la clé d'icône du service (26 oct. 2026) que l'application traduit
-     * en icône de charte.
+     * la clé d'icône du service (26 oct. 2026) et le nombre d'annonces
+     * publiées (7 nov. 2026) : le bloc « Tous les services » montre ainsi
+     * à l'utilisateur quels services ont déjà des annonces disponibles.
      */
     public function categories(): JsonResponse
     {
         $categories = Category::query()
             ->where('active', true)
+            ->withCount(['listings' => fn ($query) => $query->published()])
             ->orderBy('name')
-            ->get(['id', 'name', 'description', 'icon']);
+            ->get(['id', 'name', 'description', 'icon'])
+            ->map(fn (Category $category) => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'description' => $category->description,
+                'icon' => $category->icon,
+                'listings_count' => $category->listings_count,
+            ]);
 
         return response()->json(['data' => $categories]);
     }
 
     /**
-     * Communes actives du référentiel d'Abidjan (D-03).
+     * Communes actives du référentiel d'Abidjan (D-03), avec leurs
+     * coordonnées depuis le 7 nov. 2026.
      */
     public function communes(): JsonResponse
     {
         $communes = Commune::query()
             ->where('active', true)
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'latitude', 'longitude']);
 
         return response()->json(['data' => $communes]);
     }

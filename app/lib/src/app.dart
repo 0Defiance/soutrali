@@ -7,6 +7,8 @@ import 'features/auth/login_page.dart';
 import 'features/auth/register_page.dart';
 import 'features/discover/discover_page.dart';
 import 'features/discover/listing_detail_page.dart';
+import 'features/errors/app_error.dart';
+import 'features/errors/error_page.dart';
 import 'features/messaging/messages_page.dart';
 import 'theme/soutrali_theme.dart';
 
@@ -35,6 +37,12 @@ class SoutraliApp extends StatelessWidget {
         ),
       ),
     ],
+    // Toute adresse inconnue affiche la page 404 dédiée (7 nov. 2026),
+    // avec l’adresse demandée et le retour à l’accueil.
+    errorBuilder: (context, state) => ErrorPage(
+      error: AppError.fromStatus(404)!,
+      location: state.uri.path,
+    ),
   );
 
   @override
