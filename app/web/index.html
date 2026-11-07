@@ -32,8 +32,146 @@
 
   <title>Soutrali — L’entraide à portée de main</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    Premier affichage : sur une connexion lente, `main.dart.js` (3,8 Mo) met
+    plusieurs dizaines de secondes à arriver et le navigateur restait blanc
+    tout ce temps. On récupère donc les gros fichiers au plus tôt, et on
+    affiche immédiatement une page d’attente aux couleurs du produit.
+  -->
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="main.dart.js" as="script">
+
+  <style>
+    /*
+      Écran d’amorçage. Volontairement en CSS pur, sans police ni script
+      externe : il doit s’afficher avec le seul document HTML, avant même
+      que le moteur Flutter ne soit téléchargé.
+    */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #FFF9F2;
+    }
+
+    #soutrali-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 2147483000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* N’intercepte aucun clic : l’application reste utilisable dès qu’elle
+         est prête, même si la disparition de cet écran prend un instant. */
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 20%, #E7F5EC 0%, transparent 55%),
+        radial-gradient(circle at 85% 80%, #FDF0E2 0%, transparent 55%),
+        #FFF9F2;
+      transition: opacity 320ms ease-out;
+    }
+
+    #soutrali-splash.soutrali-splash-hidden {
+      opacity: 0;
+    }
+
+    .soutrali-splash-box {
+      text-align: center;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #12331F;
+      padding: 24px;
+    }
+
+    .soutrali-splash-box img {
+      width: 96px;
+      height: 96px;
+      border-radius: 24px;
+      box-shadow: 0 12px 28px rgba(3, 124, 48, 0.18);
+    }
+
+    .soutrali-splash-name {
+      margin: 18px 0 2px;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+
+    .soutrali-splash-tagline {
+      margin: 0 0 22px;
+      font-size: 14px;
+      color: #3E6A50;
+    }
+
+    .soutrali-splash-spinner {
+      width: 26px;
+      height: 26px;
+      margin: 0 auto 14px;
+      border: 3px solid rgba(3, 124, 48, 0.18);
+      border-top-color: #037C30;
+      border-radius: 50%;
+      animation: soutrali-spin 900ms linear infinite;
+    }
+
+    .soutrali-splash-status {
+      margin: 0;
+      font-size: 13px;
+      color: #5B7A66;
+      min-height: 1.2em;
+    }
+
+    @keyframes soutrali-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .soutrali-splash-spinner { animation-duration: 3s; }
+      #soutrali-splash { transition: none; }
+    }
+  </style>
 </head>
 <body>
+  <div id="soutrali-splash" role="status" aria-live="polite">
+    <div class="soutrali-splash-box">
+      <img src="icons/Icon-192.png" width="96" height="96" alt="Soutrali">
+      <p class="soutrali-splash-name">Soutrali</p>
+      <p class="soutrali-splash-tagline">L’entraide à portée de main</p>
+      <div class="soutrali-splash-spinner" aria-hidden="true"></div>
+      <p class="soutrali-splash-status" id="soutrali-splash-status">Chargement de l’application…</p>
+    </div>
+  </div>
+
+  <script>
+    // Mesures de démarrage, lisibles dans la console et par les outils de
+    // diagnostic : window.__soutraliBoot.firstFrame - start = attente réelle.
+    (function () {
+      var boot = { start: performance.now(), firstFrame: null };
+      window.__soutraliBoot = boot;
+
+      var splash = document.getElementById('soutrali-splash');
+      var status = document.getElementById('soutrali-splash-status');
+
+      // Sur une connexion très lente, mieux vaut expliquer l’attente que
+      // laisser tourner un indicateur muet.
+      var slowTimer = setTimeout(function () {
+        if (!boot.firstFrame && status) {
+          status.textContent = 'Connexion lente : l’application arrive…';
+        }
+      }, 15000);
+
+      window.addEventListener('flutter-first-frame', function () {
+        boot.firstFrame = performance.now();
+        clearTimeout(slowTimer);
+        if (!splash) return;
+        splash.classList.add('soutrali-splash-hidden');
+        setTimeout(function () {
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 360);
+      });
+    })();
+  </script>
+
   <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader

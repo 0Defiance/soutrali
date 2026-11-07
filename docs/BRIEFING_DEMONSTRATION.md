@@ -85,12 +85,12 @@ inaccessible depuis certaines connexions, ce n'est pas un problème du site.
 | `main.dart.js` servi | 3 824 403 octets, SHA-256 `1ecd1e34…` **identique** au build local |
 | `index.html`, `flutter_service_worker.js`, `manifest.json` | 200, types corrects |
 | API | `/api/v1/categories` 200, `/api/v1/communes` 200 |
-| Affichage | ouvert dans le navigateur en navigation privée : page complète, logo corrigé |
-
-⚠️ Depuis une connexion lente (~15 Ko/s mesurés), le premier chargement prend plusieurs
-minutes et le navigateur affiche une page blanche pendant le téléchargement de
-`main.dart.js` : ce n'est **pas** une panne. Lancez la page plusieurs minutes avant la
-démonstration, ou vérifiez d'abord `curl` sur le titre.
+| Affichage | ouvert dans le navigateur en navigation privée : page complète, logo corrigé |ℹ️ Depuis une connexion lente, `main.dart.js` (1,1 Mo compressé) met une trentaine de
+secondes à arriver. Le site affiche désormais **immédiatement** un écran de marque (logo,
+signature, indicateur) au lieu d'une page blanche, puis l'application le remplace à la
+première image rendue — mesuré à 0,7 s puis 41,7 s sur une liaison à ~28 Ko/s. Ouvrir
+la page **avant** la démonstration reste la bonne pratique : la première visite est celle
+qui télécharge, les suivantes sortent du service worker.
 
 Les lignes de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` qui citent l'ancien
 titre sont des **relevés de vérification** : mettez-les à jour en même temps que la
