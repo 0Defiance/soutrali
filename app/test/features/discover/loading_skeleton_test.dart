@@ -61,5 +61,10 @@ void main() {
     expect(formatDistanceKm(0.48), '480 m');
     expect(formatDistanceKm(1.24), '1,2 km');
     expect(formatDistanceKm(12), '12,0 km');
+
+    // Même commune : la distance au centre ne veut rien dire de plus.
+    expect(listingDistanceLabel(0), 'à proximité');
+    expect(listingDistanceLabel(0.48), 'à 480 m');
+    expect(listingDistanceLabel(6.32), 'à 6,3 km');
   });
 }

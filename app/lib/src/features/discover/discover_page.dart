@@ -1835,7 +1835,7 @@ class _ListingCardState extends State<_ListingCard> {
               if (listing.distanceKm != null) ...[
                 const SizedBox(width: 6),
                 Text(
-                  'à ${formatDistanceKm(listing.distanceKm!)}',
+                  listingDistanceLabel(listing.distanceKm!),
                   key: const ValueKey('listing-distance'),
                   style: const TextStyle(fontSize: 12.5, color: SoutraliColors.orangeText, fontWeight: FontWeight.w600),
                 ),

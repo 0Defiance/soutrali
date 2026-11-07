@@ -34,7 +34,7 @@ class PublicListingController
         $longitude = isset($filters['longitude']) ? (float) $filters['longitude'] : null;
 
         $query = Listing::query()
-            ->with(['category:id,name', 'commune:id,name,latitude,longitude', 'author:id,display_name'])
+            ->with(['category:id,name,icon', 'commune:id,name,latitude,longitude', 'author:id,display_name'])
             ->published()
             ->when($filters['q'] ?? null, function ($query, $term) {
                 $query->where(function ($search) use ($term) {
@@ -78,7 +78,7 @@ class PublicListingController
     {
         abort_unless($listing->isLive(), 404);
 
-        return new PublicListingResource($listing->load(['category:id,name', 'commune:id,name,latitude,longitude', 'author:id,display_name']));
+        return new PublicListingResource($listing->load(['category:id,name,icon', 'commune:id,name,latitude,longitude', 'author:id,display_name']));
     }
 
     private function distanceFor(Listing $listing, float $latitude, float $longitude): float

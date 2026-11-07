@@ -77,6 +77,12 @@ String formatDistanceKm(double kilometers) {
   return '${kilometers.toStringAsFixed(1).replaceAll('.', ',')} km';
 }
 
+/// Formulation de la distance sur une carte : une annonce de la même commune
+/// est « à proximité » (la distance est mesurée au centre de la commune), les
+/// autres sont situées en mètres ou en kilomètres.
+String listingDistanceLabel(double kilometers) =>
+    kilometers < 0.1 ? 'à proximité' : 'à ${formatDistanceKm(kilometers)}';
+
 class ListingFilters {
   const ListingFilters({
     this.query = '',
