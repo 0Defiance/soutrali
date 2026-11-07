@@ -44,3 +44,6 @@ keystore.properties
 # Livrables de test (archives lourdes : GitHub Releases, jamais le dépôt)
 livrables/*.zip
 livrables/*.apk
+
+# Clé SSH de déploiement (locale, jamais versionnée)
+.deploy/

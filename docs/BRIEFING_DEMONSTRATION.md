@@ -29,7 +29,7 @@ démo affaiblit tout le reste. Classement par rapport bénéfice/risque.
 
 | # | Point | Où exactement | Effort | Priorité | Statut |
 |---|---|---|---|---|---|
-| 1 | « à porter » → « à **portée** » | `app/lib/src/app.dart:43`, `app/lib/src/features/discover/discover_page.dart:1393`, `app/lib/src/features/auth/auth_shell.dart:127`, `app/web/index.html:33`, `app/web/manifest.json:2`, `backend/resources/views/emails/layout.blade.php:16`, `README.md`, `docs/INSTALLATION.md:397`, `docs/SUIVI_DEVELOPPEMENT.md:327` | 20 min + rebuild web | **P0** | **Fait le 6 nov. 2026** (13 occurrences, logo compris ; `docs/archive/` conservé). Bundle web reconstruit dans `app/build/web` : reste le **téléversement** |
+| 1 | « à porter » → « à **portée** » | `app/lib/src/app.dart:43`, `app/lib/src/features/discover/discover_page.dart:1393`, `app/lib/src/features/auth/auth_shell.dart:127`, `app/web/index.html:33`, `app/web/manifest.json:2`, `backend/resources/views/emails/layout.blade.php:16`, `README.md`, `docs/INSTALLATION.md:397`, `docs/SUIVI_DEVELOPPEMENT.md:327` | 20 min + rebuild web | **P0** | **Fait et vérifié en ligne le 7 nov. 2026** (13 occurrences, logo compris ; `docs/archive/` conservé). Bundle téléversé : le site renvoie `<title>Soutrali — L’entraide à portée de main</title>` et le nouveau logo |
 | 2 | Sortir les ~165 Mo de livrables du dépôt | `livrables/*.zip`, `livrables/*.apk` étaient versionnés | 30 min | **P0** | **Fait le 6 nov. 2026** (`git rm --cached` + `.gitignore`, notice pointée vers les Releases). Reste : créer la Release `v0.2.0` (voir §2.2) |
 | 3 | `vendor` sans outils de dev dans le paquet Windows | `desktop/build-package.ps1` | 20 min | P1 | **Fait et appliqué le 6 nov. 2026** : paquet reconstruit, 41 paquets de dev supprimés, backend 61,9 → 22,4 Mo |
 | 4 | Compte admin de démo avec mot de passe `password` | `DemoSeeder.php` **et** `desktop/build-package.ps1` (`db:seed` + `APP_ENV=local`) | 20 min | **P0** | **Fait et vérifié dans le livrable le 6 nov. 2026** : 0 utilisateur, 0 annonce dans la base embarquée |
@@ -53,8 +53,10 @@ cd app && flutter build web --release --dart-define=API_BASE_URL=https://soutral
 Sans l'étape 2–3, l'examinateur ouvrira le site et lira encore « à porter » : c'est le
 pire scénario possible. **Le texte affiché en ligne doit être le texte corrigé.**
 
-Le bundle est **déjà reconstruit** (`app/build/web`). Il ne reste que le téléversement, dans
-`backend/public/` (le site est un lien `www/soutrali → backend/public`) :
+**Exécuté le 7 nov. 2026** (`app/build/web` → `backend/public/`, le site étant un lien
+`www/soutrali → backend/public`). Sauvegarde préalable : `~/deploy-backup-20261107-0217.tgz`
+(16 Mo) sur l'hébergement, pour revenir en arrière avec `tar xzf` sans rien reconstruire.
+La commande utilisée, pour mémoire :
 
 ```bash
 cd app/build/web && scp -r index.html flutter.js flutter_bootstrap.js flutter_service_worker.js \
@@ -69,6 +71,26 @@ navigateur (le serveur statique n'envoie pas de `Cache-Control`) :
 ```bash
 curl -s https://soutrali.alwaysdata.net/ | grep -o "<title>[^<]*</title>"
 ```
+
+Sous Windows, ajoutez `--ssl-no-revoke` si `curl` échoue avec
+`CRYPT_E_REVOCATION_OFFLINE` : la vérification de révocation passe par un serveur
+inaccessible depuis certaines connexions, ce n'est pas un problème du site.
+
+**Contrôles réellement effectués** (7 nov. 2026) :
+
+| Contrôle | Résultat |
+|---|---|
+| `<title>` en ligne | `Soutrali — L’entraide à portée de main` |
+| Logo servi | 188 358 octets, SHA-256 `48d6933f…` **identique** au fichier local |
+| `main.dart.js` servi | 3 824 403 octets, SHA-256 `1ecd1e34…` **identique** au build local |
+| `index.html`, `flutter_service_worker.js`, `manifest.json` | 200, types corrects |
+| API | `/api/v1/categories` 200, `/api/v1/communes` 200 |
+| Affichage | ouvert dans le navigateur en navigation privée : page complète, logo corrigé |
+
+⚠️ Depuis une connexion lente (~15 Ko/s mesurés), le premier chargement prend plusieurs
+minutes et le navigateur affiche une page blanche pendant le téléchargement de
+`main.dart.js` : ce n'est **pas** une panne. Lancez la page plusieurs minutes avant la
+démonstration, ou vérifiez d'abord `curl` sur le titre.
 
 Les lignes de `docs/SUIVI_DEVELOPPEMENT.md` et `docs/INSTALLATION.md` qui citent l'ancien
 titre sont des **relevés de vérification** : mettez-les à jour en même temps que la
