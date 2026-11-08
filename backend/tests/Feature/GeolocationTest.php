@@ -156,7 +156,7 @@ it('can be replayed without duplicating the showcase', function () {
         ->and(User::where('email', ShowcaseSeeder::AUTHOR_EMAIL)->count())->toBe(1);
 });
 
-it('only completes services that have no visible listing', function () {
+it('complète un service déjà pourvu sans toucher aux annonces réelles', function () {
     $author = User::factory()->create();
     $category = Category::where('name', 'Plomberie et sanitaire')->firstOrFail();
 
@@ -171,9 +171,14 @@ it('only completes services that have no visible listing', function () {
         'status' => 'PUBLIEE',
     ]);
 
+    $target = ShowcaseSeeder::targetFor('Plomberie et sanitaire');
+
     $this->seed(ShowcaseSeeder::class);
 
-    expect(Listing::where('category_id', $category->id)->count())->toBe(1)
-        ->and(Listing::where('category_id', $category->id)->first()->title)
-        ->toBe('Annonce réelle du service plomberie');
+    // Le total du service atteint la cible de la vitrine (1 à 5 annonces),
+    // et l'annonce réelle reste intacte.
+    expect(Listing::where('category_id', $category->id)->count())->toBe($target)
+        ->and(Listing::where('category_id', $category->id)
+            ->where('title', 'Annonce réelle du service plomberie')
+            ->exists())->toBeTrue();
 });

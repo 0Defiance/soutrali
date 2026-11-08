@@ -1498,25 +1498,47 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final item in items)
-                        _ServiceChip(
-                          key: ValueKey('service-${item.id}'),
-                          icon: categoryIcon(item.icon),
-                          label: item.name,
-                          count: item.listingsCount,
-                          selected: _categoryId == item.id.toString(),
-                          onTap: () {
-                            setState(() {
-                              _categoryId =
-                                  _categoryId == item.id.toString() ? '' : item.id.toString();
-                            });
-                          },
-                        ),
-                    ],
+                  // Grille régulière : toutes les tuiles ont la même
+                  // largeur et la même hauteur, quel que soit le nom du
+                  // service (8 nov. 2026). Avant, des pastilles de largeur
+                  // libre laissaient des trous et des lignes irrégulières.
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const spacing = 8.0;
+                      final columns = constraints.maxWidth >= 880
+                          ? 4
+                          : constraints.maxWidth >= 600
+                              ? 3
+                              : 2;
+                      final tileWidth =
+                          (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: [
+                          for (final item in items)
+                            SizedBox(
+                              width: tileWidth,
+                              height: 72,
+                              child: _ServiceTile(
+                                key: ValueKey('service-${item.id}'),
+                                icon: categoryIcon(item.icon),
+                                label: item.name,
+                                count: item.listingsCount,
+                                selected: _categoryId == item.id.toString(),
+                                onTap: () {
+                                  setState(() {
+                                    _categoryId = _categoryId == item.id.toString()
+                                        ? ''
+                                        : item.id.toString();
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -1933,10 +1955,11 @@ class _FilterDropdown extends StatelessWidget {
   }
 }
 
-/// Pastille de service : icône de charte + nom, sélection colorée,
-/// survol relevé. Sert au bloc « Tous les services ».
-class _ServiceChip extends StatefulWidget {
-  const _ServiceChip({
+/// Tuile de service : icône de charte, nom sur deux lignes et nombre
+/// d'annonces. Largeur et hauteur sont imposées par la grille appelante, pour
+/// que tous les services s'alignent exactement les uns sous les autres.
+class _ServiceTile extends StatefulWidget {
+  const _ServiceTile({
     super.key,
     required this.icon,
     required this.label,
@@ -1950,20 +1973,21 @@ class _ServiceChip extends StatefulWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// Nombre d’annonces disponibles pour ce service (badge discret).
+  /// Nombre d'annonces disponibles pour ce service.
   final int? count;
 
   @override
-  State<_ServiceChip> createState() => _ServiceChipState();
+  State<_ServiceTile> createState() => _ServiceTileState();
 }
 
-class _ServiceChipState extends State<_ServiceChip> {
+class _ServiceTileState extends State<_ServiceTile> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
     final selected = widget.selected;
     final foreground = selected ? Colors.white : SoutraliColors.ink;
+    final count = widget.count;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -1976,7 +2000,7 @@ class _ServiceChipState extends State<_ServiceChip> {
         decoration: BoxDecoration(
           gradient: selected ? SoutraliGradients.forest : null,
           color: selected ? null : (_hovered ? SoutraliColors.mint : Colors.white),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: selected
                 ? SoutraliColors.green
@@ -1994,62 +2018,67 @@ class _ServiceChipState extends State<_ServiceChip> {
           color: Colors.transparent,
           child: InkWell(
             onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(8, 6, 11, 6),
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   AnimatedScale(
-                    scale: _hovered ? 1.08 : 1,
+                    scale: _hovered ? 1.06 : 1,
                     duration: const Duration(milliseconds: 190),
                     curve: Curves.easeOutCubic,
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: selected
                             ? Colors.white.withValues(alpha: 0.18)
                             : SoutraliColors.paleGreen,
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         widget.icon,
-                        size: 16,
+                        size: 17,
                         color: selected ? Colors.white : SoutraliColors.green,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.label,
-                    style: TextStyle(
-                      color: foreground,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w600,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.label,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: foreground,
+                            fontSize: 13,
+                            height: 1.2,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          count == null
+                              ? 'Aucune annonce'
+                              : '$count annonce${count == 1 ? '' : 's'}',
+                          key: ValueKey('service-count-${widget.label}'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: selected
+                                ? Colors.white.withValues(alpha: 0.85)
+                                : SoutraliColors.muted,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (widget.count != null) ...[
-                    const SizedBox(width: 7),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? Colors.white.withValues(alpha: 0.2)
-                            : SoutraliColors.paleGreen,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '${widget.count}',
-                        key: ValueKey('service-count-${widget.label}'),
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: selected ? Colors.white : SoutraliColors.deepGreen,
-                        ),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

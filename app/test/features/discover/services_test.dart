@@ -33,7 +33,12 @@ void main() {
                 ReferenceItem(id: 1, name: 'Abobo'),
               ]),
           categoriesProvider.overrideWith((ref) async => const [
-                ReferenceItem(id: 3, name: 'Éducation et cours', icon: 'education'),
+                ReferenceItem(
+                  id: 3,
+                  name: 'Éducation et cours',
+                  icon: 'education',
+                  listingsCount: 4,
+                ),
                 ReferenceItem(id: 9, name: 'Plomberie et sanitaire', icon: 'plumbing'),
               ]),
         ],
@@ -47,6 +52,17 @@ void main() {
     expect(find.text('Éducation et cours'), findsOneWidget);
     expect(find.byIcon(Icons.school), findsWidgets);
     expect(find.byIcon(Icons.plumbing), findsWidgets);
+
+    // Chaque service annonce son nombre d’annonces…
+    expect(find.text('4 annonces'), findsOneWidget);
+    expect(find.text('Aucune annonce'), findsOneWidget);
+
+    // …et toutes les tuiles ont exactement la même taille : la grille est
+    // régulière, quel que soit le nom du service (8 nov. 2026).
+    final first = tester.getSize(find.byKey(const ValueKey('service-3')));
+    final second = tester.getSize(find.byKey(const ValueKey('service-9')));
+    expect(first, second);
+    expect(first.height, 72);
 
     // Un service choisi devient le filtre de catégorie des résultats ; le
     // visiteur fait défiler jusqu’au bloc des services avant de cliquer.

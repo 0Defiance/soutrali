@@ -10,15 +10,19 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Vitrine des services (7 nov. 2026) : garantit **au moins une annonce
- * publiée par service actif**, pour qu'aucune pastille de « Tous les
- * services » ne mène à une liste vide.
+ * Vitrine des services (7 nov. 2026, complétée le 8) : chaque service actif
+ * reçoit **de une à cinq annonces publiées**, pour qu'aucune pastille de
+ * « Tous les services » ne mène à une liste vide ou à une annonce unique.
  *
- * Le seeder est rejouable : il ne complète que les services qui n'ont
- * encore aucune annonce visible et ne touche jamais aux annonces réelles.
- * Les contenus sont fictifs mais réalistes (communes, quartiers et
- * budgets d'Abidjan) ; ils sont publiés au nom du compte « Équipe
- * Soutrali », créé au besoin.
+ * Le nombre cible est tiré au sort **une fois pour toutes** à partir du nom
+ * du service (`targetFor`) : 1 à 5 annonces, stables d'un rejeu à l'autre,
+ * donc le seeder reste idempotent et ne crée jamais de doublon. Les annonces
+ * supplémentaires varient par le quartier, le budget et un préfixe de titre,
+ * et restent dans la commune et le texte de l'entrée de catalogue pour ne pas
+ * se contredire.
+ *     * Il ne touche jamais aux annonces réelles : il ne fait qu'ajouter des
+     * annonces du compte « Équipe Soutrali », créé au besoin, et seulement
+     * tant que le service n'atteint pas sa cible.
  */
 class ShowcaseSeeder extends Seeder
 {
@@ -320,6 +324,51 @@ class ShowcaseSeeder extends Seeder
         ],
     ];
 
+    /**
+     * Préfixes des annonces supplémentaires d'un même service. La première
+     * annonce garde le titre du catalogue (préfixe vide).
+     *
+     * @var list<string>
+     */
+    private const EXTRA_PREFIXES = [
+        '',
+        'À domicile : ',
+        'Express : ',
+        'Sur rendez-vous : ',
+        'Petit budget : ',
+    ];
+
+    /**
+     * Quartiers réels par commune, pour que les annonces supplémentaires d'un
+     * même service ne se ressemblent pas toutes.
+     *
+     * @var array<string, list<string>>
+     */
+    private const NEIGHBORHOODS = [
+        'Abobo' => ['Abobo Centre', 'Abobo Baoulé', 'PK18'],
+        'Adjamé' => ['Adjamé Centre', 'Liberté', 'Bracodi'],
+        'Anyama' => ['Anyama Centre', 'Abobo-Doumé'],
+        'Attécoubé' => ['Locodjro', 'Santé'],
+        'Bingerville' => ['Bingerville Centre', 'Adjamé-Bingerville'],
+        'Cocody' => ['Angré', 'Riviera 3', 'Deux-Plateaux', 'Blockhaus'],
+        'Koumassi' => ['Remblais', 'Zone industrielle', 'Grand Marché'],
+        'Marcory' => ['Anoumabo', 'Zone 4', 'Marcory Centre'],
+        'Plateau' => ['Plateau Centre', 'Cité Administrative'],
+        'Port-Bouët' => ['Port-Bouët Centre', 'Vridi'],
+        'Songon' => ['Adiapodoumé', 'Songon-Agbanou'],
+        'Treichville' => ['Arras', 'Marché de Treichville'],
+        'Yopougon' => ['Niangon', 'Sicogi', 'Toits Rouges', 'Wassa'],
+    ];
+
+    /**
+     * Nombre d'annonces vitrine d'un service : **entre 1 et 5**, tiré du nom
+     * du service pour rester stable d'un rejeu à l'autre.
+     */
+    public static function targetFor(string $categoryName): int
+    {
+        return (crc32($categoryName) % 5) + 1;
+    }
+
     public function run(): void
     {
         $author = User::firstOrCreate(
@@ -329,7 +378,7 @@ class ShowcaseSeeder extends Seeder
                 'password' => Str::random(40),
                 'role' => 'UTILISATEUR',
                 'status' => 'ACTIF',
-                'presentation' => 'Compte de la vitrine Soutrali : annonces de démonstration, une par service.',
+                'presentation' => 'Compte de la vitrine Soutrali : annonces de démonstration, de une à cinq par service.',
             ],
         );
 
@@ -343,35 +392,72 @@ class ShowcaseSeeder extends Seeder
                 continue;
             }
 
-            // Le service a déjà une annonce visible : on ne touche à rien.
-            $alreadyServed = Listing::query()
+            // On compte toutes les annonces publiées du service, réelles
+            // comprises, pour que le total reste entre 1 et 5 : si un
+            // visiteur a déjà publié, la vitrine complète sans dépasser.
+            $existing = Listing::query()
                 ->where('category_id', $category->id)
                 ->published()
-                ->exists();
+                ->count();
 
-            if ($alreadyServed) {
-                continue;
+            $target = self::targetFor($categoryName);
+
+            for ($index = $existing; $index < $target; $index++) {
+                Listing::create($this->attributes($author, $category, $commune, $entry, $index));
+                $created++;
             }
-
-            Listing::create([
-                'user_id' => $author->id,
-                'category_id' => $category->id,
-                'commune_id' => $commune->id,
-                'title' => $entry['title'],
-                'description' => $entry['description'],
-                'type' => 'OFFRE',
-                'nature' => $entry['nature'],
-                'neighborhood' => $entry['quartier'],
-                'availability' => $entry['availability'],
-                'budget' => $entry['budget'],
-                'status' => 'PUBLIEE',
-            ]);
-
-            $created++;
         }
 
         if ($created > 0) {
-            $this->command?->info("Vitrine : {$created} annonce(s) créée(s) pour les services sans annonce.");
+            $this->command?->info("Vitrine : {$created} annonce(s) ajoutée(s) aux services.");
         }
+    }
+
+    /**
+     * Attributs d'une annonce vitrine. L'index 0 est l'annonce du catalogue ;
+     * les suivantes changent de quartier, de budget et de préfixe de titre,
+     * sans quitter la commune citée dans le texte.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return array<string, mixed>
+     */
+    private function attributes(
+        User $author,
+        Category $category,
+        Commune $commune,
+        array $entry,
+        int $index,
+    ): array {
+        $neighborhoods = self::NEIGHBORHOODS[$commune->name] ?? [$entry['quartier']];
+        $prefix = self::EXTRA_PREFIXES[$index % count(self::EXTRA_PREFIXES)];
+
+        return [
+            'user_id' => $author->id,
+            'category_id' => $category->id,
+            'commune_id' => $commune->id,
+            'title' => $prefix.$entry['title'],
+            'description' => $entry['description'],
+            'type' => 'OFFRE',
+            'nature' => $entry['nature'],
+            'neighborhood' => $neighborhoods[$index % count($neighborhoods)],
+            'availability' => $entry['availability'],
+            'budget' => self::budget($entry['budget'], $index),
+            'status' => 'PUBLIEE',
+        ];
+    }
+
+    /**
+     * Budget légèrement dégressif d'une annonce à l'autre (100 %, 95 %, 90 %…),
+     * arrondi à 500 FCFA pour rester crédible.
+     */
+    private static function budget(?int $budget, int $index): ?int
+    {
+        if ($budget === null) {
+            return null;
+        }
+
+        $amount = (int) (round($budget * (1 - 0.05 * $index) / 500) * 500);
+
+        return max(1000, $amount);
     }
 }
