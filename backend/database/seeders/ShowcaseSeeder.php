@@ -21,8 +21,8 @@ use Illuminate\Support\Str;
  * et restent dans la commune et le texte de l'entrée de catalogue pour ne pas
  * se contredire.
  *     * Il ne touche jamais aux annonces réelles : il ne fait qu'ajouter des
-     * annonces du compte « Équipe Soutrali », créé au besoin, et seulement
-     * tant que le service n'atteint pas sa cible.
+ * annonces du compte « Équipe Soutrali », créé au besoin, et seulement
+ * tant que le service n'atteint pas sa cible.
  */
 class ShowcaseSeeder extends Seeder
 {
