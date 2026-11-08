@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../format/money.dart';
 import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
@@ -241,7 +243,11 @@ class _MyListingCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                listing.nature == 'BENEVOLE' ? '· Bénévole' : '· Rémunérée',
+                listing.nature == 'BENEVOLE'
+                    ? '· Bénévole'
+                    : listing.budget == null
+                        ? '· Rémunérée'
+                        : '· ${fcfaShort(listing.budget)}',
                 style: const TextStyle(color: SoutraliColors.muted),
               ),
               const Spacer(),
@@ -347,6 +353,7 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
   late final TextEditingController _title;
   late final TextEditingController _description;
   late final TextEditingController _availability;
+  late final TextEditingController _budget;
   late String _type;
   late String _nature;
   late int _categoryId;
@@ -362,6 +369,9 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
     _title = TextEditingController(text: widget.listing.title);
     _description = TextEditingController(text: widget.listing.description);
     _availability = TextEditingController(text: widget.listing.availability ?? '');
+    _budget = TextEditingController(
+      text: widget.listing.budget == null ? '' : widget.listing.budget!.round().toString(),
+    );
     _type = widget.listing.type;
     _nature = widget.listing.nature;
     _categoryId = widget.listing.categoryId;
@@ -374,6 +384,7 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
     _title.dispose();
     _description.dispose();
     _availability.dispose();
+    _budget.dispose();
     super.dispose();
   }
 
@@ -415,6 +426,19 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
       return;
     }
 
+    final budget = _nature == 'REMUNEREE' ? int.tryParse(_budget.text.trim()) : null;
+
+    if (_nature == 'REMUNEREE') {
+      if (budget == null) {
+        setState(() => _error = 'Indiquez la rémunération en FCFA.');
+        return;
+      }
+      if (budget < 500 || budget > 5000000) {
+        setState(() => _error = 'La rémunération doit être comprise entre 500 et 5 000 000 FCFA.');
+        return;
+      }
+    }
+
     setState(() {
       _saving = true;
       _error = null;
@@ -430,6 +454,7 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
         categoryId: _categoryId,
         communeId: _communeId,
         availability: _availability.text,
+        budget: budget?.toDouble(),
         publishAt: _scheduleChanged ? _publishAt : null,
       ),
     );
@@ -483,6 +508,21 @@ class _EditListingDialogState extends ConsumerState<_EditListingDialog> {
                 ],
                 onChanged: (value) => setState(() => _nature = value ?? _nature),
               ),
+              if (_nature == 'REMUNEREE') ...[
+                const SizedBox(height: 10),
+                TextFormField(
+                  key: const ValueKey('edit-listing-budget'),
+                  controller: _budget,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 8,
+                  decoration: const InputDecoration(
+                    labelText: 'Rémunération en FCFA *',
+                    hintText: 'Ex. 5 000',
+                    suffixText: 'FCFA',
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               DropdownButtonFormField<int>(
                 initialValue: _categoryId,

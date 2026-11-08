@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../format/money.dart';
 import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
@@ -208,8 +209,8 @@ class ListingDetailPage extends ConsumerWidget {
                           if (listing.budget != null) ...[
                             const SizedBox(height: 10),
                             _DetailLine(
-                              label: 'Budget indicatif',
-                              value: '${listing.budget!.round()} F',
+                              label: listing.nature == 'BENEVOLE' ? 'Budget' : 'Rémunération',
+                              value: fcfa(listing.budget),
                             ),
                           ],
                         ],

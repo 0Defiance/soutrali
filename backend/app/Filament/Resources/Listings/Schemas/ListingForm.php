@@ -6,6 +6,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 
 class ListingForm
@@ -56,8 +57,13 @@ class ListingForm
                     ->label('Disponibilité')
                     ->maxLength(160),
                 TextInput::make('budget')
-                    ->label('Budget (FCFA)')
-                    ->numeric(),
+                    ->label('Rémunération (FCFA)')
+                    ->numeric()
+                    ->integer()
+                    ->minValue(500)
+                    ->maxValue(5000000)
+                    ->required(fn (Get $get): bool => $get('nature') === 'REMUNEREE')
+                    ->helperText('Obligatoire pour une annonce rémunérée : montant entier, de 500 à 5 000 000 FCFA.'),
                 Select::make('status')
                     ->label('Statut')
                     ->options([

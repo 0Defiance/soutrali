@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../format/money.dart';
 import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
 import '../account/account_repository.dart';
@@ -772,7 +774,10 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ChoiceChip(
                           label: const Text('Bénévole'),
                           selected: nature == 'BENEVOLE',
-                          onSelected: (_) => setDialogState(() => nature = 'BENEVOLE'),
+                          onSelected: (_) => setDialogState(() {
+                            nature = 'BENEVOLE';
+                            budgetController.clear();
+                          }),
                         ),
                         ChoiceChip(
                           label: const Text('Rémunérée'),
@@ -781,16 +786,62 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         ),
                       ],
                     ),
+                    // Une prestation rémunérée doit dire combien, en FCFA :
+                    // le montant est obligatoire et les raccourcis couvrent
+                    // les tarifs courants d’Abidjan (1 000 à 25 000 F).
                     if (nature == 'REMUNEREE') ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
                       TextFormField(
+                        key: const ValueKey('listing-budget'),
                         controller: budgetController,
-                        keyboardType: TextInputType.number,
-                        maxLength: 12,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        maxLength: 8,
                         decoration: const InputDecoration(
-                          labelText: 'Budget indicatif en FCFA (facultatif)',
-                          hintText: 'Ex. 5000',
+                          labelText: 'Rémunération en FCFA *',
+                          hintText: 'Ex. 5 000',
+                          suffixText: 'FCFA',
+                          helperText: 'Le montant que vous proposez, pas un plafond.',
                         ),
+                        validator: (value) {
+                          final text = (value ?? '').trim();
+                          if (text.isEmpty) {
+                            return 'Indiquez la rémunération en FCFA.';
+                          }
+
+                          final amount = int.tryParse(text);
+                          if (amount == null) {
+                            return 'Montant en chiffres uniquement.';
+                          }
+                          if (amount < 500) {
+                            return 'Minimum 500 FCFA.';
+                          }
+                          if (amount > 5000000) {
+                            return 'Maximum 5 000 000 FCFA.';
+                          }
+
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Tarifs courants',
+                        style: TextStyle(fontSize: 12.5, color: SoutraliColors.muted),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final amount in const [1000, 2000, 5000, 10000, 25000])
+                            ActionChip(
+                              key: ValueKey('budget-chip-$amount'),
+                              label: Text(fcfaPlain(amount)),
+                              onPressed: () => setDialogState(
+                                () => budgetController.text = '$amount',
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                     if (isScheduled) ...[
@@ -905,7 +956,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                                 categoryId: int.parse(categoryId),
                                 communeId: int.parse(communeId),
                                 availability: isScheduled ? availabilityController.text.trim() : null,
-                                budget: nature == 'REMUNEREE' ? double.tryParse(budgetController.text.trim()) : null,
+                                budget: nature == 'REMUNEREE'
+                                    ? int.tryParse(budgetController.text.trim())?.toDouble()
+                                    : null,
                                 publishAt: isScheduled ? publishAt : null,
                               ),
                             );

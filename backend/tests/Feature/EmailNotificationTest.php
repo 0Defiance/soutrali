@@ -72,6 +72,7 @@ it('sends the publication email only when a listing actually goes live', functio
         'description' => 'Je souhaite faire installer une prise dans mon salon.',
         'type' => 'DEMANDE',
         'nature' => 'REMUNEREE',
+        'budget' => 5000,
         'category_id' => Category::where('name', 'Réparations et dépannage')->value('id'),
         'commune_id' => Commune::where('name', 'Cocody')->value('id'),
     ])->assertCreated();
@@ -84,6 +85,7 @@ it('sends the publication email only when a listing actually goes live', functio
         'description' => 'Je recherche une aide au ménage une fois par semaine.',
         'type' => 'DEMANDE',
         'nature' => 'REMUNEREE',
+        'budget' => 7000,
         'category_id' => Category::where('name', 'Maison et domestique')->value('id'),
         'commune_id' => Commune::where('name', 'Cocody')->value('id'),
         'publish_at' => now()->addDay()->toIso8601String(),

@@ -21,7 +21,7 @@ class MyListingController
      */
     public function store(Request $request): JsonResponse
     {
-        $data = $request->validate($this->rules());
+        $data = $this->normalizeBudget($request->validate($this->rules(), $this->messages()));
 
         $publishAt = ($data['publish_at'] ?? null) !== null
             ? Carbon::parse($data['publish_at'])
@@ -52,7 +52,7 @@ class MyListingController
     {
         abort_unless($listing->user_id === $request->user()->id, 403);
 
-        $data = $request->validate($this->rules());
+        $data = $this->normalizeBudget($request->validate($this->rules(), $this->messages()));
 
         // `publish_at: null` (ou absent) ne désactive pas une programmation
         // existante : la date n’est modifiable qu’avant la mise en ligne.
@@ -170,8 +170,52 @@ class MyListingController
             'commune_id' => ['required', 'integer', Rule::exists('communes', 'id')->where('active', true)],
             'neighborhood' => ['nullable', 'string', 'max:100'],
             'availability' => ['nullable', 'string', 'max:160'],
-            'budget' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+            // Une prestation rémunérée doit dire combien, en FCFA : le
+            // montant est obligatoire dès que la nature est « REMUNEREE ».
+            // Bornes réalistes pour Abidjan : 500 FCFA (un petit service)
+            // à 5 000 000 FCFA, et un montant entier — le franc CFA n’a pas
+            // de centimes.
+            'budget' => [
+                'nullable',
+                'required_if:nature,REMUNEREE',
+                'numeric',
+                'min:500',
+                'max:5000000',
+                'integer',
+            ],
             'publish_at' => ['nullable', 'date', 'after:now'],
         ];
+    }
+
+    /**
+     * Messages des règles de rémunération, en français.
+     *
+     * @return array<string, string>
+     */
+    private function messages(): array
+    {
+        return [
+            'budget.required_if' => 'Indiquez la rémunération en FCFA pour un service rémunéré.',
+            'budget.numeric' => 'Indiquez un montant en FCFA.',
+            'budget.integer' => 'La rémunération doit être un montant entier en FCFA.',
+            'budget.min' => 'La rémunération minimale est de 500 FCFA.',
+            'budget.max' => 'La rémunération ne peut pas dépasser 5 000 000 FCFA.',
+        ];
+    }
+
+    /**
+     * Une annonce bénévole n’a pas de montant : on ignore un budget envoyé
+     * par erreur plutôt que de le stocker.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function normalizeBudget(array $data): array
+    {
+        if (($data['nature'] ?? null) === 'BENEVOLE') {
+            $data['budget'] = null;
+        }
+
+        return $data;
     }
 }

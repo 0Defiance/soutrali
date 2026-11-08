@@ -48,6 +48,20 @@ it('reste idempotent quand on le rejoue', function () {
         ->and(Listing::pluck('title')->all())->toBe($titles);
 });
 
+it('donne un montant réaliste en FCFA à chaque annonce rémunérée', function () {
+    $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
+
+    $paid = Listing::where('nature', 'REMUNEREE')->get();
+
+    expect($paid)->not->toBeEmpty();
+
+    foreach ($paid as $listing) {
+        expect($listing->budget)->not->toBeNull("Montant manquant : {$listing->title}")
+            ->and((int) $listing->budget)->toBeGreaterThanOrEqual(500)
+            ->and((int) $listing->budget)->toBeLessThanOrEqual(5000000);
+    }
+});
+
 it('garde un titre distinct par annonce d’un même service', function () {
     $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
 

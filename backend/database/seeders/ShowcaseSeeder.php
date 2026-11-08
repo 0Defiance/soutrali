@@ -310,7 +310,7 @@ class ShowcaseSeeder extends Seeder
             'commune' => 'Treichville',
             'quartier' => 'Marché de Treichville',
             'nature' => 'REMUNEREE',
-            'budget' => null,
+            'budget' => 6000,
             'availability' => 'Du lundi au samedi',
         ],
         'Agriculture et élevage' => [
@@ -319,7 +319,7 @@ class ShowcaseSeeder extends Seeder
             'commune' => 'Songon',
             'quartier' => 'Adiapodoumé',
             'nature' => 'REMUNEREE',
-            'budget' => null,
+            'budget' => 3000,
             'availability' => 'Le samedi matin',
         ],
     ];
@@ -399,6 +399,18 @@ class ShowcaseSeeder extends Seeder
                 ->where('category_id', $category->id)
                 ->published()
                 ->count();
+
+            // Rattrapage : depuis le 8 novembre 2026, une annonce rémunérée
+            // doit porter un montant en FCFA. Une annonce vitrine créée avant
+            // cette règle reçoit celui du catalogue.
+            if (($entry['budget'] ?? null) !== null) {
+                Listing::query()
+                    ->where('user_id', $author->id)
+                    ->where('category_id', $category->id)
+                    ->where('nature', 'REMUNEREE')
+                    ->whereNull('budget')
+                    ->update(['budget' => $entry['budget']]);
+            }
 
             $target = self::targetFor($categoryName);
 

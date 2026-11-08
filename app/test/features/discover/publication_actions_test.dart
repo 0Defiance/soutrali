@@ -101,6 +101,42 @@ void main() {
     expect(find.text('Annonces près de vous'), findsOneWidget);
   });
 
+  testWidgets('une annonce rémunérée exige un montant en FCFA', (tester) async {
+    await _pumpApp(tester, connected: true);
+
+    await tester.tap(find.text('Annonce'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Service spontané / immédiat'));
+    await tester.pumpAndSettle();
+
+    // Tant que l’annonce est bénévole, aucun montant n’est demandé.
+    expect(find.byKey(const ValueKey('listing-budget')), findsNothing);
+
+    // « Rémunérée » existe aussi dans les filtres de la page : on vise la
+    // case du formulaire.
+    final dialog = find.byType(AlertDialog);
+    await tester.tap(find.descendant(of: dialog, matching: find.text('Rémunérée')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rémunération en FCFA *'), findsOneWidget);
+
+    // Un tarif courant d’Abidjan remplit le champ d’un geste.
+    final shortcut = find.byKey(const ValueKey('budget-chip-5000'));
+    await tester.ensureVisible(shortcut);
+    await tester.tap(shortcut);
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(find.byKey(const ValueKey('listing-budget')));
+    expect(field.controller?.text, '5000');
+
+    // Revenir au bénévolat efface le montant : une annonce gratuite n’a pas
+    // de prix et l’API le refuserait.
+    await tester.tap(find.descendant(of: dialog, matching: find.text('Bénévole')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('listing-budget')), findsNothing);
+  });
+
   testWidgets('guest is invited to sign in before publishing', (tester) async {
     await _pumpApp(tester);
 

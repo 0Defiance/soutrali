@@ -78,6 +78,53 @@ it('rejects an invalid listing with comprehensible errors (CA-04)', function () 
     expect(Listing::count())->toBe(0);
 });
 
+it('exige un montant en FCFA pour une annonce rémunérée', function () {
+    $refs = seededReferences();
+    $user = User::factory()->create();
+
+    // Sans montant : refus explicite, en français.
+    $this->actingAs($user)->postJson('/api/v1/listings', listingPayload([
+        ...$refs,
+        'nature' => 'REMUNEREE',
+    ]))->assertStatus(422)
+        ->assertJsonValidationErrors(['budget'])
+        ->assertJsonPath('errors.budget.0', 'Indiquez la rémunération en FCFA pour un service rémunéré.');
+
+    // Sous le plancher réaliste d’Abidjan (500 FCFA) : refusé.
+    $this->actingAs($user)->postJson('/api/v1/listings', listingPayload([
+        ...$refs,
+        'nature' => 'REMUNEREE',
+        'budget' => 200,
+    ]))->assertStatus(422)->assertJsonValidationErrors(['budget']);
+
+    expect(Listing::count())->toBe(0);
+
+    // Montant accepté : 5 000 FCFA, entier.
+    $this->actingAs($user)->postJson('/api/v1/listings', listingPayload([
+        ...$refs,
+        'nature' => 'REMUNEREE',
+        'budget' => 5000,
+    ]))->assertCreated()->assertJsonPath('budget', 5000);
+
+    $listing = Listing::where('user_id', $user->id)->firstOrFail();
+
+    expect((int) $listing->budget)->toBe(5000)
+        ->and($listing->nature)->toBe('REMUNEREE');
+});
+
+it('ignore un montant envoyé pour une annonce bénévole', function () {
+    $refs = seededReferences();
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->postJson('/api/v1/listings', listingPayload([
+        ...$refs,
+        'nature' => 'BENEVOLE',
+        'budget' => 7000,
+    ]))->assertCreated();
+
+    expect(Listing::where('user_id', $user->id)->firstOrFail()->budget)->toBeNull();
+});
+
 it('lets an owner update but never another user (CA-05)', function () {
     $refs = seededReferences();
     $owner = User::factory()->create();
