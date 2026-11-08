@@ -77,7 +77,7 @@ void main() {
 
     // La fiche nomme le quartier, la ville, le pays et les mesures utiles.
     expect(find.byKey(const ValueKey('location-prompt')), findsOneWidget);
-    expect(find.text('Vous êtes ici ?'), findsOneWidget);
+    expect(find.text('Trier les annonces par distance ?'), findsOneWidget);
     final sheet = find.byKey(const ValueKey('location-prompt'));
 
     expect(find.descendant(of: sheet, matching: find.text('Cocody — Angré')), findsOneWidget);

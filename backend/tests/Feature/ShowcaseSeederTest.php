@@ -62,6 +62,64 @@ it('donne un montant réaliste en FCFA à chaque annonce rémunérée', function
     }
 });
 
+it('affiche des montants alignés sur les tarifs d’Abidjan', function () {
+    $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
+
+    $budgets = Listing::pluck('budget', 'title');
+
+    // Un déménagement de studio à Abidjan coûte plusieurs dizaines de
+    // milliers de francs, un tableau électrique complet bien davantage : les
+    // montants de la vitrine doivent tenir debout face à un Ivoirien.
+    expect((int) $budgets['Déménagement d’un studio le samedi'])->toBeGreaterThanOrEqual(40000)
+        ->and((int) $budgets['Installation d’un tableau électrique'])->toBeGreaterThanOrEqual(60000)
+        ->and((int) $budgets['Repas de fête pour vingt personnes'])->toBeGreaterThanOrEqual(90000)
+        ->and((int) $budgets['Garde d’enfants après l’école'])->toBeGreaterThanOrEqual(25000)
+        ->and((int) $budgets['Retouches et ourlets rendus en 48 h'])->toBeLessThanOrEqual(3000);
+});
+
+it('facture l’express plus cher et le petit budget moins cher', function () {
+    $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
+
+    $listings = Listing::all();
+    $express = $listings
+        ->whereNotNull('budget')
+        ->filter(fn (Listing $listing) => str_starts_with($listing->title, 'Express : '));
+    $cheap = $listings
+        ->whereNotNull('budget')
+        ->filter(fn (Listing $listing) => str_starts_with($listing->title, 'Petit budget : '));
+
+    expect($express)->not->toBeEmpty()
+        ->and($cheap)->not->toBeEmpty();
+
+    foreach ($express as $listing) {
+        $base = $listings->firstWhere('title', substr($listing->title, strlen('Express : ')));
+
+        expect($base)->not->toBeNull()
+            ->and((int) $listing->budget)->toBeGreaterThan((int) $base->budget);
+    }
+
+    foreach ($cheap as $listing) {
+        $base = $listings->firstWhere('title', substr($listing->title, strlen('Petit budget : ')));
+
+        expect($base)->not->toBeNull()
+            ->and((int) $listing->budget)->toBeLessThan((int) $base->budget);
+    }
+});
+
+it('remet les montants de la vitrine au tarif courant', function () {
+    $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
+
+    $listing = Listing::where('title', 'Garde d’enfants après l’école')->firstOrFail();
+    $listing->update(['budget' => 1000, 'description' => 'Ancien texte.']);
+
+    $this->seed(ShowcaseSeeder::class);
+
+    $listing->refresh();
+
+    expect((int) $listing->budget)->toBe(35000)
+        ->and($listing->description)->toContain('35 000 FCFA');
+});
+
 it('garde un titre distinct par annonce d’un même service', function () {
     $this->seed([CommuneSeeder::class, CategorySeeder::class, ShowcaseSeeder::class]);
 

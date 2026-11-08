@@ -36,56 +36,56 @@ class ShowcaseSeeder extends Seeder
     public const CATALOGUE = [
         'Réparations et dépannage' => [
             'title' => 'Réparation de ventilateurs et de petits électroménagers',
-            'description' => 'Je répare ventilateurs, mixeurs et fers à repasser à domicile, diagnostic offert et devis avant intervention. Je me déplace dans tout Yopougon.',
+            'description' => 'Je répare ventilateurs, mixeurs et fers à repasser à domicile, diagnostic offert et devis avant intervention. Intervention à partir de 6 000 FCFA, pièces en supplément. Je me déplace dans tout Yopougon.',
             'commune' => 'Yopougon',
             'quartier' => 'Niangon',
             'nature' => 'REMUNEREE',
-            'budget' => 5000,
+            'budget' => 6000,
             'availability' => 'Du lundi au samedi, après 15 h',
         ],
         'Maison et domestique' => [
             'title' => 'Ménage et repassage à domicile',
-            'description' => 'Entretien complet d’un appartement (deux à quatre pièces) : sols, sanitaires, cuisine et repassage du linge de la semaine.',
+            'description' => 'Entretien complet d’un appartement de deux à quatre pièces : sols, sanitaires, cuisine et repassage du linge de la semaine. 15 000 FCFA la journée, produits fournis.',
             'commune' => 'Marcory',
             'quartier' => 'Anoumabo',
             'nature' => 'REMUNEREE',
-            'budget' => 7000,
+            'budget' => 15000,
             'availability' => 'Le samedi matin',
         ],
         'Couture, beauté et coiffure' => [
             'title' => 'Retouches et ourlets rendus en 48 h',
-            'description' => 'Ourlets de pantalons, fermetures éclair, retouches de robes et uniformes, avec essayage au marché de Treichville.',
+            'description' => 'Ourlets de pantalons, fermetures éclair, retouches de robes et uniformes, avec essayage au marché de Treichville. Ourlet 1 000 FCFA, fermeture 1 500, retouche de robe à partir de 2 000.',
             'commune' => 'Treichville',
             'quartier' => 'Marché de Treichville',
             'nature' => 'REMUNEREE',
-            'budget' => 3000,
+            'budget' => 2000,
             'availability' => 'Du lundi au vendredi',
         ],
         'Éducation et cours' => [
             'title' => 'Soutien scolaire en maths pour la 3e',
-            'description' => 'Reprise des bases, exercices corrigés et préparation au BEPC, deux séances par semaine à domicile ou en petit groupe.',
+            'description' => 'Reprise des bases, exercices corrigés et préparation au BEPC, deux séances par semaine à domicile ou en petit groupe. Forfait mensuel de 20 000 FCFA.',
             'commune' => 'Cocody',
             'quartier' => 'Angré',
             'nature' => 'REMUNEREE',
-            'budget' => 10000,
+            'budget' => 20000,
             'availability' => 'Mercredi et samedi',
         ],
         'Informatique et numérique' => [
             'title' => 'Dépannage d’ordinateur et installation à domicile',
-            'description' => 'Nettoyage, réinstallation de Windows, sauvegarde des fichiers et installation d’une imprimante ou d’un routeur.',
+            'description' => 'Nettoyage, réinstallation de Windows, sauvegarde des fichiers et installation d’une imprimante ou d’un routeur. 10 000 FCFA la remise en état, déplacement compris.',
             'commune' => 'Plateau',
             'quartier' => 'Plateau Centre',
             'nature' => 'REMUNEREE',
-            'budget' => 8000,
+            'budget' => 10000,
             'availability' => 'Sur rendez-vous, en journée',
         ],
         'Transport léger et déménagement' => [
             'title' => 'Déménagement d’un studio le samedi',
-            'description' => 'Camionnette, deux porteurs et couvertures de protection pour déménager un studio d’Adjamé vers une autre commune.',
+            'description' => 'Camionnette, deux porteurs et couvertures de protection pour déménager un studio d’Adjamé vers une autre commune. 50 000 FCFA dans Abidjan, carburant compris.',
             'commune' => 'Adjamé',
             'quartier' => 'Liberté',
             'nature' => 'REMUNEREE',
-            'budget' => 20000,
+            'budget' => 50000,
             'availability' => 'Samedi toute la journée',
         ],
         'Petites missions et coups de main' => [
@@ -108,65 +108,65 @@ class ShowcaseSeeder extends Seeder
         ],
         'Plomberie et sanitaire' => [
             'title' => 'Fuite sous l’évier : intervention rapide',
-            'description' => 'Recherche de fuite, remplacement de siphon et de joint, remise en service de l’eau dans la journée.',
+            'description' => 'Recherche de fuite, remplacement de siphon et de joint, remise en service de l’eau dans la journée. 8 000 FCFA, siphon et joints fournis.',
             'commune' => 'Yopougon',
             'quartier' => 'Sicogi',
             'nature' => 'REMUNEREE',
-            'budget' => 6000,
+            'budget' => 8000,
             'availability' => 'Tous les jours, 8 h – 19 h',
         ],
         'Électricité et éclairage' => [
             'title' => 'Installation d’un tableau électrique',
-            'description' => 'Mise aux normes d’un tableau, pose de disjoncteurs et étiquetage des circuits, avec essai complet.',
+            'description' => 'Mise aux normes d’un tableau, pose de disjoncteurs et étiquetage des circuits, avec essai complet. 75 000 FCFA pour un tableau complet, disjoncteurs compris.',
             'commune' => 'Abobo',
             'quartier' => 'Abobo Baoulé',
             'nature' => 'REMUNEREE',
-            'budget' => 25000,
+            'budget' => 75000,
             'availability' => 'Sur rendez-vous',
         ],
         'Menuiserie et mobilier' => [
             'title' => 'Fabrication d’une étagère sur mesure',
-            'description' => 'Étagère en bois massif prise de mesures à domicile, finition vernie, livrée et posée en une semaine.',
+            'description' => 'Étagère en bois massif prise de mesures à domicile, finition vernie, livrée et posée en une semaine. 50 000 FCFA, mesures et pose comprises.',
             'commune' => 'Yopougon',
             'quartier' => 'Toits Rouges',
             'nature' => 'REMUNEREE',
-            'budget' => 20000,
+            'budget' => 50000,
             'availability' => 'Livraison sous 7 jours',
         ],
         'Peinture et décoration' => [
             'title' => 'Peinture d’un salon en deux jours',
-            'description' => 'Protection du mobilier, rebouchage, deux couches et nettoyage final. Devis au mètre carré, peinture au choix.',
+            'description' => 'Protection du mobilier, rebouchage, deux couches et nettoyage final. 80 000 FCFA pour un salon de 25 m², peinture et protection comprises.',
             'commune' => 'Marcory',
             'quartier' => 'Zone 4',
             'nature' => 'REMUNEREE',
-            'budget' => 35000,
+            'budget' => 80000,
             'availability' => 'Week-end ou jours libres',
         ],
         'Maçonnerie et carrelage' => [
             'title' => 'Réparation d’un mur et pose de carrelage',
-            'description' => 'Reprise d’un mur fissuré, enduit et pose de carrelage dans une cuisine ou une salle de bain.',
+            'description' => 'Reprise d’un mur fissuré, enduit et pose de carrelage dans une cuisine ou une salle de bain. 150 000 FCFA la main-d’œuvre, fournitures en supplément.',
             'commune' => 'Koumassi',
             'quartier' => 'Zone industrielle',
             'nature' => 'REMUNEREE',
-            'budget' => 40000,
+            'budget' => 150000,
             'availability' => 'Chantier de trois à cinq jours',
         ],
         'Jardinage et espaces verts' => [
             'title' => 'Entretien de jardin et taille de haies',
-            'description' => 'Tonte, désherbage, taille des haies et évacuation des déchets verts, une fois par mois ou à la demande.',
+            'description' => 'Tonte, désherbage, taille des haies et évacuation des déchets verts, une fois par mois ou à la demande. 20 000 FCFA le passage mensuel.',
             'commune' => 'Cocody',
             'quartier' => 'Riviera 3',
             'nature' => 'REMUNEREE',
-            'budget' => 15000,
+            'budget' => 20000,
             'availability' => 'Samedi matin',
         ],
         'Garde d’enfants' => [
             'title' => 'Garde d’enfants après l’école',
-            'description' => 'Récupération à la sortie de l’école, goûter, aide aux devoirs et garde jusqu’au retour des parents, du lundi au vendredi.',
+            'description' => 'Récupération à la sortie de l’école, goûter, aide aux devoirs et garde jusqu’au retour des parents, du lundi au vendredi. 35 000 FCFA par mois.',
             'commune' => 'Cocody',
             'quartier' => 'Deux-Plateaux',
             'nature' => 'REMUNEREE',
-            'budget' => 4000,
+            'budget' => 35000,
             'availability' => 'En semaine, 16 h – 19 h',
         ],
         'Aide aux personnes âgées' => [
@@ -180,61 +180,61 @@ class ShowcaseSeeder extends Seeder
         ],
         'Cuisine et traiteur' => [
             'title' => 'Repas de fête pour vingt personnes',
-            'description' => 'Menu ivoirien complet (attieké, poisson braisé, alloco et dessert), cuisiné et livré chaud pour un anniversaire.',
+            'description' => 'Menu ivoirien complet (attieké, poisson braisé, alloco et dessert), cuisiné et livré chaud pour un anniversaire. 120 000 FCFA pour vingt personnes, service compris.',
             'commune' => 'Yopougon',
             'quartier' => 'Wassa',
             'nature' => 'REMUNEREE',
-            'budget' => 45000,
+            'budget' => 120000,
             'availability' => 'Sur commande, 48 h à l’avance',
         ],
         'Santé et bien-être' => [
             'title' => 'Massage de détente à domicile',
-            'description' => 'Séance d’une heure à domicile, huiles naturelles fournies, sur rendez-vous en fin de journée ou le week-end.',
+            'description' => 'Séance d’une heure à domicile, huiles naturelles fournies, sur rendez-vous en fin de journée ou le week-end. 15 000 FCFA la séance.',
             'commune' => 'Cocody',
             'quartier' => 'Blockhaus',
             'nature' => 'REMUNEREE',
-            'budget' => 12000,
+            'budget' => 15000,
             'availability' => 'Sur rendez-vous',
         ],
         'Sport et coaching' => [
             'title' => 'Coach sportif pour débutants au parc',
-            'description' => 'Remise en forme progressive en petit groupe au parc de la Riviera : échauffement, renforcement et étirements.',
+            'description' => 'Remise en forme progressive en petit groupe au parc de la Riviera : échauffement, renforcement et étirements. 10 000 FCFA par mois, deux séances par semaine.',
             'commune' => 'Cocody',
             'quartier' => 'Riviera 1',
             'nature' => 'REMUNEREE',
-            'budget' => 8000,
+            'budget' => 10000,
             'availability' => 'Mardi et jeudi, 6 h 30',
         ],
         'Photographie et vidéo' => [
             'title' => 'Reportage photo d’anniversaire',
-            'description' => 'Deux heures de reportage, retouche des photos et livraison d’une galerie en ligne sous trois jours.',
+            'description' => 'Deux heures de reportage, retouche des photos et livraison d’une galerie en ligne sous trois jours. 60 000 FCFA, retouche et galerie comprises.',
             'commune' => 'Marcory',
             'quartier' => 'Marcory Centre',
             'nature' => 'REMUNEREE',
-            'budget' => 30000,
+            'budget' => 60000,
             'availability' => 'Week-end',
         ],
         'Événements et animation' => [
             'title' => 'Sonorisation pour une soirée de quartier',
-            'description' => 'Sonorisation, micros et éclairage pour une soirée de quartier, installation et démontage compris.',
+            'description' => 'Sonorisation, micros et éclairage pour une soirée de quartier, installation et démontage compris. 100 000 FCFA la soirée.',
             'commune' => 'Treichville',
             'quartier' => 'Arras',
             'nature' => 'REMUNEREE',
-            'budget' => 25000,
+            'budget' => 100000,
             'availability' => 'Vendredi et samedi soir',
         ],
         'Mécanique et automobile' => [
             'title' => 'Diagnostic et vidange à domicile',
-            'description' => 'Vidange, contrôle des freins et batterie sur place, avec rapport des points à surveiller avant le prochain contrôle.',
+            'description' => 'Vidange, contrôle des freins et batterie sur place, avec rapport des points à surveiller avant le prochain contrôle. 20 000 FCFA, huile et filtre compris.',
             'commune' => 'Yopougon',
             'quartier' => 'Selmer',
             'nature' => 'REMUNEREE',
-            'budget' => 15000,
+            'budget' => 20000,
             'availability' => 'Tous les jours, 9 h – 18 h',
         ],
         'Livraison et courses' => [
             'title' => 'Livraison de colis dans tout Abidjan',
-            'description' => 'Course ou colis récupéré dans une commune et livré dans une autre le jour même, suivi par message.',
+            'description' => 'Course ou colis récupéré dans une commune et livré dans une autre le jour même, suivi par message. 2 000 FCFA dans Abidjan, 3 000 vers une commune éloignée.',
             'commune' => 'Adjamé',
             'quartier' => 'Adjamé Centre',
             'nature' => 'REMUNEREE',
@@ -243,47 +243,47 @@ class ShowcaseSeeder extends Seeder
         ],
         'Comptabilité et gestion' => [
             'title' => 'Tenue de caisse d’une petite boutique',
-            'description' => 'Mise en place d’un cahier de caisse, suivi des recettes et dépenses, et bilan mensuel simple.',
+            'description' => 'Mise en place d’un cahier de caisse, suivi des recettes et dépenses, et bilan mensuel simple. 30 000 FCFA par mois, passage hebdomadaire.',
             'commune' => 'Plateau',
             'quartier' => 'Cité Administrative',
             'nature' => 'REMUNEREE',
-            'budget' => 20000,
+            'budget' => 30000,
             'availability' => 'Une fois par semaine',
         ],
         'Droit et démarches' => [
             'title' => 'Rédaction d’une lettre de réclamation',
-            'description' => 'Rédaction et relecture d’une lettre de réclamation ou d’un contrat de location, avec les pièces à joindre.',
+            'description' => 'Rédaction et relecture d’une lettre de réclamation ou d’un contrat de location, avec les pièces à joindre. 10 000 FCFA le document.',
             'commune' => 'Plateau',
             'quartier' => 'Plateau Centre',
             'nature' => 'REMUNEREE',
-            'budget' => 5000,
+            'budget' => 10000,
             'availability' => 'Sur rendez-vous',
         ],
         'Langues et traduction' => [
             'title' => 'Cours d’anglais par conversation',
-            'description' => 'Séances d’une heure axées sur la conversation, pour adultes et lycéens, à domicile ou en visioconférence.',
+            'description' => 'Séances d’une heure axées sur la conversation, pour adultes et lycéens, à domicile ou en visioconférence. 7 500 FCFA la séance.',
             'commune' => 'Cocody',
             'quartier' => 'Angré',
             'nature' => 'REMUNEREE',
-            'budget' => 10000,
+            'budget' => 7500,
             'availability' => 'Mercredi et dimanche',
         ],
         'Sécurité et surveillance' => [
             'title' => 'Gardiennage de nuit pour un chantier',
-            'description' => 'Présence de nuit et rondes régulières sur un chantier ou un magasin, du dimanche au jeudi.',
+            'description' => 'Présence de nuit et rondes régulières sur un chantier ou un magasin, du dimanche au jeudi. 6 000 FCFA la nuit.',
             'commune' => 'Abobo',
             'quartier' => 'PK18',
             'nature' => 'REMUNEREE',
-            'budget' => 25000,
+            'budget' => 6000,
             'availability' => 'Nuit, 19 h – 6 h',
         ],
         'Animaux domestiques' => [
             'title' => 'Toilettage de chiens et de chats',
-            'description' => 'Bain, brossage et coupe des griffes à domicile, pour animaux de petite et moyenne taille.',
+            'description' => 'Bain, brossage et coupe des griffes à domicile, pour animaux de petite et moyenne taille. 10 000 FCFA selon la taille.',
             'commune' => 'Cocody',
             'quartier' => 'Deux-Plateaux',
             'nature' => 'REMUNEREE',
-            'budget' => 5000,
+            'budget' => 10000,
             'availability' => 'Sur rendez-vous, le week-end',
         ],
         'Musique et arts' => [
@@ -297,25 +297,25 @@ class ShowcaseSeeder extends Seeder
         ],
         'Communication et marketing' => [
             'title' => 'Logo et carte de visite pour un commerce',
-            'description' => 'Création d’un logo, d’une carte de visite et d’une bannière pour les réseaux sociaux, trois propositions.',
+            'description' => 'Création d’un logo, d’une carte de visite et d’une bannière pour les réseaux sociaux, trois propositions. 40 000 FCFA le pack complet.',
             'commune' => 'Cocody',
             'quartier' => 'Angré',
             'nature' => 'REMUNEREE',
-            'budget' => 15000,
+            'budget' => 40000,
             'availability' => 'Livraison sous 5 jours',
         ],
         'Vente et petit commerce' => [
             'title' => 'Vente de tissus wax et de pagnes',
-            'description' => 'Wax et bazin en petite et grande largeur, choix sur place, retouches possibles chez la couturière du marché.',
+            'description' => 'Wax et bazin en petite et grande largeur, choix sur place, retouches possibles chez la couturière du marché. Pagne wax de six yards à 8 000 FCFA, bazin sur commande.',
             'commune' => 'Treichville',
             'quartier' => 'Marché de Treichville',
             'nature' => 'REMUNEREE',
-            'budget' => 6000,
+            'budget' => 8000,
             'availability' => 'Du lundi au samedi',
         ],
         'Agriculture et élevage' => [
             'title' => 'Plants de tomate et piment du jardin',
-            'description' => 'Plants de tomate, piment et manioc cultivés à Songon, livrés en godets prêts à repiquer.',
+            'description' => 'Plants de tomate, piment et manioc cultivés à Songon, livrés en godets prêts à repiquer. Lot de vingt plants à 3 000 FCFA.',
             'commune' => 'Songon',
             'quartier' => 'Adiapodoumé',
             'nature' => 'REMUNEREE',
@@ -400,17 +400,10 @@ class ShowcaseSeeder extends Seeder
                 ->published()
                 ->count();
 
-            // Rattrapage : depuis le 8 novembre 2026, une annonce rémunérée
-            // doit porter un montant en FCFA. Une annonce vitrine créée avant
-            // cette règle reçoit celui du catalogue.
-            if (($entry['budget'] ?? null) !== null) {
-                Listing::query()
-                    ->where('user_id', $author->id)
-                    ->where('category_id', $category->id)
-                    ->where('nature', 'REMUNEREE')
-                    ->whereNull('budget')
-                    ->update(['budget' => $entry['budget']]);
-            }
+            // Mise à niveau : le catalogue porte les tarifs courants
+            // d’Abidjan et un texte qui les explique. Une annonce vitrine
+            // déjà en place reçoit ce tarif et ce texte, sans être recréée.
+            $this->refresh($author, $category, $entry);
 
             $target = self::targetFor($categoryName);
 
@@ -423,6 +416,49 @@ class ShowcaseSeeder extends Seeder
         if ($created > 0) {
             $this->command?->info("Vitrine : {$created} annonce(s) ajoutée(s) aux services.");
         }
+    }
+
+    /**
+     * Aligne les annonces vitrines déjà présentes sur le catalogue courant :
+     * le titre (et donc le préfixe) désigne la variante, qui reçoit le tarif
+     * correspondant ; le texte est rafraîchi pour rester d'accord avec lui.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function refresh(User $author, Category $category, array $entry): void
+    {
+        $listings = Listing::query()
+            ->where('user_id', $author->id)
+            ->where('category_id', $category->id)
+            ->get();
+
+        foreach ($listings as $listing) {
+            $attributes = ['description' => $entry['description']];
+
+            if ($listing->nature === 'REMUNEREE') {
+                $attributes['budget'] = self::variantBudget(
+                    $entry['budget'],
+                    self::prefixOf($listing->title),
+                );
+            }
+
+            if ($listing->budget !== ($attributes['budget'] ?? $listing->budget)
+                || $listing->description !== $attributes['description']) {
+                $listing->update($attributes);
+            }
+        }
+    }
+
+    /** Préfixe de variante porté par un titre de la vitrine, vide sinon. */
+    private static function prefixOf(string $title): string
+    {
+        foreach (self::EXTRA_PREFIXES as $prefix) {
+            if ($prefix !== '' && str_starts_with($title, $prefix)) {
+                return $prefix;
+            }
+        }
+
+        return '';
     }
 
     /**
@@ -453,23 +489,48 @@ class ShowcaseSeeder extends Seeder
             'nature' => $entry['nature'],
             'neighborhood' => $neighborhoods[$index % count($neighborhoods)],
             'availability' => $entry['availability'],
-            'budget' => self::budget($entry['budget'], $index),
+            'budget' => self::variantBudget($entry['budget'], $prefix),
             'status' => 'PUBLIEE',
         ];
     }
 
     /**
-     * Budget légèrement dégressif d'une annonce à l'autre (100 %, 95 %, 90 %…),
-     * arrondi à 500 FCFA pour rester crédible.
+     * Écart de prix d’une variante par rapport au tarif courant du service :
+     * l’express se paie plus cher, le petit budget moins, le déplacement à
+     * domicile un peu plus. Rien de dégressif : un même service ne baisse pas
+     * de 5 % à chaque annonce, il se facture selon ce qu’il inclut.
+     *
+     * @var array<string, float>
      */
-    private static function budget(?int $budget, int $index): ?int
+    private const PRICE_FACTORS = [
+        '' => 1.0,
+        'À domicile : ' => 1.15,
+        'Express : ' => 1.35,
+        'Sur rendez-vous : ' => 1.1,
+        'Petit budget : ' => 0.75,
+    ];
+
+    /**
+     * Montant d’une annonce vitrine : tarif courant du service ajusté par le
+     * préfixe, puis arrondi à un pas crédible en FCFA (1 000 FCFA, 2 500 au
+     *-delà de 50 000, 5 000 au-delà de 100 000) — les prix ivoiriens
+     * s’annoncent en chiffres ronds, jamais en 4 237 FCFA.
+     */
+    private static function variantBudget(?int $budget, string $prefix): ?int
     {
         if ($budget === null) {
             return null;
         }
 
-        $amount = (int) (round($budget * (1 - 0.05 * $index) / 500) * 500);
+        $amount = $budget * (self::PRICE_FACTORS[$prefix] ?? 1.0);
 
-        return max(1000, $amount);
+        $step = match (true) {
+            $amount < 10_000 => 500,
+            $amount < 50_000 => 1_000,
+            $amount < 100_000 => 2_500,
+            default => 5_000,
+        };
+
+        return max(500, (int) (round($amount / $step) * $step));
     }
 }

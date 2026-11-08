@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
+import '../../format/date.dart';
 import '../../format/money.dart';
 import '../../theme/motifs.dart';
 import '../../theme/soutrali_theme.dart';
@@ -15,7 +16,12 @@ import 'category_icons.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
 
-/// Détail d’une annonce : informations, contact de l’auteur et signalement.
+/// Détail d’une annonce : le prix, le lieu, la disponibilité, l’auteur, les
+/// conseils de sécurité, les annonces voisines et le contact.
+///
+/// La page se lit de haut en bas comme une fiche de service : un bandeau de
+/// marque, le montant annoncé mis en avant, les repères en tuiles, le texte de
+/// l’annonce, puis la confiance (auteur, conseils) avant les actions.
 class ListingDetailPage extends ConsumerWidget {
   const ListingDetailPage({super.key, required this.listingId});
 
@@ -24,13 +30,155 @@ class ListingDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listingAsync = ref.watch(listingProvider(listingId));
-    final auth = ref.watch(authProvider);
-    final user = auth.value;
+    final user = ref.watch(authProvider).value;
 
+    return listingAsync.when(
+      loading: () => _scaffold(
+        context,
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+      // Panne, coupure réseau ou erreur serveur : chaque cas a son écran.
+      error: (error, stack) => _scaffold(
+        context,
+        body: ErrorPage(
+          error: AppError.fromException(error),
+          onRetry: () => ref.invalidate(listingProvider(listingId)),
+        ),
+      ),
+      data: (listing) {
+        // L’API renvoie 404 pour une annonce retirée : page dédiée.
+        if (listing == null) {
+          return _scaffold(
+            context,
+            body: ErrorPage(
+              error: AppError.fromStatus(404)!,
+              titleOverride: 'Annonce introuvable',
+              location: '/listing/$listingId',
+            ),
+          );
+        }
+
+        final isMine = user != null && listing.authorId == user.id;
+        final blockedIds = ref.watch(blockedUsersProvider).value ?? const <BlockedUser>[];
+        final isBlocked =
+            listing.authorId != null && blockedIds.any((account) => account.id == listing.authorId);
+        final channels = ref.watch(listingChannelsProvider(listingId)).value ?? const <ContactChannel>[];
+
+        return Scaffold(
+          backgroundColor: SoutraliColors.ivory,
+          appBar: _buildBar(context, ref, listing, user, isMine: isMine, isBlocked: isBlocked),
+          bottomNavigationBar: _BottomBar(
+            listing: listing,
+            isMine: isMine,
+            isBlocked: isBlocked,
+            onManage: () => context.go('/mes-annonces'),
+            onContact: () => _contact(context, ref, listing, user),
+          ),
+          body: InteractiveMotif(
+            style: MotifStyle.light,
+            density: 44,
+            opacity: 0.6,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 860),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Hero(listing: listing),
+                      const SizedBox(height: 16),
+                      _PriceBanner(listing: listing),
+                      const SizedBox(height: 16),
+                      _FactsGrid(listing: listing),
+                      const SizedBox(height: 16),
+                      _SectionCard(
+                        title: 'À propos de cette annonce',
+                        icon: Icons.notes_rounded,
+                        child: Text(
+                          listing.description,
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.55),
+                        ),
+                      ),
+                      if (!isMine && !isBlocked && channels.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _SectionCard(
+                          title: 'Canaux de contact de l’auteur',
+                          icon: Icons.alternate_email_rounded,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (final channel in channels)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 6),
+                                  child: _DetailLine(label: channel.label, value: channel.value),
+                                ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Visibles uniquement parce que vous êtes connecté ; la messagerie interne reste recommandée.',
+                                style: TextStyle(color: SoutraliColors.muted, fontSize: 12.5, height: 1.4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      _AuthorCard(listing: listing),
+                      const SizedBox(height: 16),
+                      const _SafetyCard(),
+                      if (!isMine) ...[
+                        const SizedBox(height: 16),
+                        _SimilarListings(listing: listing),
+                      ],
+                      if (isMine) ...[
+                        const SizedBox(height: 16),
+                        _NoticeCard(
+                          color: SoutraliColors.paleGreen,
+                          icon: Icons.person_outline_rounded,
+                          text: 'C’est votre annonce : elle n’est pas contactable par votre propre compte.',
+                          action: TextButton.icon(
+                            onPressed: () => context.go('/mes-annonces'),
+                            icon: const Icon(Icons.manage_accounts_outlined),
+                            label: const Text('Gérer mes annonces'),
+                          ),
+                        ),
+                      ] else if (isBlocked) ...[
+                        const SizedBox(height: 16),
+                        _NoticeCard(
+                          color: SoutraliColors.paleOrange,
+                          icon: Icons.block,
+                          text: 'Vous avez bloqué ce compte : la messagerie est désactivée dans les deux sens.',
+                          action: TextButton.icon(
+                            onPressed: () => _unblock(context, ref, listing),
+                            icon: const Icon(Icons.check_circle_outline),
+                            label: const Text('Débloquer'),
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => _block(context, ref, listing),
+                            icon: const Icon(Icons.block, size: 18),
+                            label: const Text('Bloquer ce compte'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _scaffold(BuildContext context, {required Widget body}) {
     return Scaffold(
       backgroundColor: SoutraliColors.ivory,
-      // Bandeau discret : le dégradé du service juste en dessous est le
-      // vrai en-tête de la page, l’AppBar ne fait que porter le retour.
       appBar: AppBar(
         backgroundColor: SoutraliColors.ivory,
         foregroundColor: SoutraliColors.ink,
@@ -41,319 +189,79 @@ class ListingDetailPage extends ConsumerWidget {
           onPressed: () => context.canPop() ? context.pop() : context.go('/'),
         ),
       ),
-      body: InteractiveMotif(
-        style: MotifStyle.light,
-        density: 44,
-        opacity: 0.6,
-        child: listingAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        // Panne, coupure réseau ou erreur serveur : chaque cas a son écran.
-        error: (error, stack) => ErrorPage(
-          error: AppError.fromException(error),
-          onRetry: () => ref.invalidate(listingProvider(listingId)),
+      body: body,
+    );
+  }
+
+  /// Barre du haut : retour, copie du lien (utile pour partager par WhatsApp)
+  /// et un menu qui ne montre que les actions possibles.
+  AppBar _buildBar(
+    BuildContext context,
+    WidgetRef ref,
+    Listing listing,
+    AuthUser? user, {
+    required bool isMine,
+    required bool isBlocked,
+  }) {
+    return AppBar(
+      backgroundColor: SoutraliColors.ivory,
+      foregroundColor: SoutraliColors.ink,
+      title: const Text('Annonce'),
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: SoutraliColors.deepGreen),
+        tooltip: 'Retour',
+        onPressed: () => context.canPop() ? context.pop() : context.go('/'),
+      ),
+      actions: [
+        IconButton(
+          key: const ValueKey('listing-copy-link'),
+          tooltip: 'Copier le lien',
+          icon: const Icon(Icons.link_rounded, color: SoutraliColors.deepGreen),
+          onPressed: () => _copyLink(context),
         ),
-        data: (listing) {
-          // L’API renvoie 404 pour une annonce retirée : page dédiée.
-          if (listing == null) {
-            return ErrorPage(
-              error: AppError.fromStatus(404)!,
-              titleOverride: 'Annonce introuvable',
-              location: '/listing/$listingId',
-            );
-          }
-
-          final isMine = user != null && listing.authorId == user.id;
-          // Demande : bandeau orange chaud, texte encre ; offre : vert, texte blanc.
-          final isRequest = listing.type == 'DEMANDE';
-          final onHeader = isRequest ? SoutraliColors.ink : Colors.white;
-          final blockedIds = ref.watch(blockedUsersProvider).value ?? const <BlockedUser>[];
-          final isBlocked = listing.authorId != null && blockedIds.any((account) => account.id == listing.authorId);
-          final channels = ref.watch(listingChannelsProvider(listingId)).value ?? const <ContactChannel>[];
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Bandeau de marque : le service, le titre et les repères.
-                    Container(
-                      width: double.infinity,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        gradient: isRequest ? SoutraliGradients.warm : SoutraliGradients.forest,
-                        borderRadius: BorderRadius.circular(26),
-                        boxShadow: SoutraliShadows.brand(
-                          isRequest ? SoutraliColors.orange : SoutraliColors.green,
-                        ),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            right: -18,
-                            bottom: -34,
-                            child: Icon(
-                              categoryIcon(listing.categoryIcon),
-                              size: 190,
-                              color: Colors.white.withValues(alpha: 0.14),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(24),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 54,
-                                      height: 54,
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(alpha: 0.2),
-                                        borderRadius: BorderRadius.circular(17),
-                                      ),
-                                      child: Icon(
-                                        categoryIcon(listing.categoryIcon),
-                                        size: 27,
-                                        color: onHeader,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: [
-                                          _HeaderTag(
-                                            label: isRequest ? 'Demande' : 'Offre',
-                                            foreground: onHeader,
-                                            strong: true,
-                                          ),
-                                          _HeaderTag(
-                                            label: listing.nature == 'BENEVOLE' ? 'Bénévole' : 'Rémunérée',
-                                            foreground: onHeader,
-                                          ),
-                                          if (listing.category.isNotEmpty)
-                                            _HeaderTag(
-                                              label: listing.category,
-                                              foreground: onHeader,
-                                              icon: categoryIcon(listing.categoryIcon),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                Text(
-                                  listing.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(color: onHeader, fontSize: 30, height: 1.16),
-                                ),
-                                const SizedBox(height: 10),
-                                AnimatedAccent(
-                                  color: isRequest ? SoutraliColors.ink : SoutraliColors.sun,
-                                ),
-                                const SizedBox(height: 12),
-                                Wrap(
-                                  spacing: 16,
-                                  runSpacing: 6,
-                                  children: [
-                                    _Meta(
-                                      icon: Icons.location_on_outlined,
-                                      text: listing.commune,
-                                      color: onHeader,
-                                    ),
-                                    if (listing.authorName != null)
-                                      _Meta(
-                                        icon: Icons.person_outline,
-                                        text: 'Publié par ${listing.authorName}',
-                                        color: onHeader,
-                                      ),
-                                    if (listing.createdAt != null)
-                                      _Meta(
-                                        icon: Icons.calendar_today_outlined,
-                                        text: DateFormat('d MMMM yyyy', 'fr').format(listing.createdAt!),
-                                        color: onHeader,
-                                      ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: SoutraliColors.border),
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: SoutraliShadows.soft(alpha: 0.05, blur: 22, y: 10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(listing.description, style: Theme.of(context).textTheme.bodyLarge),
-                          if (listing.availability != null && listing.availability!.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            _DetailLine(label: 'Disponibilité', value: listing.availability!),
-                          ],
-                          if (listing.budget != null) ...[
-                            const SizedBox(height: 10),
-                            _DetailLine(
-                              label: listing.nature == 'BENEVOLE' ? 'Budget' : 'Rémunération',
-                              value: fcfa(listing.budget),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    if (!isMine && !isBlocked && channels.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: SoutraliColors.paleGreen,
-                          border: Border.all(color: SoutraliColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Canaux de contact choisis par l’auteur',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(height: 8),
-                            for (final channel in channels)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: _DetailLine(label: channel.label, value: channel.value),
-                              ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              'Visibles uniquement parce que vous êtes connecté ; la messagerie interne reste recommandée.',
-                              style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    if (isMine) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: SoutraliColors.paleGreen,
-                          border: Border.all(color: SoutraliColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'C’est votre annonce : elle n’est pas contactable par votre propre compte.',
-                              style: TextStyle(color: SoutraliColors.ink),
-                            ),
-                            const SizedBox(height: 8),
-                            TextButton.icon(
-                              onPressed: () => context.go('/mes-annonces'),
-                              icon: const Icon(Icons.manage_accounts_outlined),
-                              label: const Text('Gérer mes annonces'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else if (isBlocked) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: SoutraliColors.paleOrange,
-                          border: Border.all(color: SoutraliColors.border),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Vous avez bloqué ce compte : la messagerie est désactivée dans les deux sens.',
-                              style: TextStyle(color: SoutraliColors.ink),
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                TextButton.icon(
-                                  onPressed: () => _unblock(context, ref, listing),
-                                  icon: const Icon(Icons.check_circle_outline),
-                                  label: const Text('Débloquer'),
-                                ),
-                                const Spacer(),
-                                OutlinedButton.icon(
-                                  icon: const Icon(Icons.flag_outlined),
-                                  label: const Text('Signaler'),
-                                  onPressed: () => _report(context, ref, listing, user),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ] else ...[
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                backgroundColor: SoutraliColors.green,
-                                minimumSize: const Size(44, 48),
-                              ),
-                              icon: const Icon(Icons.chat_bubble_outline),
-                              label: const Text('Contacter l’auteur'),
-                              onPressed: () => _contact(context, ref, listing, user),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.flag_outlined),
-                            label: const Text('Signaler'),
-                            onPressed: () => _report(context, ref, listing, user),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Le contact se fait par la messagerie interne du site, réservée aux comptes connectés.',
-                        style: TextStyle(color: SoutraliColors.muted, fontSize: 13),
-                      ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () => _block(context, ref, listing),
-                          icon: const Icon(Icons.block, size: 18),
-                          label: const Text('Bloquer ce compte'),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 32),
-                  ],
+        if (!isMine)
+          PopupMenuButton<String>(
+            tooltip: 'Plus d’actions',
+            icon: const Icon(Icons.more_vert, color: SoutraliColors.deepGreen),
+            onSelected: (value) {
+              switch (value) {
+                case 'report':
+                  _report(context, ref, listing, user);
+                case 'block':
+                  _block(context, ref, listing);
+                case 'unblock':
+                  _unblock(context, ref, listing);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'report',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.flag_outlined),
+                  title: Text('Signaler l’annonce'),
                 ),
               ),
-            ),
-          );
-        },
-      ),
-      ),
+              PopupMenuItem(
+                value: isBlocked ? 'unblock' : 'block',
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(isBlocked ? Icons.lock_open_rounded : Icons.block),
+                  title: Text(isBlocked ? 'Débloquer ce compte' : 'Bloquer ce compte'),
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Future<void> _copyLink(BuildContext context) async {
+    final link = Uri.base.replace(fragment: '/listing/$listingId').toString();
+    await Clipboard.setData(ClipboardData(text: link));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Lien de l’annonce copié.')),
     );
   }
 
@@ -480,6 +388,792 @@ class ListingDetailPage extends ConsumerWidget {
   }
 }
 
+/// Bandeau de marque : service, type, nature, titre, repères de lieu et de date.
+class _Hero extends StatelessWidget {
+  const _Hero({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRequest = listing.type == 'DEMANDE';
+    final onHeader = isRequest ? SoutraliColors.ink : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: isRequest ? SoutraliGradients.warm : SoutraliGradients.forest,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: SoutraliShadows.brand(
+          isRequest ? SoutraliColors.orange : SoutraliColors.green,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -24,
+            bottom: -40,
+            child: Icon(
+              categoryIcon(listing.categoryIcon),
+              size: 210,
+              color: Colors.white.withValues(alpha: 0.13),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(17),
+                      ),
+                      child: Icon(categoryIcon(listing.categoryIcon), size: 27, color: onHeader),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _HeaderTag(
+                            label: isRequest ? 'Demande' : 'Offre',
+                            foreground: onHeader,
+                            strong: true,
+                          ),
+                          _HeaderTag(
+                            label: listing.nature == 'BENEVOLE' ? 'Bénévole' : 'Rémunérée',
+                            foreground: onHeader,
+                          ),
+                          if (listing.category.isNotEmpty)
+                            _HeaderTag(
+                              label: listing.category,
+                              foreground: onHeader,
+                              icon: categoryIcon(listing.categoryIcon),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  listing.title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineMedium
+                      ?.copyWith(color: onHeader, fontSize: 29, height: 1.16),
+                ),
+                const SizedBox(height: 10),
+                AnimatedAccent(
+                  color: isRequest ? SoutraliColors.ink : SoutraliColors.sun,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 6,
+                  children: [
+                    _Meta(icon: Icons.location_on_outlined, text: listing.commune, color: onHeader),
+                    if (listing.distanceKm != null)
+                      _Meta(
+                        icon: Icons.near_me_outlined,
+                        text: listingDistanceLabel(listing.distanceKm!),
+                        color: onHeader,
+                      ),
+                    _Meta(
+                      icon: Icons.schedule_rounded,
+                      text: publishedAgo(listing.createdAt),
+                      color: onHeader,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Montant annoncé, en grand : c’est l’information que l’on cherche d’abord.
+class _PriceBanner extends StatelessWidget {
+  const _PriceBanner({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    final isVolunteer = listing.nature == 'BENEVOLE';
+    final amount = listing.budget;
+
+    final (label, value, note) = switch ((isVolunteer, amount)) {
+      (true, _) => (
+          'Bénévolat',
+          'Gratuit',
+          'Service rendu sans contrepartie, par choix de l’auteur.',
+        ),
+      (false, final num budget) => (
+          'Rémunération annoncée',
+          fcfa(budget),
+          'Montant indiqué par l’auteur — à confirmer lors de l’échange.',
+        ),
+      _ => (
+          'Rémunération',
+          'À convenir',
+          'L’auteur n’a pas précisé de montant : demandez-lui avant de vous engager.',
+        ),
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: SoutraliColors.border),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: SoutraliShadows.soft(alpha: 0.05, blur: 20, y: 8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: isVolunteer ? SoutraliColors.paleOrange : SoutraliColors.paleGreen,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              isVolunteer ? Icons.volunteer_activism_rounded : Icons.payments_rounded,
+              color: isVolunteer ? SoutraliColors.orangeText : SoutraliColors.deepGreen,
+              size: 26,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: SoutraliColors.muted,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  key: const ValueKey('listing-amount'),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: isVolunteer ? SoutraliColors.orangeText : SoutraliColors.ink,
+                      ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  note,
+                  style: const TextStyle(color: SoutraliColors.muted, fontSize: 12.5, height: 1.35),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Repères pratiques : lieu, disponibilité, publication, référence.
+class _FactsGrid extends StatelessWidget {
+  const _FactsGrid({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context) {
+    final availability = listing.availability;
+    final tiles = <Widget>[
+      _InfoTile(
+        icon: Icons.location_on_outlined,
+        label: 'Lieu',
+        value: listing.commune.isEmpty ? 'Abidjan' : listing.commune,
+      ),
+      _InfoTile(
+        icon: Icons.event_available_outlined,
+        label: 'Disponibilité',
+        value: availability != null && availability.isNotEmpty ? availability : 'À convenir',
+      ),
+      _InfoTile(
+        icon: Icons.schedule_rounded,
+        label: 'Publication',
+        value: publishedAgo(listing.createdAt),
+      ),
+      _InfoTile(
+        icon: Icons.tag_rounded,
+        label: 'Référence',
+        value: 'N° ${listing.id}',
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final twoColumns = constraints.maxWidth >= 520;
+        final width = twoColumns ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final tile in tiles) SizedBox(width: width, child: tile),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({required this.icon, required this.label, required this.value});
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 13),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: SoutraliColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: SoutraliColors.paleGreen,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 19, color: SoutraliColors.deepGreen),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                    color: SoutraliColors.muted,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: SoutraliColors.ink,
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Carte de section homogène : titre, icône et contenu.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.icon, required this.child});
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: SoutraliColors.border),
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: SoutraliShadows.soft(alpha: 0.04, blur: 18, y: 8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: SoutraliColors.deepGreen),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: SoutraliColors.ink,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Qui publie : l’auteur, son compte, et un rappel que la messagerie est le
+/// canal normal.
+class _AuthorCard extends StatelessWidget {
+  const _AuthorCard({required this.listing});
+
+  final Listing listing;
+
+  String get _initials {
+    final name = listing.authorName?.trim() ?? '';
+    if (name.isEmpty) return 'S';
+    final parts = name.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+    final letters = parts.take(2).map((part) => part.substring(0, 1)).join();
+    return letters.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = listing.authorName ?? 'Auteur Soutrali';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: SoutraliColors.border),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: const BoxDecoration(
+              gradient: SoutraliGradients.forest,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                _initials,
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: SoutraliColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'Auteur de l’annonce · compte Soutrali',
+                  style: TextStyle(fontSize: 12.5, color: SoutraliColors.muted),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: SoutraliColors.paleGreen,
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.forum_outlined, size: 13, color: SoutraliColors.deepGreen),
+                SizedBox(width: 5),
+                Text(
+                  'Messagerie',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: SoutraliColors.deepGreen,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Conseils avant de s’engager : honnêtes, généraux, et utiles dans un
+/// contexte ivoirien où les acomptes par Mobile Money sont courants.
+class _SafetyCard extends StatelessWidget {
+  const _SafetyCard();
+
+  static const _rules = <String>[
+    'Écrivez d’abord par la messagerie Soutrali : l’échange reste tracé.',
+    'Ne versez aucun acompte avant d’avoir vu la prestation, le lieu ou la personne.',
+    'Méfiez-vous des prix trop bas et des demandes de paiement hors plateforme.',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: SoutraliColors.ivoryDeep,
+        border: Border.all(color: SoutraliColors.peach),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.verified_user_outlined, size: 18, color: SoutraliColors.orangeText),
+              SizedBox(width: 8),
+              Text(
+                'Avant de vous engager',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: SoutraliColors.ink,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final rule in _rules)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 7),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 5),
+                    child: Icon(Icons.circle, size: 5, color: SoutraliColors.orangeText),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      rule,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: SoutraliColors.ink,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Trois annonces de la même commune, pour ne pas s’arrêter à la première.
+class _SimilarListings extends ConsumerWidget {
+  const _SimilarListings({required this.listing});
+
+  final Listing listing;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (listing.commune.isEmpty) return const SizedBox.shrink();
+
+    final nearby = ref.watch(listingsProvider(ListingFilters(commune: listing.commune)));
+    final others = (nearby.value ?? const <Listing>[])
+        .where((other) => other.id != listing.id)
+        .take(3)
+        .toList(growable: false);
+
+    if (others.isEmpty) return const SizedBox.shrink();
+
+    return _SectionCard(
+      title: 'À découvrir aussi à ${listing.commune}',
+      icon: Icons.explore_outlined,
+      child: Column(
+        children: [
+          for (final other in others)
+            _MiniListing(
+              listing: other,
+              onTap: () => context.push('/listing/${other.id}'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniListing extends StatelessWidget {
+  const _MiniListing({required this.listing, required this.onTap});
+
+  final Listing listing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final isVolunteer = listing.nature == 'BENEVOLE';
+    final price = isVolunteer
+        ? 'Bénévole'
+        : listing.budget == null
+            ? 'À convenir'
+            : fcfa(listing.budget);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: SoutraliColors.paleGreen,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  categoryIcon(listing.categoryIcon),
+                  size: 19,
+                  color: SoutraliColors.deepGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: SoutraliColors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${listing.category} · ${publishedAgo(listing.createdAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 12, color: SoutraliColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                price,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: isVolunteer ? SoutraliColors.orangeText : SoutraliColors.deepGreen,
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, size: 18, color: SoutraliColors.muted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Action principale toujours à portée de pouce : le montant et « Contacter ».
+class _BottomBar extends StatelessWidget {
+  const _BottomBar({
+    required this.listing,
+    required this.isMine,
+    required this.isBlocked,
+    required this.onManage,
+    required this.onContact,
+  });
+
+  final Listing listing;
+  final bool isMine;
+  final bool isBlocked;
+  final VoidCallback onManage;
+  final VoidCallback onContact;
+
+  @override
+  Widget build(BuildContext context) {
+    final isVolunteer = listing.nature == 'BENEVOLE';
+    final price = isVolunteer
+        ? 'Bénévolat'
+        : listing.budget == null
+            ? 'Montant à convenir'
+            : fcfa(listing.budget);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: SoutraliColors.border)),
+        boxShadow: SoutraliShadows.soft(alpha: 0.07, blur: 22, y: -6),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 860),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 11, 20, 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isVolunteer ? 'SERVICE BÉNÉVOLE' : 'RÉMUNÉRATION',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: SoutraliColors.muted,
+                          ),
+                        ),
+                        Text(
+                          price,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: SoutraliColors.ink,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (isMine)
+                    OutlinedButton.icon(
+                      onPressed: onManage,
+                      icon: const Icon(Icons.manage_accounts_outlined, size: 18),
+                      label: const Text('Gérer'),
+                    )
+                  else if (isBlocked)
+                    const Text(
+                      'Compte bloqué',
+                      style: TextStyle(fontSize: 12.5, color: SoutraliColors.muted),
+                    )
+                  else
+                    FilledButton.icon(
+                      key: const ValueKey('listing-contact'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: SoutraliColors.green,
+                        minimumSize: const Size(44, 46),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                      ),
+                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      label: const Text('Contacter'),
+                      onPressed: onContact,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Encart d’information contextuel (annonce personnelle, compte bloqué).
+class _NoticeCard extends StatelessWidget {
+  const _NoticeCard({
+    required this.color,
+    required this.icon,
+    required this.text,
+    required this.action,
+  });
+
+  final Color color;
+  final IconData icon;
+  final String text;
+  final Widget action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      decoration: BoxDecoration(
+        color: color,
+        border: Border.all(color: SoutraliColors.border),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 18, color: SoutraliColors.ink),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: const TextStyle(color: SoutraliColors.ink, height: 1.4),
+                ),
+              ),
+            ],
+          ),
+          action,
+        ],
+      ),
+    );
+  }
+}
+
 class _ContactDialog extends StatefulWidget {
   const _ContactDialog({required this.listing, required this.onSend});
 
@@ -540,6 +1234,19 @@ class _ContactDialogState extends State<_ContactDialog> {
               'À propos de « ${widget.listing.title} »',
               style: const TextStyle(color: SoutraliColors.muted),
             ),
+            if (widget.listing.budget != null || widget.listing.nature == 'BENEVOLE') ...[
+              const SizedBox(height: 6),
+              Text(
+                widget.listing.nature == 'BENEVOLE'
+                    ? 'Annonce bénévole.'
+                    : 'Rémunération annoncée : ${fcfa(widget.listing.budget)}.',
+                style: const TextStyle(
+                  color: SoutraliColors.deepGreen,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
             const SizedBox(height: 12),
             TextField(
               controller: _controller,
