@@ -91,7 +91,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
       return;
     }
 
-    final decision = await LocationPromptDialog.show(context, place);
+    final decision = await LocationPromptSheet.show(context, place);
     if (!mounted) {
       return;
     }
@@ -2861,15 +2861,19 @@ class _HeroPreviewCard extends StatelessWidget {
               const SizedBox(width: 8),
               const Icon(Icons.near_me_outlined, size: 12, color: SoutraliColors.orangeText),
               const SizedBox(width: 3),
-              Text(
-                distance,
-                style: const TextStyle(
-                  color: SoutraliColors.orangeText,
-                  fontSize: 11.5,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  distance,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: SoutraliColors.orangeText,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 6),
               // Exemple assumé : ces deux cartes illustrent la page, elles ne
               // prétendent pas être de vraies annonces vérifiées.
               Text(

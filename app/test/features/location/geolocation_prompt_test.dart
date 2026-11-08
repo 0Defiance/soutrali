@@ -75,16 +75,19 @@ void main() {
 
     await _pumpApp(tester, captured);
 
-    // La popup nomme pays, ville, commune, quartier et coordonnées.
+    // La fiche nomme le quartier, la ville, le pays et les mesures utiles.
     expect(find.byKey(const ValueKey('location-prompt')), findsOneWidget);
-    expect(find.text('Nous vous situons'), findsOneWidget);
-    final dialog = find.byKey(const ValueKey('location-prompt'));
+    expect(find.text('Vous êtes ici ?'), findsOneWidget);
+    final sheet = find.byKey(const ValueKey('location-prompt'));
 
-    expect(find.descendant(of: dialog, matching: find.text('Côte d’Ivoire')), findsOneWidget);
-    expect(find.descendant(of: dialog, matching: find.text('Abidjan')), findsOneWidget);
-    expect(find.descendant(of: dialog, matching: find.text('Cocody')), findsOneWidget);
-    expect(find.descendant(of: dialog, matching: find.text('Angré')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('Cocody — Angré')), findsOneWidget);
+    expect(
+      find.descendant(of: sheet, matching: find.text('Abidjan · Côte d’Ivoire')),
+      findsOneWidget,
+    );
     expect(find.text('± 22 m'), findsOneWidget);
+    expect(find.text('à 40 m du centre'), findsOneWidget);
+    expect(find.text('Abidjan Est'), findsOneWidget);
     expect(find.text('5.39710, -3.97290'), findsOneWidget);
 
     // Tant que l’on n’a pas confirmé, aucune coordonnée n’est envoyée.

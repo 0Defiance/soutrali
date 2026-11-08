@@ -63,9 +63,15 @@
     </IfModule>
 </IfModule>
 
-# Brotli est volontairement écarté : mesuré sur cet hébergement, la compression
-# à la volée d’un `main.dart.js` de 3,8 Mo dépasse la minute et un téléchargement
-# a échoué au-delà de 180 s. gzip, déjà servi par Apache, reste bien plus fiable.
+# Brotli est volontairement écarté pour les gros fichiers : mesuré sur cet
+# hébergement le 8 novembre 2026, `main.dart.js` arrive en 26,9 s compressé en
+# brotli contre 14,8 s en gzip — la compression coûte plus de temps qu’elle
+# n’économise d’octets (999 Ko contre 1,09 Mo). Même chose pour le WebAssembly.
+# Les navigateurs annoncent `br` : on le leur retire sur ces fichiers pour
+# qu’ils reçoivent du gzip.
+<IfModule mod_brotli.c>
+    SetEnvIf Request_URI "\.(js|mjs|wasm)$" no-brotli
+</IfModule>
 
 <IfModule mod_headers.c>
     <FilesMatch "\.(js|mjs|json|html|wasm)$">
