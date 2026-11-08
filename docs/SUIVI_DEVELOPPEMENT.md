@@ -410,6 +410,18 @@ Application Flutter :
 - **Vérifications** : backend `php artisan test` → **89 tests** verts, `pint --test` et `phpstan` propres ; Flutter `flutter analyze` propre, **38 tests** verts ; build release reconstruit (3 894 760 o) et téléversé, servi à l’identique.
 - **Reste** : la liste sous les services reste plafonnée à 12 annonces par page (l’API monte à 24) et le compteur de section l’annonce honnêtement ; aucun tri par popularité n’est proposé (l’ordre est alphabétique pour les services, chronologique pour les annonces).
 
+### 8 novembre 2026, suite 2 — la rémunération se dit en FCFA
+
+- **Problème** : le montant était un « Budget indicatif en FCFA (facultatif) ». Une annonce « Rémunérée » pouvait donc n’annoncer aucun prix, et l’affichage « 5 000 F » ne disait pas la devise. Ce n’est pas l’usage ivoirien : une prestation rémunérée dit son tarif.
+- **Formulaire de publication** : dès que la nature est « Rémunérée », un champ **« Rémunération en FCFA * »** apparaît, obligatoire, en chiffres uniquement (pas de centimes), avec cinq raccourcis aux **tarifs courants d’Abidjan** — 1 000, 2 000, 5 000, 10 000 et 25 000 FCFA — qui remplissent le champ d’un geste. Les bornes sont 500 FCFA (un petit service) et 5 000 000 FCFA, avec messages en français (« Indiquez la rémunération en FCFA. », « Minimum 500 FCFA. »). Repasser en « Bénévole » efface le montant.
+- **Affichage** : une seule écriture, `app/lib/src/format/money.dart` — **« 5 000 FCFA »** avec l’espace insécable du français et un arrondi au franc, car le FCFA n’a pas de centimes. Le détail d’annonce affiche « Rémunération : 5 000 FCFA » (et non plus « Budget indicatif : 5 000 F »), et « Mes annonces » montre le montant à côté du type.
+- **Modification** : le dialogue d’édition de « Mes annonces » n’avait aucun champ de montant (le modifier effaçait le prix) ; il porte maintenant le même champ et la même validation.
+- **API** (`MyListingController`) : `budget` devient `required_if:nature,REMUNEREE`, `numeric`, `integer`, `min:500`, `max:5000000`, avec messages français ; un montant envoyé pour une annonce **bénévole** est ignoré et enregistré à `null`. Le back-office Filament rend le champ obligatoire quand la nature est rémunérée, avec les mêmes bornes.
+- **Données de vitrine** : deux annonces rémunérées du catalogue n’avaient pas de montant (« Vente de tissus wax » et « Plants de tomate ») ; elles passent à **6 000** et **3 000 FCFA**, et le seeder rattrape les annonces vitrines rémunérées sans montant. En ligne, `Listing::where('nature','REMUNEREE')->whereNull('budget')` renvoie **0**.
+- **Tests** : `MyListingTest` (+2) — refus sans montant avec message français, refus sous 500 FCFA, acceptation à 5 000, montant ignoré en bénévole ; `ShowcaseSeederTest` (+1) — chaque annonce rémunérée porte un montant entre 500 et 5 000 000 ; `money_test` (3 tests) — écriture, arrondi, forme courte ; `publication_actions_test` (+1) — le champ apparaît avec « Rémunérée », le raccourci 5 000 le remplit, « Bénévole » le retire. Les fixtures e-mail qui publiaient une annonce rémunérée sans montant ont reçu le leur (5 000 et 7 000 FCFA).
+- **Vérifications** : backend **92 tests** verts, `pint --test` et `phpstan` propres ; Flutter `flutter analyze` propre, **42 tests** verts ; build release reconstruit (3 901 516 o) et téléversé ; détail d’annonce contrôlé dans le navigateur : « Rémunération : 5 000 FCFA ».
+- **Réserve** : le montant reste un **tarif annoncé**, pas un paiement — Soutrali n’encaisse rien et ne garantit pas la transaction ; une fourchette (« à partir de ») ou un règlement à la prestation ne sont pas modélisés.
+
 ---
 
 ## 3. Ce qui est fait et vérifié
