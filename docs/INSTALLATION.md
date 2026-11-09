@@ -229,6 +229,40 @@ python -m http.server 8082 --bind 127.0.0.1 --directory build\web
 
 - **Polices et icônes de marque** : Manrope et Source Sans 3 sont déclarées dans `pubspec.yaml` (fichiers et licences OFL dans `app/assets/fonts/`). Les icônes web et favicons sont générés depuis le logo source ; depuis la racine du dépôt, `php brand/generate-icons.php` les régénère si le logo est retravaillé (§15.7 du README).
 
+### Application Android : récupérer l’APK depuis le site
+
+Le site sert lui-même l’APK signé : en bas de la page d’accueil de
+`https://soutrali.alwaysdata.net`, le bandeau « **Soutrali pour Android** »
+porte le bouton « **Télécharger l’APK** ». L’adresse directe est
+`https://soutrali.alwaysdata.net/downloads/soutrali.apk` (type
+`application/vnd.android.package-archive`, `no-cache`).
+
+Sur le téléphone : ouvrir le fichier téléchargé, autoriser l’installation
+depuis cette source si Android le demande, puis lancer « Soutrali ». L’URL de
+l’API est gravée à la compilation — l’APK livré pointe donc sur la production,
+sans réglage à faire.
+
+Pour recompiler et republier :
+
+```powershell
+cd app
+export PATH="/c/soutrali-android/flutter/bin:$PATH"   # Git Bash ; PowerShell : $env:PATH += ";C:\soutrali-android\flutter\bin"
+flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net
+```
+
+Puis copier `build/app/outputs/flutter-apk/app-release.apk` vers
+`~/soutrali/backend/public/downloads/soutrali.apk` sur le serveur (SSH). Le
+fichier ne se committe pas (`backend/public/downloads/*.apk` est ignoré) ; la
+signature exige le keystore du profil utilisateur
+`~/.android/soutrali-keystore.properties` — sans lui, le build release
+retombe sur la clé debug et l’APK ne peut plus mettre à jour l’installation
+existante. Vérifier après téléversement :
+
+```powershell
+curl -I https://soutrali.alwaysdata.net/downloads/soutrali.apk   # 200, application/vnd.android.package-archive
+sha256sum app/build/app/outputs/flutter-apk/app-release.apk      # même empreinte que le fichier distant
+```
+
 ### Paquet desktop Windows tout-en-un (phase 2)
 
 Depuis la **racine** du dépôt, dans PowerShell :

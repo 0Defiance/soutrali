@@ -1,10 +1,31 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soutrali/src/app.dart';
 import 'package:soutrali/src/features/discover/listing.dart';
 import 'package:soutrali/src/features/discover/listings_repository.dart';
 import 'package:soutrali/src/features/discover/references_repository.dart';
+import 'package:soutrali/src/platform/app_download.dart';
+
+/// Polices de la charte : sans elles, le test mesure la police de secours,
+/// plus large que Manrope, et signale des débordements que le site n’a pas.
+Future<void> _loadFonts() async {
+  const families = {
+    'Manrope': 'assets/fonts/Manrope.ttf',
+    'Source Sans 3': 'assets/fonts/SourceSans3.ttf',
+  };
+
+  for (final entry in families.entries) {
+    final bytes = File(entry.value).readAsBytesSync();
+
+    await (FontLoader(entry.key)
+          ..addFont(Future.value(ByteData.view(bytes.buffer))))
+        .load();
+  }
+}
 
 void main() {
   testWidgets('le hero compte les services, les annonces et les communes', (tester) async {
@@ -108,5 +129,61 @@ void main() {
     expect(find.byIcon(Icons.handyman), findsWidgets);
     // Une seule annonce : le compteur de la section le dit.
     expect(find.text('1 résultat'), findsOneWidget);
+  });
+
+  testWidgets('le pied de page propose l’APK Android servi par le site', (tester) async {
+    await _loadFonts();
+
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var downloads = 0;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          listingsProvider.overrideWith((ref, filters) async => <Listing>[]),
+          communesProvider.overrideWith((ref) async => const [
+                ReferenceItem(id: 1, name: 'Cocody'),
+              ]),
+          categoriesProvider.overrideWith((ref) async => const <ReferenceItem>[]),
+          apkDownloaderProvider.overrideWith(
+            (ref) => () async {
+              downloads++;
+              return true;
+            },
+          ),
+        ],
+        child: SoutraliApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final download = find.byKey(const ValueKey('download-apk'));
+
+    // Le bandeau vit en bas de la vitrine, après les annonces.
+    await tester.scrollUntilVisible(
+      download,
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Soutrali pour Android'), findsOneWidget);
+    expect(find.text('Télécharger l’APK'), findsOneWidget);
+
+    // Le fichier est servi par le site lui-même, sur la même origine que l’API.
+    expect(Uri.parse(apkDownloadUrl).path, '/downloads/soutrali.apk');
+    expect(apkDownloadUrl, startsWith(apiBaseUrl));
+
+    // Un appui demande bien l’ouverture du fichier, une seule fois.
+    expect(downloads, 0);
+
+    await tester.tap(download);
+    await tester.pumpAndSettle();
+
+    expect(downloads, 1);
   });
 }

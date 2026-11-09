@@ -75,8 +75,14 @@
     SetEnvIf Request_URI "\.(js|mjs|wasm)$" no-brotli
 </IfModule>
 
+# APK servi depuis `downloads/` : sans type déclaré, certains navigateurs
+# l'ouvrent comme du texte au lieu de proposer l'installation.
+<IfModule mod_mime.c>
+    AddType application/vnd.android.package-archive .apk
+</IfModule>
+
 <IfModule mod_headers.c>
-    <FilesMatch "\.(js|mjs|json|html|wasm)$">
+    <FilesMatch "\.(js|mjs|json|html|wasm|apk)$">
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
     <FilesMatch "\.(png|jpg|jpeg|webp|gif|svg|ico|ttf|otf|woff|woff2)$">

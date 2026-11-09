@@ -45,5 +45,8 @@ keystore.properties
 livrables/*.zip
 livrables/*.apk
 
+# APK téléversé sur le serveur (servi par le site, jamais committé)
+backend/public/downloads/*.apk
+
 # Clé SSH de déploiement (locale, jamais versionnée)
 .deploy/
