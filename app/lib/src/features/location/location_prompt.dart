@@ -474,7 +474,8 @@ class _MapPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFE7F2E9));
+    // Fond « terrain » : un vert-gris qui laisse les rues claires ressortir.
+    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xFFDCEBDF));
 
     // Lagune Ébrié, en bas à gauche.
     final lagoon = Path()
@@ -486,27 +487,31 @@ class _MapPainter extends CustomPainter {
     canvas.drawPath(lagoon, Paint()..color = const Color(0xFFCFE5EF));
 
     // Îlots : trois rangées de pâtés de maisons, décalés d’une rangée à l’autre.
-    final block = Paint()..color = Colors.white.withValues(alpha: 0.82);
+    final block = Paint()..color = const Color(0xFFC7DCCB);
+    final blockEdge = Paint()
+      ..color = const Color(0xFFB2CEB8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
     for (var row = 0; row < 3; row++) {
       final top = h * (0.1 + row * 0.28);
       final height = h * 0.16;
       for (var col = 0; col < 5; col++) {
         final left = w * (0.04 + col * 0.2) + (row.isOdd ? w * 0.05 : 0);
         if (left + w * 0.14 > w * 0.96) continue;
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(left, top, w * 0.14, height),
-            const Radius.circular(5),
-          ),
-          block,
+        final island = RRect.fromRectAndRadius(
+          Rect.fromLTWH(left, top, w * 0.14, height),
+          const Radius.circular(5),
         );
+        canvas
+          ..drawRRect(island, block)
+          ..drawRRect(island, blockEdge);
       }
     }
 
-    // Avenues perpendiculaires.
+    // Avenues perpendiculaires : plus claires que les îlots, comme sur un plan.
     final avenue = Paint()
-      ..color = const Color(0xFFD2E5D9)
-      ..strokeWidth = 8
+      ..color = const Color(0xFFF4FAF5)
+      ..strokeWidth = 9
       ..strokeCap = StrokeCap.round;
     for (final y in [0.26, 0.54, 0.82]) {
       canvas.drawLine(Offset(0, h * y), Offset(w, h * y), avenue);
@@ -528,7 +533,7 @@ class _MapPainter extends CustomPainter {
     canvas.drawPath(path, road);
 
     // Un peu de végétation pour casser la géométrie.
-    final tree = Paint()..color = const Color(0xFFBFDCC7);
+    final tree = Paint()..color = const Color(0xFFA9CBAF);
     for (final spot in const [Offset(0.09, 0.72), Offset(0.86, 0.15), Offset(0.68, 0.86)]) {
       canvas.drawCircle(Offset(w * spot.dx, h * spot.dy), 9, tree);
       canvas.drawCircle(Offset(w * spot.dx + 12, h * spot.dy + 6), 6, tree);
