@@ -16,6 +16,14 @@ import 'category_icons.dart';
 import 'listing.dart';
 import 'listings_repository.dart';
 
+// Le titre des barres de cette page : le thème les destine au vert profond.
+const _barTitle = TextStyle(
+  fontFamily: 'Manrope',
+  fontSize: 17,
+  fontWeight: FontWeight.w700,
+  color: SoutraliColors.ink,
+);
+
 /// Détail d’une annonce : le prix, le lieu, la disponibilité, l’auteur, les
 /// conseils de sécurité, les annonces voisines et le contact.
 ///
@@ -182,7 +190,7 @@ class ListingDetailPage extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: SoutraliColors.ivory,
         foregroundColor: SoutraliColors.ink,
-        title: const Text('Annonce'),
+        title: const Text('Annonce', style: _barTitle),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: SoutraliColors.deepGreen),
           tooltip: 'Retour',
@@ -206,7 +214,7 @@ class ListingDetailPage extends ConsumerWidget {
     return AppBar(
       backgroundColor: SoutraliColors.ivory,
       foregroundColor: SoutraliColors.ink,
-      title: const Text('Annonce'),
+      title: const Text('Annonce', style: _barTitle),
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: SoutraliColors.deepGreen),
         tooltip: 'Retour',
@@ -628,14 +636,37 @@ class _FactsGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final twoColumns = constraints.maxWidth >= 520;
-        final width = twoColumns ? (constraints.maxWidth - 12) / 2 : constraints.maxWidth;
+        // Deux colonnes dès qu’un téléphone le permet : la fiche tient alors
+        // en un écran et demi au lieu de trois.
+        if (constraints.maxWidth < 320) {
+          return Column(
+            children: [
+              for (final tile in tiles)
+                Padding(padding: const EdgeInsets.only(bottom: 12), child: tile),
+            ],
+          );
+        }
 
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        // Deux tuiles d’une même ligne prennent la même hauteur, sinon la
+        // grille ressemble à un escalier quand la disponibilité est longue.
+        return Column(
           children: [
-            for (final tile in tiles) SizedBox(width: width, child: tile),
+            for (var row = 0; row < tiles.length; row += 2)
+              Padding(
+                padding: EdgeInsets.only(bottom: row + 2 < tiles.length ? 12 : 0),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: tiles[row]),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: row + 1 < tiles.length ? tiles[row + 1] : const SizedBox(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         );
       },
@@ -687,7 +718,7 @@ class _InfoTile extends StatelessWidget {
                 const SizedBox(height: 1),
                 Text(
                   value,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 14,
@@ -871,12 +902,14 @@ class _SafetyCard extends StatelessWidget {
             children: [
               Icon(Icons.verified_user_outlined, size: 18, color: SoutraliColors.orangeText),
               SizedBox(width: 8),
-              Text(
-                'Avant de vous engager',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: SoutraliColors.ink,
+              Expanded(
+                child: Text(
+                  'Avant de vous engager',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: SoutraliColors.ink,
+                  ),
                 ),
               ),
             ],
@@ -1059,7 +1092,12 @@ class _BottomBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Center(
+        // `heightFactor: 1` : la barre prend la hauteur de son contenu.
+        // Sans cela, `Center` s’étire sur toute la hauteur offerte par le
+        // `Scaffold` et recouvre le corps de la page.
+        child: Align(
+          alignment: Alignment.center,
+          heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 860),
             child: Padding(
@@ -1423,12 +1461,16 @@ class _HeaderTag extends StatelessWidget {
             Icon(icon, size: 14, color: foreground),
             const SizedBox(width: 5),
           ],
-          Text(
-            label,
-            style: TextStyle(
-              color: strong ? SoutraliColors.ink : foreground,
-              fontSize: 12.5,
-              fontWeight: FontWeight.w700,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: strong ? SoutraliColors.ink : foreground,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],

@@ -36,7 +36,7 @@ final _volunteer = Listing(
 );
 
 Future<void> _pump(WidgetTester tester, Listing listing) async {
-  tester.view.physicalSize = const Size(1100, 1600);
+  tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
