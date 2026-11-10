@@ -34,14 +34,23 @@ class PublicReferenceController
 
     /**
      * Communes actives du référentiel d'Abidjan (D-03), avec leurs
-     * coordonnées depuis le 7 nov. 2026.
+     * coordonnées depuis le 7 nov. 2026. `is_zone` distingue le choix
+     * « Plusieurs communes », qui n'est pas une commune du District : le site
+     * compte ainsi treize communes, pas quatorze.
      */
     public function communes(): JsonResponse
     {
         $communes = Commune::query()
             ->where('active', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'latitude', 'longitude']);
+            ->get(['id', 'name', 'latitude', 'longitude'])
+            ->map(fn (Commune $commune) => [
+                'id' => $commune->id,
+                'name' => $commune->name,
+                'latitude' => $commune->latitude,
+                'longitude' => $commune->longitude,
+                'is_zone' => $commune->isZone(),
+            ]);
 
         return response()->json(['data' => $communes]);
     }

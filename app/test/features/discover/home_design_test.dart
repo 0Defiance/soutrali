@@ -10,6 +10,7 @@ import 'package:soutrali/src/features/discover/listing_detail_page.dart';
 import 'package:soutrali/src/features/discover/listings_repository.dart';
 import 'package:soutrali/src/features/discover/references_repository.dart';
 import 'package:soutrali/src/platform/app_download.dart';
+import 'package:soutrali/src/theme/soutrali_theme.dart';
 
 /// Polices de la charte : sans elles, le test mesure la police de secours,
 /// plus large que Manrope, et signale des débordements que le site n’a pas.
@@ -43,6 +44,8 @@ void main() {
                 ReferenceItem(id: 1, name: 'Abobo'),
                 ReferenceItem(id: 2, name: 'Cocody'),
                 ReferenceItem(id: 3, name: 'Yopougon'),
+                // Zone de saisie, pas une commune : elle ne compte pas.
+                ReferenceItem(id: 4, name: 'Plusieurs communes', isZone: true),
               ]),
           categoriesProvider.overrideWith((ref) async => const [
                 ReferenceItem(id: 1, name: 'Éducation et cours', icon: 'education', listingsCount: 3),
@@ -80,7 +83,6 @@ void main() {
       ),
       findsOneWidget,
     );
-
     // Grille vide : la section l'annonce au lieu de laisser un blanc.
     expect(find.byKey(const ValueKey('results-count')), findsOneWidget);
     expect(find.text('aucun résultat'), findsOneWidget);
@@ -228,16 +230,20 @@ void main() {
   });
 
   testWidgets('le hero montre de vraies annonces, cliquables et renouvelées', (tester) async {
+    // Trois offres et trois demandes. Les annonces 2 et 3 portent le même
+    // service dans la même commune : elles ne doivent jamais s’afficher
+    // ensemble, sinon l’écran montre deux fois la même proposition.
+    const communesByIndex = ['Cocody', 'Yopougon', 'Abobo', 'Abobo', 'Treichville', 'Marcory'];
     final pool = [
-      for (var index = 0; index < 5; index++)
+      for (var index = 0; index < 6; index++)
         Listing(
           id: 200 + index,
           title: 'Service réel numéro $index',
           description: 'Annonce publiée par un habitant d’Abidjan.',
           type: index.isEven ? 'OFFRE' : 'DEMANDE',
           nature: 'BENEVOLE',
-          commune: ['Cocody', 'Yopougon', 'Abobo', 'Koumassi', 'Treichville'][index],
-          category: 'Réparations et dépannage',
+          commune: communesByIndex[index],
+          category: index < 2 ? 'Couture, beauté et bien-être' : 'Réparations et dépannage',
           categoryIcon: 'repair',
           createdAt: DateTime(2026, 11, 10, 9),
         ),
@@ -279,20 +285,68 @@ void main() {
             int.parse((widget.key! as ValueKey<String>).value.split('-').last),
         ];
 
+    Listing listingOf(int id) => pool.firstWhere((listing) => listing.id == id);
+
+    /// Une carte du hero est verte si elle est une offre, orange si elle est
+    /// une demande ; le libellé porte la couleur de la nature.
+    void expectNatureColours(List<int> ids) {
+      final types = ids.map((id) => listingOf(id).type).toList();
+      expect(types, containsAll(['OFFRE', 'DEMANDE']));
+
+      for (final id in ids) {
+        final isRequest = listingOf(id).type == 'DEMANDE';
+        final badge = tester.widget<Text>(
+          find.descendant(
+            of: find.byKey(ValueKey('hero-listing-$id')),
+            matching: find.text(isRequest ? 'Demande' : 'Offre'),
+          ),
+        );
+
+        expect(badge.style?.color, isRequest ? SoutraliColors.orange : SoutraliColors.green);
+      }
+    }
+
+    /// Deux annonces du même service dans la même commune feraient doublon.
+    void expectNoDuplicateService(List<int> ids) {
+      final pairs = {
+        for (final id in ids) '${listingOf(id).category}|${listingOf(id).commune}',
+      };
+      expect(pairs, hasLength(ids.length));
+    }
+
     var shown = shownIds();
     expect(shown, hasLength(2));
     // Ce sont des annonces du vivier, pas deux exemples figés.
     expect(pool.map((listing) => listing.id), containsAll(shown));
     expect(find.text('Réparation de ventilateurs'), findsNothing);
 
-    // Cinq minutes plus tard, la vitrine a changé de paire.
+    // Une offre en vert et une demande en orange, jamais deux fois le même
+    // service.
+    expectNatureColours(shown);
+    expectNoDuplicateService(shown);
+
+    // Cinq minutes plus tard, la vitrine a changé de paire — et reste juste.
     await tester.pump(const Duration(minutes: 5));
     await tester.pump();
 
-    final rotated = shownIds();
+    var rotated = shownIds();
     expect(rotated, hasLength(2));
     expect(pool.map((listing) => listing.id), containsAll(rotated));
     expect(rotated, isNot(shown));
+    expectNatureColours(rotated);
+    expectNoDuplicateService(rotated);
+
+    // Plusieurs renouvellements d’affilée : la règle tient à chaque fois.
+    for (var turn = 0; turn < 3; turn++) {
+      await tester.pump(const Duration(minutes: 5));
+      await tester.pump();
+      final next = shownIds();
+      expect(next, hasLength(2));
+      expectNatureColours(next);
+      expectNoDuplicateService(next);
+      rotated = next;
+    }
+
     shown = rotated;
 
     // La carte ouvre la fiche de son annonce : le bouton n’est pas décoratif.

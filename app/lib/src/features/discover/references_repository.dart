@@ -11,6 +11,7 @@ class ReferenceItem {
     this.description,
     this.icon,
     this.listingsCount,
+    this.isZone = false,
   });
 
   final int id;
@@ -25,12 +26,17 @@ class ReferenceItem {
   /// 2026) : le bloc « Tous les services » affiche ce nombre.
   final int? listingsCount;
 
+  /// Vrai pour le choix « Plusieurs communes » : une zone de saisie, pas une
+  /// commune du District (qui en compte treize).
+  final bool isZone;
+
   factory ReferenceItem.fromJson(Map<String, dynamic> json) => ReferenceItem(
         id: (json['id'] as num).toInt(),
         name: json['name'] as String? ?? '',
         description: json['description'] as String?,
         icon: json['icon'] as String?,
         listingsCount: (json['listings_count'] as num?)?.toInt(),
+        isZone: json['is_zone'] as bool? ?? false,
       );
 }
 

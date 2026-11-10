@@ -99,21 +99,69 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
         _showcaseQueue.every((listing) => ids.contains(listing.id));
 
     if (!samePool) {
-      _showcaseQueue = [...source]..shuffle(_showcaseRandom);
+      _showcaseQueue = _showcaseOrder(source);
       _showcaseOffset = 0;
     }
 
-    final picked = <Listing>[
-      for (var index = 0; index < _showcaseCards && index < _showcaseQueue.length; index++)
-        _showcaseQueue[(_showcaseOffset + index) % _showcaseQueue.length],
-    ];
-    _showcaseOffset = (_showcaseOffset + _showcaseCards) % _showcaseQueue.length;
+    final total = _showcaseQueue.length;
+    final picked = <Listing>[];
+
+    for (var step = 0; step < total && picked.length < _showcaseCards; step++) {
+      final candidate = _showcaseQueue[(_showcaseOffset + step) % total];
+
+      if (picked.any((listing) => listing.id == candidate.id)) {
+        continue;
+      }
+
+      // Deux annonces du même service dans la même commune se lisent comme un
+      // doublon : on garde la première et on cherche plus loin.
+      if (picked.any(
+        (listing) => listing.category == candidate.category && listing.commune == candidate.commune,
+      )) {
+        continue;
+      }
+
+      picked.add(candidate);
+    }
+
+    _showcaseOffset = (_showcaseOffset + _showcaseCards) % total;
 
     if (!mounted) {
       return;
     }
 
     setState(() => _showcase = picked);
+  }
+
+  /// Ordre de passage de la vitrine : une offre, une demande, une offre…
+  /// ainsi les deux cartes affichées ne sont jamais deux annonces du même
+  /// genre — le vert dit « offre », l’orange dit « demande ».
+  List<Listing> _showcaseOrder(List<Listing> source) {
+    final offers = [
+      for (final listing in source)
+        if (listing.type != 'DEMANDE') listing,
+    ]..shuffle(_showcaseRandom);
+    final requests = [
+      for (final listing in source)
+        if (listing.type == 'DEMANDE') listing,
+    ]..shuffle(_showcaseRandom);
+
+    if (offers.isEmpty || requests.isEmpty) {
+      return [...source]..shuffle(_showcaseRandom);
+    }
+
+    final order = <Listing>[];
+
+    while (offers.isNotEmpty || requests.isNotEmpty) {
+      if (offers.isNotEmpty) {
+        order.add(offers.removeLast());
+      }
+      if (requests.isNotEmpty) {
+        order.add(requests.removeLast());
+      }
+    }
+
+    return order;
   }
 
   /// Demande la position au navigateur, la fait reconnaître par l’API, puis
@@ -1060,6 +1108,9 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final wide = MediaQuery.sizeOf(context).width >= 1020;
     final categories = ref.watch(categoriesProvider).value ?? const <ReferenceItem>[];
     final communes = ref.watch(communesProvider).value ?? const <ReferenceItem>[];
+    // Le District d’Abidjan compte treize communes : « Plusieurs communes » est
+    // une zone de saisie, pas une quatorzième commune.
+    final communeCount = communes.where((item) => !item.isZone).length;
     final listingsCount = categories.fold<int>(0, (total, item) => total + (item.listingsCount ?? 0));
 
     // Première paire de la vitrine : dès que l’API a répondu, une fois le
@@ -1205,7 +1256,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
                         _heroStats(
                           services: categories.length,
                           listings: listingsCount,
-                          communes: communes.length,
+                          communes: communeCount,
                           compact: compact,
                         ),
                       ],
@@ -1300,7 +1351,6 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
               child: _HeroPreviewCard(
                 key: ValueKey('hero-listing-${cards[1].id}'),
                 listing: cards[1],
-                accent: SoutraliColors.green,
               ),
             ),
           ),
@@ -3143,11 +3193,9 @@ class _HeroPreviewCard extends StatefulWidget {
   const _HeroPreviewCard({
     super.key,
     required this.listing,
-    this.accent = SoutraliColors.orange,
   });
 
   final Listing listing;
-  final Color accent;
 
   @override
   State<_HeroPreviewCard> createState() => _HeroPreviewCardState();
@@ -3160,6 +3208,9 @@ class _HeroPreviewCardState extends State<_HeroPreviewCard> {
   Widget build(BuildContext context) {
     final listing = widget.listing;
     final isRequest = listing.type == 'DEMANDE';
+    // Une seule règle de couleur dans toute l’application : l’offre est verte,
+    // la demande orange.
+    final accent = isRequest ? SoutraliColors.orange : SoutraliColors.green;
     final distance = listing.distanceKm;
     final radius = BorderRadius.circular(22);
 
@@ -3251,13 +3302,13 @@ class _HeroPreviewCardState extends State<_HeroPreviewCard> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                           decoration: BoxDecoration(
-                            color: widget.accent.withValues(alpha: 0.12),
+                            color: accent.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
                             isRequest ? 'Demande' : 'Offre',
                             style: TextStyle(
-                              color: widget.accent,
+                              color: accent,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),

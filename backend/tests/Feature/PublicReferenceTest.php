@@ -76,6 +76,27 @@ it('serves the communes of the validated referential', function () {
     expect($names)->toContain('Yopougon', 'Abobo', 'Plusieurs communes');
 });
 
+it('counts thirteen communes and flags the multi-commune zone', function () {
+    $this->seed(CommuneSeeder::class);
+
+    $rows = collect($this->getJson('/api/v1/communes')->assertOk()->json('data'));
+
+    $communes = $rows->where('is_zone', false);
+    $zones = $rows->where('is_zone', true);
+
+    // Le District autonome d'Abidjan compte treize communes : dix dans la
+    // ville, trois rattachées (Anyama, Bingerville, Songon).
+    expect($communes)->toHaveCount(13)
+        ->and($communes->pluck('name')->all())->toContain(
+            'Abobo', 'Adjamé', 'Attécoubé', 'Cocody', 'Koumassi', 'Marcory',
+            'Plateau', 'Port-Bouët', 'Treichville', 'Yopougon',
+            'Anyama', 'Bingerville', 'Songon',
+        )
+        ->and($zones->pluck('name')->values()->all())->toBe(['Plusieurs communes']);
+
+    expect($this->getJson('/api/v1/communes')->json('data.0'))->toHaveKeys(['is_zone']);
+});
+
 it('publishes demo listings to visitors without any private coordinate', function () {
     $this->seed([CommuneSeeder::class, CategorySeeder::class, DemoSeeder::class]);
 
