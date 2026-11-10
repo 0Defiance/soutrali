@@ -76,9 +76,17 @@
 </IfModule>
 
 # APK servi depuis `downloads/` : sans type déclaré, certains navigateurs
-# l'ouvrent comme du texte au lieu de proposer l'installation.
+# l'ouvrent comme du texte au lieu de proposer l'installation ; sans
+# `Content-Disposition`, d'autres l'affichent dans un onglet au lieu de
+# l'enregistrer. Le nom du fichier enregistré est explicite.
 <IfModule mod_mime.c>
     AddType application/vnd.android.package-archive .apk
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.apk$">
+        Header set Content-Disposition "attachment; filename=\"soutrali-0.2.0.apk\""
+    </FilesMatch>
 </IfModule>
 
 <IfModule mod_headers.c>
