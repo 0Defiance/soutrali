@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,6 +44,19 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   String _nature = '';
   String _categoryId = '';
 
+  /// Vitrine du hero : deux annonces réelles tirées au hasard, renouvelées
+  /// toutes les cinq minutes. Le tirage est mélangé une fois par visite puis
+  /// parcouru, pour ne jamais remontrer la même paire d’affilée.
+  static const _showcaseCards = 2;
+  static const showcaseRotation = Duration(minutes: 5);
+
+  final _showcaseRandom = Random();
+  Timer? _showcaseTimer;
+  List<Listing> _showcaseQueue = const [];
+  int _showcaseOffset = 0;
+  List<Listing> _showcase = const [];
+  bool _showcaseScheduled = false;
+
   ListingFilters get _filters {
     final location = ref.read(locationChoiceProvider);
 
@@ -57,12 +73,47 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
   }
 
+  /// Toutes les cinq minutes, la vitrine du hero change d’annonces.
   @override
   void initState() {
     super.initState();
     // La proposition de localisation arrive après le premier rendu : la page
     // s’affiche immédiatement, la popup ne retarde jamais le contenu.
     WidgetsBinding.instance.addPostFrameCallback((_) => _askForLocation());
+    _showcaseTimer = Timer.periodic(showcaseRotation, (_) => _rotateShowcase());
+  }
+
+  /// Choisit la paire affichée dans le hero. Le vivier vient de l’API : ce
+  /// sont de vraies annonces, donc leurs cartes mènent à une vraie fiche.
+  void _rotateShowcase({List<Listing>? pool}) {
+    final source = pool ??
+        ref.read(listingsProvider(const ListingFilters())).value ??
+        const <Listing>[];
+
+    if (source.isEmpty) {
+      return;
+    }
+
+    final ids = {for (final listing in source) listing.id};
+    final samePool = _showcaseQueue.length == ids.length &&
+        _showcaseQueue.every((listing) => ids.contains(listing.id));
+
+    if (!samePool) {
+      _showcaseQueue = [...source]..shuffle(_showcaseRandom);
+      _showcaseOffset = 0;
+    }
+
+    final picked = <Listing>[
+      for (var index = 0; index < _showcaseCards && index < _showcaseQueue.length; index++)
+        _showcaseQueue[(_showcaseOffset + index) % _showcaseQueue.length],
+    ];
+    _showcaseOffset = (_showcaseOffset + _showcaseCards) % _showcaseQueue.length;
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _showcase = picked);
   }
 
   /// Demande la position au navigateur, la fait reconnaître par l’API, puis
@@ -108,6 +159,7 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
 
   @override
   void dispose() {
+    _showcaseTimer?.cancel();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -1010,6 +1062,20 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     final communes = ref.watch(communesProvider).value ?? const <ReferenceItem>[];
     final listingsCount = categories.fold<int>(0, (total, item) => total + (item.listingsCount ?? 0));
 
+    // Première paire de la vitrine : dès que l’API a répondu, une fois le
+    // rendu terminé. Le minuteur prend le relais toutes les cinq minutes.
+    final showcasePool =
+        ref.watch(listingsProvider(const ListingFilters())).value ?? const <Listing>[];
+    if (showcasePool.isNotEmpty && _showcase.isEmpty && !_showcaseScheduled) {
+      _showcaseScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showcaseScheduled = false;
+        if (mounted && _showcase.isEmpty) {
+          _rotateShowcase(pool: showcasePool);
+        }
+      });
+    }
+
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
       child: Container(
@@ -1203,48 +1269,43 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     );
   }
 
-  /// Deux cartes d’exemple inclinées : elles se redressent sous le pointeur.
+  /// Vitrine du hero : deux vraies annonces, inclinées, qui se redressent et
+  /// s’ouvrent sous le pointeur. Elles changent toutes les cinq minutes.
   Widget _heroShowcase() {
-    return SizedBox(
-      height: 228,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 0,
-            top: 6,
-            child: StraightenOnHover(
-              turns: -0.028,
-              child: const _HeroPreviewCard(
-                icon: Icons.handyman_outlined,
-                title: 'Réparation de ventilateurs',
-                commune: 'Yopougon',
-                distance: 'à 2,4 km',
-                tag: 'Offre',
-                gradient: SoutraliGradients.warm,
-                foreground: SoutraliColors.ink,
-              ),
-            ),
+    final cards = _showcase;
+
+    if (cards.isEmpty) {
+      return const Align(alignment: Alignment.topLeft, child: _HeroPreviewSkeleton());
+    }
+
+    // Deux cartes décalées l’une sous l’autre : le décalage tient lieu de
+    // collage, sans que la seconde masque les montants de la première.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StraightenOnHover(
+          turns: -0.02,
+          child: _HeroPreviewCard(
+            key: ValueKey('hero-listing-${cards.first.id}'),
+            listing: cards.first,
           ),
-          Positioned(
-            right: 0,
-            bottom: 0,
+        ),
+        if (cards.length > 1) ...[
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerRight,
             child: StraightenOnHover(
-              turns: 0.024,
-              child: const _HeroPreviewCard(
-                icon: Icons.school,
-                title: 'Cours de maths à domicile',
-                commune: 'Cocody',
-                distance: 'à 800 m',
-                tag: 'Demande',
-                gradient: SoutraliGradients.warm,
-                foreground: SoutraliColors.ink,
+              turns: 0.018,
+              child: _HeroPreviewCard(
+                key: ValueKey('hero-listing-${cards[1].id}'),
+                listing: cards[1],
                 accent: SoutraliColors.green,
               ),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -2057,44 +2118,66 @@ class _AndroidAppBannerState extends State<_AndroidAppBanner> {
     final compact = widget.compact;
     final radius = BorderRadius.circular(24);
 
+    // Le logo Soutrali est l’image principale de l’option ; les deux
+    // pictogrammes qui l’accompagnent disent d’un coup d’œil « Android » et
+    // « téléchargement », sans dépendre de la lecture du texte.
+    Widget mark({required Key key, required IconData icon, required Color background, required Color foreground, required String label}) =>
+        Semantics(
+          label: label,
+          child: Container(
+            key: key,
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: background,
+              shape: BoxShape.circle,
+              boxShadow: SoutraliShadows.soft(alpha: 0.24, blur: 8, y: 3),
+            ),
+            child: Icon(icon, size: 21, color: foreground),
+          ),
+        );
+
     final badge = AnimatedScale(
-      scale: _hovered ? 1.06 : 1,
+      scale: _hovered ? 1.04 : 1,
       duration: const Duration(milliseconds: 190),
       curve: Curves.easeOutCubic,
-      child: SizedBox(
-        width: 58,
-        height: 58,
-        child: Stack(
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                gradient: SoutraliGradients.warm,
-                borderRadius: BorderRadius.circular(17),
-              ),
-              child: const Icon(Icons.android, size: 34, color: SoutraliColors.ink),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            key: const ValueKey('android-banner-logo'),
+            width: 122,
+            height: 82,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: SoutraliShadows.soft(alpha: 0.3, blur: 20, y: 9),
             ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: SoutraliShadows.soft(alpha: 0.22, blur: 8, y: 3),
-                ),
-                child: const Icon(
-                  Icons.download_rounded,
-                  size: 15,
-                  color: SoutraliColors.deepGreen,
-                ),
+            child: Image.asset('assets/brand/soutrali-logo.png', fit: BoxFit.contain),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              mark(
+                key: const ValueKey('android-banner-icon'),
+                icon: Icons.android,
+                background: SoutraliColors.orange,
+                foreground: SoutraliColors.ink,
+                label: 'Application Android',
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 8),
+              mark(
+                key: const ValueKey('download-banner-icon'),
+                icon: Icons.download_rounded,
+                background: Colors.white,
+                foreground: SoutraliColors.deepGreen,
+                label: 'Fichier APK à télécharger',
+              ),
+            ],
+          ),
+        ],
       ),
     );
 
@@ -3053,30 +3136,191 @@ class _HeroEyebrow extends StatelessWidget {
   }
 }
 
-/// Carte d’exemple du hero : illustration de ce qu’on trouve sur Soutrali.
-class _HeroPreviewCard extends StatelessWidget {
+/// Carte de la vitrine du hero : une **vraie** annonce, cliquable de tout son
+/// corps, qui ouvre sa fiche. Le bandeau du hero en montre deux, tirées au
+/// hasard et renouvelées toutes les cinq minutes.
+class _HeroPreviewCard extends StatefulWidget {
   const _HeroPreviewCard({
-    required this.icon,
-    required this.title,
-    required this.commune,
-    required this.distance,
-    required this.tag,
-    required this.gradient,
-    required this.foreground,
+    super.key,
+    required this.listing,
     this.accent = SoutraliColors.orange,
   });
 
-  final IconData icon;
-  final String title;
-  final String commune;
-  final String distance;
-  final String tag;
-  final LinearGradient gradient;
-  final Color foreground;
+  final Listing listing;
   final Color accent;
 
   @override
+  State<_HeroPreviewCard> createState() => _HeroPreviewCardState();
+}
+
+class _HeroPreviewCardState extends State<_HeroPreviewCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final listing = widget.listing;
+    final isRequest = listing.type == 'DEMANDE';
+    final distance = listing.distanceKm;
+    final radius = BorderRadius.circular(22);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Semantics(
+        button: true,
+        label: '${listing.title}, ${listing.commune} — voir le détail',
+        child: Container(
+          width: 288,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: radius,
+            border: Border.all(
+              color: _hovered ? SoutraliColors.green : Colors.white,
+              width: _hovered ? 1.4 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: SoutraliColors.ink.withValues(alpha: _hovered ? 0.26 : 0.16),
+                blurRadius: _hovered ? 40 : 32,
+                offset: Offset(0, _hovered ? 20 : 16),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: radius,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: () => context.push('/listing/${listing.id}'),
+              borderRadius: radius,
+              hoverColor: SoutraliColors.green.withValues(alpha: 0.04),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            gradient: SoutraliGradients.warm,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            categoryIcon(listing.categoryIcon),
+                            size: 22,
+                            color: SoutraliColors.ink,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                listing.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontFamily: 'Manrope',
+                                  color: SoutraliColors.ink,
+                                  fontSize: 13.5,
+                                  height: 1.25,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                listing.commune,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: SoutraliColors.muted, fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: widget.accent.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            isRequest ? 'Demande' : 'Offre',
+                            style: TextStyle(
+                              color: widget.accent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.near_me_outlined, size: 12, color: SoutraliColors.orangeText),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            distance == null
+                                ? listing.category
+                                : 'à ${distance.toStringAsFixed(1).replaceAll('.', ',')} km',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: SoutraliColors.orangeText,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (listing.budget != null) ...[
+                          const SizedBox(width: 6),
+                          Text(
+                            fcfaShort(listing.budget),
+                            style: const TextStyle(
+                              fontFamily: 'Manrope',
+                              color: SoutraliColors.deepGreen,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Silhouette de la vitrine pendant que les annonces arrivent : la même carte,
+/// grise et sans texte, pour que le hero ne saute pas à leur apparition.
+class _HeroPreviewSkeleton extends StatelessWidget {
+  const _HeroPreviewSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget bar(double width, double height) => Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: SoutraliColors.border.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(8),
+          ),
+        );
+
     return Container(
       width: 288,
       padding: const EdgeInsets.all(16),
@@ -3100,78 +3344,26 @@ class _HeroPreviewCard extends StatelessWidget {
               Container(
                 width: 44,
                 height: 44,
-                decoration: BoxDecoration(gradient: gradient, borderRadius: BorderRadius.circular(14)),
-                child: Icon(icon, size: 22, color: foreground),
+                decoration: BoxDecoration(
+                  color: SoutraliColors.border.withValues(alpha: 0.8),
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: 'Manrope',
-                        color: SoutraliColors.ink,
-                        fontSize: 13.5,
-                        height: 1.25,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      commune,
-                      style: const TextStyle(color: SoutraliColors.muted, fontSize: 12),
-                    ),
+                    bar(140, 13),
+                    const SizedBox(height: 7),
+                    bar(84, 10),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  tag,
-                  style: TextStyle(color: accent, fontSize: 11, fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.near_me_outlined, size: 12, color: SoutraliColors.orangeText),
-              const SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  distance,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: SoutraliColors.orangeText,
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Exemple assumé : ces deux cartes illustrent la page, elles ne
-              // prétendent pas être de vraies annonces vérifiées.
-              Text(
-                'Exemple',
-                style: TextStyle(
-                  color: SoutraliColors.muted.withValues(alpha: 0.8),
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 14),
+          bar(72, 18),
         ],
       ),
     );

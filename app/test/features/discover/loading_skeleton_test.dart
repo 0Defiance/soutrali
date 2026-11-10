@@ -53,7 +53,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(ListingSkeletonCard), findsNothing);
-    expect(find.text('Réparation de vélo au quartier'), findsOneWidget);
+    // La carte de la grille, et la vitrine du hero qui reprend les mêmes
+    // annonces réelles quand l’écran est assez large.
+    expect(find.text('Réparation de vélo au quartier'), findsWidgets);
   });
 
   test('la distance se lit en mètres puis en kilomètres', () {

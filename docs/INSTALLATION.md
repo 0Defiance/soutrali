@@ -432,6 +432,21 @@ Deux pièges, tous deux vérifiés en production :
   grep -c "127.0.0.1:8000" build/web/main.dart.js   # doit afficher 0
   ```
 - **Tout `build/web` part sur le serveur**, pas seulement `main.dart.js`. `assets/fonts/MaterialIcons-Regular.otf` est réécrit à chaque build avec les seules icônes utilisées : une police oubliée laisse des cases vides là où une icône récente devrait s’afficher (constaté sur le repère Android du bandeau). Le `.htaccess` la sert désormais en `no-cache`.
+- **La police d’icônes change d’adresse à chaque empreinte.** Un `no-cache` ne corrige pas une copie déjà enregistrée chez un visiteur : il ne s’applique qu’à partir de la réponse suivante. Après le build, `assets/FontManifest.json` désigne donc la police avec l’empreinte de son contenu (`fonts/MaterialIcons-Regular.otf?v=8e4a3b51`), ce qui force le navigateur à télécharger la nouvelle version sans `Ctrl+F5` :
+  ```bash
+  python - <<'PY'
+  import hashlib, json, pathlib
+  p = pathlib.Path('build/web/assets/FontManifest.json')
+  manifest = json.loads(p.read_text())
+  version = hashlib.sha256(pathlib.Path('build/web/assets/fonts/MaterialIcons-Regular.otf').read_bytes()).hexdigest()[:8]
+  for entry in manifest:
+      for font in entry['fonts']:
+          if font['asset'].endswith('MaterialIcons-Regular.otf'):
+              font['asset'] = font['asset'].split('?')[0] + f'?v={version}'
+  p.write_text(json.dumps(manifest, ensure_ascii=False))
+  PY
+  ```
+  Contrôle en ligne : `curl -s https://soutrali.alwaysdata.net/assets/FontManifest.json` doit contenir `?v=`, et le journal réseau du navigateur doit demander `MaterialIcons-Regular.otf?v=…` en 200.
 
 Vérifications :
 

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:soutrali/src/app.dart';
 import 'package:soutrali/src/features/discover/listing.dart';
+import 'package:soutrali/src/features/discover/listing_detail_page.dart';
 import 'package:soutrali/src/features/discover/listings_repository.dart';
 import 'package:soutrali/src/features/discover/references_repository.dart';
 import 'package:soutrali/src/platform/app_download.dart';
@@ -118,7 +119,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Réparation de vélos au quartier'), findsOneWidget);
+    // Le titre apparaît deux fois : la carte de la grille et la vitrine du
+    // hero, qui reprend elle aussi de vraies annonces.
+    expect(find.text('Réparation de vélos au quartier'), findsWidgets);
     // « Offre » et « Rémunérée » existent aussi dans les filtres : la carte
     // doit en tout cas porter les deux étiquettes de lecture.
     expect(find.text('Offre'), findsWidgets);
@@ -173,8 +176,36 @@ void main() {
 
     expect(find.text('Soutrali pour Android'), findsOneWidget);
     expect(find.text('Télécharger l’APK'), findsOneWidget);
-    // Le repère Android doit être dessiné, sinon le carré du badge est vide.
-    expect(find.byIcon(Icons.android), findsOneWidget);
+
+    // Le logo Soutrali est l’image principale de l’option, et les deux
+    // pictogrammes qui l’accompagnent sont réellement dessinés : l’Android
+    // et la flèche de téléchargement, pas un carré vide.
+    expect(find.byKey(const ValueKey('android-banner-logo')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('android-banner-logo')),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is Image &&
+              widget.image is AssetImage &&
+              (widget.image as AssetImage).assetName == 'assets/brand/soutrali-logo.png',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('android-banner-icon')),
+        matching: find.byIcon(Icons.android),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('download-banner-icon')),
+        matching: find.byIcon(Icons.download_rounded),
+      ),
+      findsOneWidget,
+    );
 
     // Le fichier est servi par le site lui-même, sur la même origine que l’API.
     expect(Uri.parse(apkDownloadUrl).path, '/downloads/soutrali.apk');
@@ -194,5 +225,84 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(downloads, 2);
+  });
+
+  testWidgets('le hero montre de vraies annonces, cliquables et renouvelées', (tester) async {
+    final pool = [
+      for (var index = 0; index < 5; index++)
+        Listing(
+          id: 200 + index,
+          title: 'Service réel numéro $index',
+          description: 'Annonce publiée par un habitant d’Abidjan.',
+          type: index.isEven ? 'OFFRE' : 'DEMANDE',
+          nature: 'BENEVOLE',
+          commune: ['Cocody', 'Yopougon', 'Abobo', 'Koumassi', 'Treichville'][index],
+          category: 'Réparations et dépannage',
+          categoryIcon: 'repair',
+          createdAt: DateTime(2026, 11, 10, 9),
+        ),
+    ];
+
+    tester.view.physicalSize = const Size(1400, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          listingsProvider.overrideWith((ref, filters) async => pool),
+          listingProvider.overrideWith((ref, id) async {
+            for (final listing in pool) {
+              if (listing.id == id) {
+                return listing;
+              }
+            }
+            return null;
+          }),
+          communesProvider.overrideWith((ref) async => const <ReferenceItem>[]),
+          categoriesProvider.overrideWith((ref) async => const <ReferenceItem>[]),
+        ],
+        child: SoutraliApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    /// Les deux cartes de la vitrine, repérées par leur clé d’annonce.
+    final showcase = find.byWidgetPredicate(
+      (widget) =>
+          widget.key is ValueKey<String> &&
+          (widget.key! as ValueKey<String>).value.startsWith('hero-listing-'),
+    );
+    List<int> shownIds() => [
+          for (final widget in tester.widgetList<Widget>(showcase))
+            int.parse((widget.key! as ValueKey<String>).value.split('-').last),
+        ];
+
+    var shown = shownIds();
+    expect(shown, hasLength(2));
+    // Ce sont des annonces du vivier, pas deux exemples figés.
+    expect(pool.map((listing) => listing.id), containsAll(shown));
+    expect(find.text('Réparation de ventilateurs'), findsNothing);
+
+    // Cinq minutes plus tard, la vitrine a changé de paire.
+    await tester.pump(const Duration(minutes: 5));
+    await tester.pump();
+
+    final rotated = shownIds();
+    expect(rotated, hasLength(2));
+    expect(pool.map((listing) => listing.id), containsAll(rotated));
+    expect(rotated, isNot(shown));
+    shown = rotated;
+
+    // La carte ouvre la fiche de son annonce : le bouton n’est pas décoratif.
+    await tester.tap(find.byKey(ValueKey('hero-listing-${shown.first}')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ListingDetailPage), findsOneWidget);
+    expect(
+      find.text(pool.firstWhere((listing) => listing.id == shown.first).title),
+      findsWidgets,
+    );
   });
 }
