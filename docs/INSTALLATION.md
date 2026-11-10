@@ -425,6 +425,14 @@ tar czf - -C build/web . | ssh -i <clé> soutrali@ssh-soutrali.alwaysdata.net \
   'tar xzf - -C /home/soutrali/soutrali/backend/public'
 ```
 
+Deux pièges, tous deux vérifiés en production :
+
+- **Le `--dart-define` n’est pas facultatif.** Sans lui, l’application cherche son API sur `http://127.0.0.1:8000` : la vitrine reste en squelettes et le journal réseau du navigateur affiche des `ERR_CONNECTION_REFUSED`. Contrôle rapide après le build :
+  ```bash
+  grep -c "127.0.0.1:8000" build/web/main.dart.js   # doit afficher 0
+  ```
+- **Tout `build/web` part sur le serveur**, pas seulement `main.dart.js`. `assets/fonts/MaterialIcons-Regular.otf` est réécrit à chaque build avec les seules icônes utilisées : une police oubliée laisse des cases vides là où une icône récente devrait s’afficher (constaté sur le repère Android du bandeau). Le `.htaccess` la sert désormais en `no-cache`.
+
 Vérifications :
 
 ```bash

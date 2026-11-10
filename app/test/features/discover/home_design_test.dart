@@ -173,6 +173,8 @@ void main() {
 
     expect(find.text('Soutrali pour Android'), findsOneWidget);
     expect(find.text('Télécharger l’APK'), findsOneWidget);
+    // Le repère Android doit être dessiné, sinon le carré du badge est vide.
+    expect(find.byIcon(Icons.android), findsOneWidget);
 
     // Le fichier est servi par le site lui-même, sur la même origine que l’API.
     expect(Uri.parse(apkDownloadUrl).path, '/downloads/soutrali.apk');
@@ -181,9 +183,16 @@ void main() {
     // Un appui demande bien l’ouverture du fichier, une seule fois.
     expect(downloads, 0);
 
-    await tester.tap(download);
+    // Toute la carte est cliquable, pas seulement le bouton.
+    await tester.tap(find.text('Soutrali pour Android'));
     await tester.pumpAndSettle();
 
     expect(downloads, 1);
+
+    // Le bouton reste le geste explicite, et ne déclenche qu’un téléchargement.
+    await tester.tap(download);
+    await tester.pumpAndSettle();
+
+    expect(downloads, 2);
   });
 }

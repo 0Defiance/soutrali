@@ -85,7 +85,15 @@
     <FilesMatch "\.(js|mjs|json|html|wasm|apk)$">
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
-    <FilesMatch "\.(png|jpg|jpeg|webp|gif|svg|ico|ttf|otf|woff|woff2)$">
+    # `MaterialIcons-Regular.otf` est réécrit à chaque build avec seulement les
+    # icônes utilisées : une copie gardée un mois affichait des cases vides
+    # quand une icône nouvelle arrivait (constaté le 10 novembre 2026 sur le
+    # repère Android du bandeau de téléchargement). 23 Ko, donc rien à gagner
+    # à le cacher : il est revalidé comme les scripts.
+    <FilesMatch "^MaterialIcons-Regular\.otf$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+    <FilesMatch "^(?!MaterialIcons-Regular).*\.(png|jpg|jpeg|webp|gif|svg|ico|ttf|otf|woff|woff2)$">
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>
 </IfModule>

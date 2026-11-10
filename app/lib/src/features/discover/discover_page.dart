@@ -1749,114 +1749,24 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
   /// téléphone. Le fichier est servi par le site (`downloads/soutrali.apk`),
   /// donc aucun magasin ni compte tiers n’est nécessaire pour installer.
   Widget _buildAndroidApp(bool compact) {
-    final theme = Theme.of(context);
-    final badge = Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        gradient: SoutraliGradients.warm,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Icon(Icons.android, size: 30, color: SoutraliColors.ink),
-    );
-    final pitch = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Text(
-          'Soutrali pour Android',
-          style: TextStyle(
-            fontFamily: 'Manrope',
-            color: Colors.white,
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 5),
-        Text(
-          'Les annonces, la messagerie et le contact, installés sur votre '
-          'téléphone. Fichier APK signé, à ouvrir directement — aucun magasin '
-          'd’applications à traverser.',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.82),
-            height: 1.45,
-          ),
-        ),
-      ],
-    );
-    final download = SizedBox(
-      width: compact ? double.infinity : null,
-      height: 48,
-      child: FilledButton.icon(
-        key: const ValueKey('download-apk'),
-        style: FilledButton.styleFrom(
-          backgroundColor: SoutraliColors.orange,
-          foregroundColor: SoutraliColors.ink,
-          padding: const EdgeInsets.symmetric(horizontal: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: theme.textTheme.labelLarge?.copyWith(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        onPressed: () async {
-          final opened = await ref.read(apkDownloaderProvider)();
+    return _AndroidAppBanner(compact: compact, onDownload: _downloadApk);
+  }
 
-          if (!opened && mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Téléchargement indisponible : ouvrez '
-                  'soutrali.alwaysdata.net/downloads/soutrali.apk dans un navigateur.',
-                ),
-              ),
-            );
-          }
-        },
-        icon: const Icon(Icons.download_rounded, size: 20),
-        label: const Text('Télécharger l’APK'),
-      ),
-    );
+  /// Ouvre le fichier APK servi par le site ; prévient si aucun gestionnaire
+  /// ne répond plutôt que de laisser croire au téléchargement.
+  Future<void> _downloadApk() async {
+    final opened = await ref.read(apkDownloaderProvider)();
 
-    return Container(
-      width: double.infinity,
-      color: SoutraliColors.ivory,
-      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 8, compact ? 16 : 40, 26),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1120),
-          child: Container(
-            padding: EdgeInsets.all(compact ? 18 : 24),
-            decoration: BoxDecoration(
-              gradient: SoutraliGradients.hero,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: SoutraliShadows.soft(alpha: 0.16, blur: 26, y: 10),
-            ),
-            child: compact
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      badge,
-                      const SizedBox(height: 14),
-                      pitch,
-                      const SizedBox(height: 16),
-                      download,
-                    ],
-                  )
-                : Row(
-                    children: [
-                      badge,
-                      const SizedBox(width: 18),
-                      Expanded(child: pitch),
-                      const SizedBox(width: 20),
-                      download,
-                    ],
-                  ),
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Téléchargement indisponible : ouvrez '
+            'soutrali.alwaysdata.net/downloads/soutrali.apk dans un navigateur.',
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildFooter(bool compact) {
@@ -2119,6 +2029,184 @@ class _FilterDropdown extends StatelessWidget {
         onChanged: (selected) {
           if (selected != null) onChanged(selected);
         },
+      ),
+    );
+  }
+}
+
+/// Bandeau de téléchargement de l’APK : le repère Android dit d’un coup d’œil
+/// de quoi il s’agit, et **toute la carte** est cliquable — pas seulement le
+/// bouton — avec curseur, relief et halo au survol, comme les autres cartes du
+/// site. Accessible au clavier (Tab puis Entrée ou Espace).
+class _AndroidAppBanner extends StatefulWidget {
+  const _AndroidAppBanner({required this.compact, required this.onDownload});
+
+  final bool compact;
+  final Future<void> Function() onDownload;
+
+  @override
+  State<_AndroidAppBanner> createState() => _AndroidAppBannerState();
+}
+
+class _AndroidAppBannerState extends State<_AndroidAppBanner> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final compact = widget.compact;
+    final radius = BorderRadius.circular(24);
+
+    final badge = AnimatedScale(
+      scale: _hovered ? 1.06 : 1,
+      duration: const Duration(milliseconds: 190),
+      curve: Curves.easeOutCubic,
+      child: SizedBox(
+        width: 58,
+        height: 58,
+        child: Stack(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: SoutraliGradients.warm,
+                borderRadius: BorderRadius.circular(17),
+              ),
+              child: const Icon(Icons.android, size: 34, color: SoutraliColors.ink),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: SoutraliShadows.soft(alpha: 0.22, blur: 8, y: 3),
+                ),
+                child: const Icon(
+                  Icons.download_rounded,
+                  size: 15,
+                  color: SoutraliColors.deepGreen,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final pitch = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'Soutrali pour Android',
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            color: Colors.white,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Text(
+          'Les annonces, la messagerie et le contact, installés sur votre '
+          'téléphone. Fichier APK signé, à ouvrir directement — aucun magasin '
+          'd’applications à traverser.',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: Colors.white.withValues(alpha: 0.82),
+            height: 1.45,
+          ),
+        ),
+      ],
+    );
+
+    final download = SizedBox(
+      width: compact ? double.infinity : null,
+      height: 48,
+      child: FilledButton.icon(
+        key: const ValueKey('download-apk'),
+        style: FilledButton.styleFrom(
+          backgroundColor: SoutraliColors.orange,
+          foregroundColor: SoutraliColors.ink,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          textStyle: theme.textTheme.labelLarge?.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        onPressed: widget.onDownload,
+        icon: const Icon(Icons.download_rounded, size: 20),
+        label: const Text('Télécharger l’APK'),
+      ),
+    );
+
+    return Container(
+      width: double.infinity,
+      color: SoutraliColors.ivory,
+      padding: EdgeInsets.fromLTRB(compact ? 16 : 40, 8, compact ? 16 : 40, 26),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1120),
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hovered = true),
+            onExit: (_) => setState(() => _hovered = false),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 190),
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
+              decoration: BoxDecoration(
+                gradient: SoutraliGradients.hero,
+                borderRadius: radius,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: _hovered ? 0.36 : 0.1),
+                ),
+                boxShadow: SoutraliShadows.soft(
+                  alpha: _hovered ? 0.26 : 0.16,
+                  blur: _hovered ? 34 : 26,
+                  y: _hovered ? 14 : 10,
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: widget.onDownload,
+                  borderRadius: radius,
+                  hoverColor: Colors.white.withValues(alpha: 0.04),
+                  child: Padding(
+                    padding: EdgeInsets.all(compact ? 18 : 24),
+                    child: compact
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              badge,
+                              const SizedBox(height: 14),
+                              pitch,
+                              const SizedBox(height: 16),
+                              download,
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              badge,
+                              const SizedBox(width: 18),
+                              Expanded(child: pitch),
+                              const SizedBox(width: 20),
+                              download,
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
