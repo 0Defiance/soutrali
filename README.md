@@ -6,11 +6,29 @@
 
 Plateforme d’entraide et de services de proximité entre habitants d’une même ville de Côte d’Ivoire. Projet pilote : **Abidjan**.
 
+## Accès direct
+
+<p align="center">
+  <a href="https://soutrali.alwaysdata.net"><img src="https://img.shields.io/badge/OUVRIR_LE_SITE-soutrali.alwaysdata.net-037C30?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Ouvrir le site Soutrali"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-ANDROID_%C2%B7_59_Mo-FE7402?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger l'APK Android"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-WINDOWS_%C2%B7_3_zip-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Télécharger le paquet desktop Windows"></a>
+</p>
+
+| Plateforme | Lien direct | En deux mots |
+|---|---|---|
+| 🌐 **Site web** | **<https://soutrali.alwaysdata.net>** | Rien à installer : l’application, l’API et le back-office `/admin` sur la même origine. |
+| 🤖 **Android** | [**soutrali-android.apk**](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) · 59 Mo | APK signé `CN=Soutrali`, à copier sur le téléphone puis installer (autoriser les sources inconnues). |
+| 🖥️ **Desktop Windows** | [**Release `v0.2.0`**](https://github.com/0Defiance/soutrali/releases/latest) · 3 zip, 71 Mo | Rien à installer : extraire les 3 zip dans un même dossier, puis double-cliquer sur `soutrali.exe`. |
+
+> **Le site d’abord.** Tout ce qui suit dans ce fichier décrit le projet ; pour
+> simplement **utiliser** Soutrali, le site web reste le chemin le plus court —
+> l’APK et le paquet desktop servent aux tests hors navigateur.
+
 > **Ce fichier est la source unique de contexte du projet.** Il est écrit pour qu’une personne, une équipe ou une IA qui n’a rien suivi puisse comprendre **ce qu’est Soutrali, pourquoi il existe, ce qui est décidé, ce qui ne l’est pas, et comment reprendre le travail avec n’importe quelle technologie**.
 >
 > **Neutralité technologique :** ce document ne choisit aucun langage, framework, base de données ni hébergeur. Le choix technique (« stack v3 ») sera fait ensuite, en équipe.
 >
-> **Version :** 4.3 · **Dernière mise à jour :** 29 octobre 2026 · **Langue de travail :** français · **Statut :** cadrage validé ; phase 2 en cours — site en ligne, paquet desktop et APK Android livrés.
+> **Version :** 4.4 · **Dernière mise à jour :** 10 novembre 2026 · **Langue de travail :** français · **Statut :** cadrage validé ; phase 2 en cours — site en ligne, paquet desktop et APK Android livrés.
 >
 > **Ce README reste le document unique de contexte fonctionnel** (décisions D-15 et D-16). Il décrit *ce qu’est Soutrali et ce qui est décidé*. Il ne décrit pas le code.
 
@@ -931,6 +949,7 @@ En cas d’écart entre ce README et un document Word, signaler l’écart et co
 | 10 nov. 2026 (soir) | **Offre verte, demande orange, treize communes** : la vitrine pouvait montrer deux fois le même service et sa seconde carte était verte par construction. Désormais **l’offre est verte, la demande orange** partout, la paire du hero **alterne les deux genres** et écarte deux annonces du même service. En parallèle, « Plusieurs communes » est reconnue pour ce qu’elle est — une zone de saisie, pas une commune : l’API le dit (`is_zone`) et le bandeau affiche les **treize communes** du District d’Abidjan au lieu de quatorze. Pest **96 tests / 1 476 assertions**, Flutter **48 tests**. À noter : la base publiée ne contient que des offres, la paire mixte apparaîtra à la première demande publiée | Vitrine juste |
 | 10 nov. 2026 (suite) | **Logo dans le bandeau, vitrine qui tourne, police d’icônes enfin renouvelée** : le bandeau Android prend le **logo Soutrali** comme image principale, entouré des pastilles **Android** et **téléchargement**. La vitrine du hero ne montre plus deux exemples figés mais **deux vraies annonces**, tirées au hasard dans l’API et **renouvelées toutes les cinq minutes** ; chaque carte affiche titre, commune, type, distance ou service et montant, et **ouvre sa fiche** au clic. Les deux cartes s’empilent en décalage pour ne plus se masquer. Enfin le blocage de la police d’icônes est traité à la racine : `FontManifest.json` la désigne avec une **empreinte de contenu** (`?v=8e4a3b51`), donc une police reconstruite change d’URL et échappe à la copie d’un mois que le navigateur gardait. Suite Flutter **48 tests** verte, `flutter analyze` propre, bundle **sha256 `19ffd00b…`** servi à l’identique, fiche `/listing/35` rendue en ligne. L’**APK est recompilé** avec ce même code (`sha256:fed00bb6…`, 59 098 408 o), remis sur le site et dans la Release `v0.2.0` — le téléphone montre donc exactement ce que montre le site. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2 | Bandeau lisible, vitrine vivante |
 | 10 nov. 2026 | **Bandeau Android visible et cliquable, GitHub au même niveau** : le carré orange vide venait de la **police d’icônes** — `MaterialIcons-Regular.otf` est réécrit à chaque build, et seule restait l’ancienne copie (`93025b48…`), sans les glyphes `android` et `download` ; tout `build/web` est désormais téléversé et `.htaccess` la sert en `no-cache`. Le badge porte le **robot Android** avec une pastille « télécharger », et **toute la carte** est cliquable (halo, curseur main, relief et ombre au survol, clavier Tab + Entrée), le bouton restant le geste explicite. Les tests Flutter vérifient l’icône, l’appui sur le titre *et* sur le bouton sans doublon (**47 tests**). La Release GitHub `v0.2.0` est réécrite et son APK remplacé : `size` 59 098 408 et `digest` `sha256:45b27c68…2376`, identiques au fichier servi par le site. Bundle web **3 925 729 o** (`da8d0883…a98`) — un build lancé sans `--dart-define` pointait sur `127.0.0.1:8000`, attrapé au journal réseau et refait. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2 | F-21 : APK, bandeau interactif, Release à jour |
+| 10 nov. 2026 (nuit) | **Le dépôt mène au site et aux téléchargements en un clic** : le champ « Website » du dépôt pointe sur `https://soutrali.alwaysdata.net` (lien visible dans la colonne « À propos » dès l’ouverture), et le README s’ouvre sur un bloc **« Accès direct »** — trois boutons de couleur (site vert `#037C30`, Android orange `#FE7402`, Windows bleu) suivis d’un tableau « Plateforme / Lien direct / En deux mots ». Les trois badges et les quatre liens de release ont été appelés en HTTP (200, `image/svg+xml` pour les badges ; `releases/latest/download/…` répond bien) | Accès immédiat au site et aux plateformes |
 | 9 nov. 2026 | **Prix d’Abidjan, fiche de localisation dessinée, fiche d’annonce complète** : les **28 services** de la vitrine portent un tarif crédible avec son unité dans la description (« 35 000 FCFA par mois », « 10 000 FCFA la visite ») ; la variation entre annonces vient du contexte du titre (À domicile × 1,15, Express × 1,35, Sur rendez-vous × 1,10, Petit budget × 0,75) et non plus d’une remise de 5 %, et le seeder réaligne les annonces déjà en base. La fiche de localisation devient une **feuille avec plan de quartier peint**, épingle, commune détectée et trois promesses. Le détail d’une annonce devient une **fiche de service** : montant en grand, quatre tuiles Lieu / Disponibilité / Publication / Référence, auteur, conseils de prudence, annonces voisines, barre fixe « Contacter » et menu ⋮ (signaler, bloquer, copier le lien). Backend **95 tests / 1 459 assertions**, Flutter **47 tests** verts, bundle 3 924 741 o téléversé et servi à l’identique. Détail dans `docs/SUIVI_DEVELOPPEMENT.md` §2 | Prix de vitrine crédibles, fiche F-20 |
 
 ---

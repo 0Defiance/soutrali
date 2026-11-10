@@ -476,6 +476,33 @@ Application Flutter :
 - **Limite de contenu, dite franchement** : la base publiée contient **85 offres et aucune demande**. La règle verte/orange est donc prête, mais une paire mixte n’apparaîtra qu’à la première demande publiée depuis « Annonce » — rien n’est inventé pour faire joli.
 - **APK** : recompilé avec ce même code, remis sur le site et dans la Release `v0.2.0` (`sha256:fed00bb6…`).
 
+### 10 novembre 2026 (nuit) — le dépôt GitHub mène au site et aux téléchargements
+
+- **Demande du porteur** : que le lien du site soit accessible dès l’ouverture du
+  dépôt, et que l’on puisse télécharger l’Android et le desktop sans chercher le
+  fichier — avec une présentation simple.
+- **Champ « Website » du dépôt** : `homepage` était **vide** dans l’API GitHub,
+  donc aucun lien dans la colonne « À propos ». Il vaut désormais
+  `https://soutrali.alwaysdata.net` (PATCH `repos/0Defiance/soutrali`) : c’est le
+  lien que GitHub affiche à droite du dépôt et dans la liste des dépôts.
+- **Bloc « Accès direct » en tête de `README.md`**, juste après le titre, avant
+  le cadrage : trois badges-boutons cliquables (`shields.io`, `for-the-badge`) —
+  **OUVRIR LE SITE** (vert `#037C30`), **TÉLÉCHARGER · ANDROID · 59 Mo**
+  (orange `#FE7402`), **TÉLÉCHARGER · WINDOWS · 3 zip** (bleu `#0078D6`) — puis
+  un tableau **Plateforme / Lien direct / En deux mots** (site, APK de la
+  Release `v0.2.0`, paquet desktop en 3 zip et la marche à suivre
+  `soutrali.exe`).
+- **Liens utilisés** : `https://soutrali.alwaysdata.net` et les adresses
+  **stables** `releases/latest/download/soutrali-android.apk` et
+  `releases/latest` — elles ne changeront pas à la prochaine version, contrairement
+  à un `releases/download/v0.2.0/…` figé.
+- **Vérifications** : les trois URL de badges répondent **200** en
+  `image/svg+xml` ; `curl -I` sur le site, sur l’APK et sur les trois zip de la
+  Release → **200 / 302 vers l’objet** ; l’asset APK de la Release porte toujours
+  `sha256:fed00bb6…` et **59 098 408 o** ; page du dépôt ouverte dans le
+  navigateur pour contrôler le rendu du bloc (badges, tableau, tableau de la
+  colonne « À propos »).
+
 ---
 
 ## 3. Ce qui est fait et vérifié
