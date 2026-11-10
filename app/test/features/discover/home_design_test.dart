@@ -306,12 +306,14 @@ void main() {
       }
     }
 
-    /// Deux annonces du même service dans la même commune feraient doublon.
+    /// Deux annonces du même service dans la même commune feraient doublon :
+    /// la vitrine préfère deux services différents.
     void expectNoDuplicateService(List<int> ids) {
       final pairs = {
         for (final id in ids) '${listingOf(id).category}|${listingOf(id).commune}',
       };
       expect(pairs, hasLength(ids.length));
+      expect(listingOf(ids[0]).category, isNot(listingOf(ids[1]).category));
     }
 
     var shown = shownIds();

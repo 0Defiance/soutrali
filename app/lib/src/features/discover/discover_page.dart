@@ -104,24 +104,45 @@ class _DiscoverPageState extends ConsumerState<DiscoverPage> {
     }
 
     final total = _showcaseQueue.length;
+    final candidates = [
+      for (var step = 0; step < total; step++) _showcaseQueue[(_showcaseOffset + step) % total],
+    ];
+
     final picked = <Listing>[];
 
-    for (var step = 0; step < total && picked.length < _showcaseCards; step++) {
-      final candidate = _showcaseQueue[(_showcaseOffset + step) % total];
-
+    for (final candidate in candidates) {
+      if (picked.length == _showcaseCards) {
+        break;
+      }
       if (picked.any((listing) => listing.id == candidate.id)) {
         continue;
       }
-
-      // Deux annonces du même service dans la même commune se lisent comme un
-      // doublon : on garde la première et on cherche plus loin.
-      if (picked.any(
-        (listing) => listing.category == candidate.category && listing.commune == candidate.commune,
-      )) {
-        continue;
-      }
-
       picked.add(candidate);
+    }
+
+    // Une autre annonce du même service se lit comme un doublon : on préfère
+    // un service différent, et à défaut une autre commune.
+    if (picked.length == _showcaseCards && picked[0].category == picked[1].category) {
+      final other = candidates.firstWhere(
+        (candidate) =>
+            candidate.id != picked[0].id &&
+            candidate.category != picked[0].category &&
+            candidate.type == picked[1].type,
+        orElse: () => picked[1],
+      );
+
+      if (other.id != picked[1].id) {
+        picked[1] = other;
+      } else if (picked[0].commune == picked[1].commune) {
+        final elsewhere = candidates.firstWhere(
+          (candidate) =>
+              candidate.id != picked[0].id &&
+              candidate.type == picked[1].type &&
+              candidate.commune != picked[0].commune,
+          orElse: () => picked[1],
+        );
+        picked[1] = elsewhere;
+      }
     }
 
     _showcaseOffset = (_showcaseOffset + _showcaseCards) % total;

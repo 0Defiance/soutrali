@@ -6,7 +6,7 @@
 >
 > **Règle d’or :** chaque entrée décrit un fait observé, jamais une intention. Si une mesure n’a pas été faite, elle est écrite « non mesurée ». Si un seuil n’est pas fixé par la MOA, aucun chiffre n’est proposé.
 >
-> **Version :** 1.7 · **Dernière mise à jour :** 6 novembre 2026
+> **Version :** 1.8 · **Dernière mise à jour :** 10 novembre 2026
 
 ---
 
@@ -463,7 +463,18 @@ Application Flutter :
 - **Tests** : `home_design_test.dart` gagne un cas complet (« le hero montre de vraies annonces, cliquables et renouvelées ») : vivier de cinq annonces, deux cartes affichées dont les identifiants appartiennent au vivier, `pump(const Duration(minutes: 5))` puis paire différente, appui sur la carte → `ListingDetailPage` ouverte avec le bon titre. Le bandeau vérifie le logo (image `assets/brand/soutrali-logo.png`) et les deux pastilles dessinées. Suite Flutter : **48 tests** verts, `flutter analyze` propre.
 - **Vérifications en ligne** (navigateur neuf, onglet privé) : `FontManifest.json` servi avec `?v=8e4a3b51` ; police, `main.dart.js` (**sha256 `19ffd00b…08e5`**, identique local/serveur) et logo chargés en 200 ; `/api/v1/listings` 200, `/api/v1/categories` 200, `/api/v1/communes` 200, `/me` 401 hors session ; compteurs réels **32 services / 85 annonces / 14 communes** ; vitrine montrant « À domicile : Ménage et repassage à domicile » (Marcory) et « Express : repassage » ; fiche `/listing/35` ouverte et rendue (17 000 FCFA, Marcory, « N° 35 »).
 - **Limites dites franchement** : l’appui sur une carte du hero n’a pas pu être rejoué dans un vrai navigateur — le canevas Flutter n’expose pas d’arbre d’accessibilité exploitable par les outils de ce poste ; le geste est couvert par le test de widgets, et la fiche visée a été ouverte en ligne. L’installation sur un téléphone reste à faire.
-- **APK recompilé pour rester au même niveau** : `flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net` (350,7 s) → **0.2.0 (versionCode 2)**, `minSdkVersion 24`, signé `CN=Soutrali` (vérifié par `apksigner`), **59 082 024 o**, sha256 **`f1a255d5…3c8d`**. Le fichier remplace `backend/public/downloads/soutrali.apk` (sha du serveur identique, `HEAD` → 200, type Android, `Content-Disposition: attachment; filename="soutrali-0.2.0.apk"`) et l’asset de la Release `v0.2.0` (id `731537576`, `size` 59 082 024, `digest` `sha256:f1a255d5…`), notes réécrites avec cette empreinte (PATCH 200, téléchargement vérifié en 206).
+- **APK recompilé pour rester au même niveau** : `flutter build apk --release --dart-define=API_BASE_URL=https://soutrali.alwaysdata.net` (350,7 s) → **0.2.0 (versionCode 2)**, `minSdkVersion 24`, signé `CN=Soutrali` (vérifié par `apksigner`), **59 082 024 o**, sha256 `f1a255d5…3c8d`. Le fichier a remplacé `backend/public/downloads/soutrali.apk` (sha du serveur identique) et l’asset de la Release `v0.2.0` ; il a été remplacé le même soir par la compilation ci-dessous.
+
+### 10 novembre 2026 (soir) — l’offre est verte, la demande orange, et treize communes
+
+- **Constat porteur, capture à l’appui** : la vitrine montrait deux fois le même service (« Retouches et ourlets », Treichville) et les deux pastilles « Offre » n’avaient pas la même couleur. Deux causes distinctes : la seconde carte du hero recevait `accent: SoutraliColors.green` **en dur**, quelle que soit la nature de l’annonce ; et le tirage ne regardait ni le genre ni le service, donc deux annonces du même prestataire pouvaient tomber ensemble.
+- **Une seule règle de couleur dans toute l’application** : **offre = vert** (`#037C30`), **demande = orange** (`#FE7402`). La carte du hero déduit sa pastille de `listing.type` ; les filtres, le bandeau de la carte de la grille et la fiche d’annonce suivaient déjà cette règle — c’était la seule exception, elle est supprimée.
+- **Plus de doublon dans la vitrine** : l’ordre de passage alterne **offre, demande, offre…** (deux cartes = un des deux genres, jamais deux fois le même), et la sélection écarte une seconde annonce du même service ; à défaut elle préfère une autre commune. Quatre renouvellements d’affilée sont vérifiés par le test.
+- **Treize communes, pas quatorze** : le référentiel contient les treize communes du District **et** la zone de saisie « Plusieurs communes » (D-03). Le bandeau additionnait les deux. `Commune::MULTI_COMMUNE` + `isZone()` côté Laravel, champ `is_zone` dans `GET /api/v1/communes`, et le site ne compte plus que les communes. La zone reste proposée dans le filtre et à la publication : elle n’a simplement plus le statut de commune. Vérifié en ligne : l’API renvoie **14 lignes dont 13 communes et 1 zone**.
+- **Tests** : Pest **96 tests / 1 476 assertions**, dont « it counts thirteen communes and flags the multi-commune zone » (13 noms exacts + la zone seule) ; Flutter **48 tests**, le cas du hero vérifiant en plus une offre verte + une demande orange, deux services différents et la règle tenue sur quatre renouvellements ; le compteur du bandeau ignore la zone (3 communes + 1 zone → « 3 »). `flutter analyze` et `pint`/`phpstan` propres.
+- **En ligne** : le bandeau affiche « 13 communes d’Abidjan », la vitrine montre deux services différents (« Dépannage d’ordinateur » Plateau et « Petit budget : retouches » Treichville), pastille verte ; bundle `de622373…` identique local/serveur.
+- **Limite de contenu, dite franchement** : la base publiée contient **85 offres et aucune demande**. La règle verte/orange est donc prête, mais une paire mixte n’apparaîtra qu’à la première demande publiée depuis « Annonce » — rien n’est inventé pour faire joli.
+- **APK** : recompilé avec ce même code, remis sur le site et dans la Release `v0.2.0` (`sha256:fed00bb6…`).
 
 ---
 
