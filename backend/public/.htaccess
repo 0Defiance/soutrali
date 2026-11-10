@@ -93,7 +93,10 @@
     <FilesMatch "^MaterialIcons-Regular\.otf$">
         Header set Cache-Control "no-cache, must-revalidate"
     </FilesMatch>
-    <FilesMatch "^(?!MaterialIcons-Regular).*\.(png|jpg|jpeg|webp|gif|svg|ico|ttf|otf|woff|woff2)$">
+    # Pas de `otf` ici : la seule police de ce format est celle des icônes,
+    # servie juste au-dessus en revalidation. Deux règles qui se croisent
+    # envoyaient deux en-têtes `Cache-Control` contradictoires.
+    <FilesMatch "\.(png|jpg|jpeg|webp|gif|svg|ico|ttf|woff|woff2)$">
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>
 </IfModule>
