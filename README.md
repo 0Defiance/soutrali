@@ -10,8 +10,8 @@ Plateforme d’entraide et de services de proximité entre habitants d’une mê
 
 <p align="center">
   <a href="https://soutrali.alwaysdata.net"><img src="https://img.shields.io/badge/OUVRIR_LE_SITE-soutrali.alwaysdata.net-037C30?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Ouvrir le site Soutrali"></a>
-  <a href="https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-ANDROID_%C2%B7_59_Mo-FE7402?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger l'APK Android"></a>
-  <a href="https://github.com/0Defiance/soutrali/releases/latest"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-WINDOWS_%C2%B7_3_zip-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Télécharger le paquet desktop Windows"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk"><img src="https://img.shields.io/badge/ANDROID-APK_%C2%B7_59_Mo-FE7402?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger l'APK Android"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest"><img src="https://img.shields.io/badge/WINDOWS-3_zip_%C2%B7_71_Mo-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Télécharger le paquet desktop Windows"></a>
 </p>
 
 | Plateforme | Lien direct | En deux mots |
