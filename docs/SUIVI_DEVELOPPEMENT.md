@@ -502,6 +502,13 @@ Application Flutter :
   **aussi sur `main`** (commit `587eadb`, `README.md` seulement, rien d’autre
   n’a été fusionné) : les deux branches portent désormais le même bloc.
 - **Vérifications** : les trois URL de badges répondent **200** en
+  `image/svg+xml` ; `curl -L` sur le site, sur l’APK et sur les trois zip de
+  la Release → **200**, l’APK étant servi en `application/vnd.android.package-archive` ;
+  l’asset APK de la Release porte toujours `sha256:fed00bb6…` et **59 098 408 o** ;
+  la page du dépôt a été chargée dans le navigateur : bloc visible sous le titre,
+  les trois badges se chargent réellement (358 et 271 px de large via le proxy
+  d’images de GitHub), le tableau s’affiche et la colonne « À propos » montre la
+  description et le lien `soutrali.alwaysdata.net`.
 
 ---
 
