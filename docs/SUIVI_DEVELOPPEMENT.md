@@ -496,12 +496,12 @@ Application Flutter :
   **stables** `releases/latest/download/soutrali-android.apk` et
   `releases/latest` — elles ne changeront pas à la prochaine version, contrairement
   à un `releases/download/v0.2.0/…` figé.
+- **Branche par défaut = `main`** : la page d’accueil d’un dépôt affiche le
+  `README.md` de la branche par défaut, ici `main`, et non celui de
+  `labo-soutrali-v2` — le bloc aurait donc été invisible. Il a été ajouté
+  **aussi sur `main`** (commit `587eadb`, `README.md` seulement, rien d’autre
+  n’a été fusionné) : les deux branches portent désormais le même bloc.
 - **Vérifications** : les trois URL de badges répondent **200** en
-  `image/svg+xml` ; `curl -I` sur le site, sur l’APK et sur les trois zip de la
-  Release → **200 / 302 vers l’objet** ; l’asset APK de la Release porte toujours
-  `sha256:fed00bb6…` et **59 098 408 o** ; page du dépôt ouverte dans le
-  navigateur pour contrôler le rendu du bloc (badges, tableau, tableau de la
-  colonne « À propos »).
 
 ---
 
