@@ -5,6 +5,25 @@
 # Soutrali — L’entraide à porter de main
 
 Plateforme d’entraide et de services de proximité entre habitants d’une même ville de Côte d’Ivoire. Projet pilote : **Abidjan**.
+## Accès direct
+
+<p align="center">
+  <a href="https://soutrali.alwaysdata.net"><img src="https://img.shields.io/badge/OUVRIR_LE_SITE-soutrali.alwaysdata.net-037C30?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Ouvrir le site Soutrali"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-ANDROID_%C2%B7_59_Mo-FE7402?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger l'APK Android"></a>
+  <a href="https://github.com/0Defiance/soutrali/releases/latest"><img src="https://img.shields.io/badge/T%C3%89L%C3%89CHARGER-WINDOWS_%C2%B7_3_zip-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Télécharger le paquet desktop Windows"></a>
+</p>
+
+| Plateforme | Lien direct | En deux mots |
+|---|---|---|
+| 🌐 **Site web** | **<https://soutrali.alwaysdata.net>** | Rien à installer : l’application, l’API et le back-office `/admin` sur la même origine. |
+| 🤖 **Android** | [**soutrali-android.apk**](https://github.com/0Defiance/soutrali/releases/latest/download/soutrali-android.apk) · 59 Mo | APK signé `CN=Soutrali`, à copier sur le téléphone puis installer (autoriser les sources inconnues). |
+| 🖥️ **Desktop Windows** | [**Release `v0.2.0`**](https://github.com/0Defiance/soutrali/releases/latest) · 3 zip, 71 Mo | Rien à installer : extraire les 3 zip dans un même dossier, puis double-cliquer sur `soutrali.exe`. |
+
+> **Le site d’abord.** Tout ce qui suit dans ce fichier décrit le projet ; pour
+> simplement **utiliser** Soutrali, le site web reste le chemin le plus court —
+> l’APK et le paquet desktop servent aux tests hors navigateur.
+
+
 
 > **Ce fichier est la source unique de contexte du projet.** Il est écrit pour qu’une personne, une équipe ou une IA qui n’a rien suivi puisse comprendre **ce qu’est Soutrali, pourquoi il existe, ce qui est décidé, ce qui ne l’est pas, et comment reprendre le travail avec n’importe quelle technologie**.
 >
